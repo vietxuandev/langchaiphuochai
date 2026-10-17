@@ -12,6 +12,9 @@ RUN npm ci --include=dev
 # Build package dùng chung rồi build API
 COPY packages/shared packages/shared
 COPY apps/api apps/api
+# Chặn sớm nếu thiếu migration Prisma (cần cho `prisma migrate deploy` khi container start)
+RUN test -d apps/api/prisma/migrations \
+    || (echo "THIEU apps/api/prisma/migrations - kiem tra .gitignore" && exit 1)
 # Prisma client phải được generate TRƯỚC khi build: lúc `npm ci`, schema.prisma chưa có
 # trong image nên postinstall của @prisma/client không sinh types -> build sẽ lỗi TS2305.
 RUN npx prisma generate --schema apps/api/prisma/schema.prisma \

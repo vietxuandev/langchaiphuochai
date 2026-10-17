@@ -30,7 +30,7 @@
     "docker:logs": "docker compose logs -f",
     "verify:editor": "node scripts/verify-editor-roundtrip.mjs",
     "verify:editor:render": "npm run verify:editor:render -w @phuochai/web",
-    "verify": "npm run typecheck && npm run verify:schemas && npm run verify:content && npm run verify:addresses && npm run verify:editor:render",
+    "verify": "npm run typecheck && npm run verify:schemas && npm run verify:repo && npm run verify:content && npm run verify:addresses && npm run verify:editor:render",
     "verify:avatar": "npm run verify:avatar -w @phuochai/web",
     "uploads:report": "node scripts/uploads-report.mjs",
     "verify:schemas": "node scripts/verify-schemas.mjs",
@@ -45,7 +45,8 @@
     "verify:queries": "node scripts/verify-queries.mjs",
     "strip:tags": "node scripts/strip-tags-block.mjs",
     "docker:prod:config": "docker compose -f docker-compose.coolify.yml --env-file .env.coolify config",
-    "docker:prod:seed": "docker compose -f docker-compose.coolify.yml --profile tools run --rm seed"
+    "docker:prod:seed": "docker compose -f docker-compose.coolify.yml --profile tools run --rm seed",
+    "verify:repo": "node scripts/verify-repo.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

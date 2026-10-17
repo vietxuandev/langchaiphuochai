@@ -34,6 +34,10 @@ RUN npm ci --include=dev
 
 COPY packages/shared packages/shared
 COPY apps/web apps/web
+# Chặn sớm với thông báo rõ nếu thiếu file dữ liệu hành chính (thường do .gitignore đặt sai:
+# "data/" sẽ ẩn mọi thư mục tên data ở mọi cấp, kể cả packages/shared/src/data/).
+RUN test -f packages/shared/src/data/hcm-wards.json \
+    || (echo "THIEU packages/shared/src/data/hcm-wards.json - kiem tra .gitignore phai la /data/ (co dau / o dau) va da git add file nay chua" && exit 1)
 # Schema GraphQL để chạy codegen trong lúc build
 COPY apps/api/schema.graphql apps/api/schema.graphql
 
