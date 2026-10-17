@@ -1,0 +1,119 @@
+# Fragment dùng chung cho bài viết - khai báo đủ field để tái sử dụng ở mọi trang.
+fragment PostCard on Post {
+  id
+  type
+  status
+  slug
+  title
+  summary
+  city
+  ward
+  addressRaw
+  priceRaw
+  priceValue
+  priceUnit
+  areaM2
+  areaText
+  bedrooms
+  bathrooms
+  direction
+  views
+  publishedAt
+  createdAt
+  updatedAt
+  code
+  tagsText
+  category {
+    id
+    name
+    slug
+    section
+  }
+  heroImage {
+    id
+    path
+    role
+    alt
+  }
+}
+
+fragment PostFull on Post {
+  ...PostCard
+  sourceKey
+  seoTitle
+  contentHtml
+  contentText
+  pricePerM2Raw
+  pricePerM2Value
+  widthM
+  lengthM
+  dimensions
+  floors
+  roadWidth
+  legal
+  attributes
+  seo
+  extras
+  warnings
+  verified
+  hasManager
+  contactName
+  contactPhone
+  contactEmail
+  contactZalo
+  authorId
+  author {
+    id
+    name
+    email
+    role
+    avatarUrl
+  }
+  images {
+    id
+    path
+    role
+    alt
+    sortOrder
+  }
+  tags {
+    id
+    name
+    slug
+  }
+}
+
+fragment CategoryNode on Category {
+  id
+  name
+  slug
+  section
+  description
+  seoTitle
+  imagePath
+  sourceUrl
+  level
+  sortOrder
+  declaredCount
+  discoveredCount
+  childCount
+  isLocationFilter
+  parentId
+  parent {
+    id
+    name
+    slug
+    level
+  }
+  postCount
+  children {
+    id
+    name
+    slug
+    section
+    level
+    sortOrder
+    postCount
+    childCount
+  }
+}

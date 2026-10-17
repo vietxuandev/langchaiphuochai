@@ -1,0 +1,301 @@
+# ---------------------------- Truy vấn công khai ----------------------------
+
+query Posts($filter: PostFilterInput) {
+  posts(filter: $filter) {
+    items {
+      ...PostCard
+    }
+    total
+    page
+    pageSize
+    totalPages
+    hasNextPage
+  }
+}
+
+query PostDetail($slug: String!, $countView: Boolean) {
+  post(slug: $slug, countView: $countView) {
+    ...PostFull
+  }
+}
+
+query RelatedPosts($slug: String!, $limit: Int) {
+  relatedPosts(slug: $slug, limit: $limit) {
+    ...PostCard
+  }
+}
+
+query FeaturedPosts($type: PostType!, $limit: Int) {
+  featuredPosts(type: $type, limit: $limit) {
+    ...PostCard
+  }
+}
+
+query LatestPosts($type: PostType!, $limit: Int) {
+  latestPosts(type: $type, limit: $limit) {
+    ...PostCard
+  }
+}
+
+query PostWards($type: PostType) {
+  postWards(type: $type) {
+    ward
+    count
+  }
+}
+
+query PublicStats {
+  publicStats {
+    accommodations
+    news
+    realEstates
+    categories
+    cities
+    totalPosts
+  }
+}
+
+# ------------------------------- Danh mục ----------------------------------
+
+query Categories($section: PostType, $includeLocationFilters: Boolean) {
+  categories(section: $section, includeLocationFilters: $includeLocationFilters) {
+    ...CategoryNode
+  }
+}
+
+query CategoryTree($section: PostType) {
+  categoryTree(section: $section) {
+    ...CategoryNode
+  }
+}
+
+query CategoryBySlug($slug: String!) {
+  category(slug: $slug) {
+    ...CategoryNode
+  }
+}
+
+# ------------------------------ Xác thực -----------------------------------
+
+query Me {
+  me {
+    id
+    email
+    name
+    role
+    avatarUrl
+    bio
+    phone
+    isActive
+    lastLoginAt
+    createdAt
+    postCount
+  }
+}
+
+# --------------------------- Khu vực quản trị ------------------------------
+
+query DashboardStats {
+  dashboardStats {
+    totalPosts
+    publishedPosts
+    draftPosts
+    archivedPosts
+    totalUsers
+    totalCategories
+    totalViews
+    postsByType {
+      label
+      value
+      count
+    }
+    postsByStatus {
+      label
+      value
+      count
+    }
+    postsByMonth {
+      month
+      count
+    }
+  }
+}
+
+query AdminPosts($filter: PostFilterInput) {
+  posts(filter: $filter) {
+    items {
+      ...PostCard
+      author {
+        id
+        name
+        email
+        role
+      }
+    }
+    total
+    page
+    pageSize
+    totalPages
+  }
+}
+
+query AdminPostDetail($id: String!) {
+  postById(id: $id) {
+    ...PostFull
+  }
+}
+
+query AdminCategories {
+  categories(includeLocationFilters: true) {
+    ...CategoryNode
+  }
+}
+
+query AdminUsers($keyword: String, $role: Role, $isActive: Boolean, $page: Int, $pageSize: Int) {
+  users(keyword: $keyword, role: $role, isActive: $isActive, page: $page, pageSize: $pageSize) {
+    items {
+      id
+      email
+      name
+      role
+      avatarUrl
+      isActive
+      lastLoginAt
+      createdAt
+      postCount
+    }
+    total
+    page
+    pageSize
+    totalPages
+  }
+}
+
+# ------------------------------ Mutations ----------------------------------
+
+mutation Login($input: LoginInput!) {
+  login(input: $input) {
+    accessToken
+    user {
+      id
+      email
+      name
+      role
+      avatarUrl
+    }
+  }
+}
+
+mutation Register($input: RegisterInput!) {
+  register(input: $input) {
+    accessToken
+    user {
+      id
+      email
+      name
+      role
+      avatarUrl
+    }
+  }
+}
+
+mutation UpdateProfile($input: UpdateProfileInput!) {
+  updateProfile(input: $input) {
+    id
+    name
+    avatarUrl
+    bio
+    phone
+  }
+}
+
+mutation ChangePassword($input: ChangePasswordInput!) {
+  changePassword(input: $input)
+}
+
+mutation CreatePost($input: PostInput!) {
+  createPost(input: $input) {
+    id
+    slug
+    status
+  }
+}
+
+mutation UpdatePost($input: UpdatePostInput!) {
+  updatePost(input: $input) {
+    id
+    slug
+    status
+  }
+}
+
+mutation DeletePost($id: String!) {
+  deletePost(id: $id)
+}
+
+mutation PublishPost($id: String!) {
+  publishPost(id: $id) {
+    id
+    status
+    publishedAt
+  }
+}
+
+mutation UnpublishPost($id: String!) {
+  unpublishPost(id: $id) {
+    id
+    status
+  }
+}
+
+mutation ArchivePost($id: String!) {
+  archivePost(id: $id) {
+    id
+    status
+  }
+}
+
+mutation CreateCategory($input: CategoryInput!) {
+  createCategory(input: $input) {
+    id
+    name
+    slug
+  }
+}
+
+mutation UpdateCategory($input: UpdateCategoryInput!) {
+  updateCategory(input: $input) {
+    id
+    name
+    slug
+  }
+}
+
+mutation DeleteCategory($id: String!) {
+  deleteCategory(id: $id)
+}
+
+mutation CreateUser($input: AdminCreateUserInput!) {
+  createUser(input: $input) {
+    id
+    email
+    name
+    role
+  }
+}
+
+mutation UpdateUser($input: UpdateUserInput!) {
+  updateUser(input: $input) {
+    id
+    name
+    role
+    isActive
+  }
+}
+
+mutation DeactivateUser($id: String!) {
+  deactivateUser(id: $id) {
+    id
+    isActive
+  }
+}

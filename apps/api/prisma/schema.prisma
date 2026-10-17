@@ -1,0 +1,226 @@
+// Prisma schema - website danh bạ lưu trú & du lịch Phước Hải
+// Chạy: npm run db:push (dev) hoặc npx prisma migrate dev (tạo migration)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              Người dùng & quyền                            */
+/* -------------------------------------------------------------------------- */
+
+enum Role {
+  ADMIN
+  EDITOR
+  USER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(USER)
+  avatarUrl    String?
+  bio          String?
+  phone        String?
+  isActive     Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  posts Post[]
+
+  @@index([role])
+  @@map("users")
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                  Danh mục                                  */
+/* -------------------------------------------------------------------------- */
+
+enum PostType {
+  ACCOMMODATION
+  NEWS
+  REAL_ESTATE
+  PAGE
+}
+
+model Category {
+  id               String    @id @default(cuid())
+  name             String
+  slug             String    @unique
+  section          PostType
+  description      String?
+  seoTitle         String?
+  imagePath        String?
+  level            Int       @default(0)
+  sortOrder        Int       @default(0)
+  declaredCount    Int?
+  discoveredCount  Int?
+  childCount       Int       @default(0)
+  isLocationFilter Boolean   @default(false)
+
+  parentId String?
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryTree")
+
+  posts Post[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([section, level])
+  @@index([parentId])
+  @@map("categories")
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                 Bài viết                                   */
+/* -------------------------------------------------------------------------- */
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Post {
+  id          String     @id @default(cuid())
+  /// Khoá gốc khi import từ site cũ, ví dụ "accommodation:67"
+  sourceKey   String?    @unique
+  type        PostType
+  status      PostStatus @default(DRAFT)
+  slug        String     @unique
+  title       String
+  seoTitle    String?
+  summary     String?
+  contentHtml String?
+  contentText String?
+  /// SHA-1 HTML nguồn - dùng để phát hiện bài đã thay đổi khi crawl lại
+  htmlHash    String?
+  code        String?
+  views       Int        @default(0)
+
+  // Địa điểm
+  /// Địa chỉ chi tiết (số nhà, đường, khu phố) - KHÔNG gồm xã/phường và tỉnh/thành.
+  addressRaw String?
+  /// Xã/phường theo dữ liệu hành chính TP. Hồ Chí Minh (168 đơn vị, không còn quận/huyện).
+  ward       String?
+  /// Tỉnh/thành phố - website chỉ hỗ trợ "Thành phố Hồ Chí Minh".
+  city       String?
+
+  // Giá
+  priceRaw         String?
+  priceValue       BigInt?
+  priceUnit        String?
+  currency         String? @default("VND")
+  pricePerM2Raw    String?
+  pricePerM2Value  BigInt?
+
+  // Thuộc tính lưu trú / bất động sản
+  areaM2     Float?
+  areaText   String?
+  widthM     Float?
+  lengthM    Float?
+  dimensions String?
+  bedrooms   Int?
+  bathrooms  Int?
+  floors     Int?
+  direction  String?
+  roadWidth  String?
+  legal      String?
+  /// Toàn bộ cặp nhãn/giá trị gốc (JSON)
+  attributes Json?
+
+  // Liên hệ chủ địa điểm
+  contactName        String?
+  contactPhone       String?
+  contactEmail       String?
+  contactZalo        String?
+  contactCertificate String?
+  contactExperience  String?
+  verified           Boolean?
+  hasManager         Boolean?
+
+  /// Metadata SEO gốc + dữ liệu đặc thù template (JSON)
+  seo      Json?
+  extras   Json?
+  warnings String[] @default([])
+  tagsText String[] @default([])
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  images PostImage[]
+  tags   Tag[]       @relation("PostTags")
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([type, status])
+  @@index([categoryId])
+  @@index([authorId])
+  @@index([publishedAt])
+  @@index([city])
+  @@index([ward])
+  @@index([priceValue])
+  @@map("posts")
+}
+
+model PostImage {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  /// Đường dẫn ảnh do server mới quản lý, ví dụ "/upload/posts/2026/10/abc.jpg"
+  path      String
+  role      String   @default("gallery")
+  alt       String?
+  bytes     Int?
+  sha256    String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([postId, sortOrder])
+  @@map("post_images")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  posts Post[] @relation("PostTags")
+
+  @@map("tags")
+}
+
+/* -------------------------------------------------------------------------- */
+/*                          Phiên bản dữ liệu crawl                           */
+/* -------------------------------------------------------------------------- */
+
+model ImportRun {
+  id          String    @id @default(cuid())
+  source      String
+  datasetPath String?
+  totalItems  Int       @default(0)
+  created     Int       @default(0)
+  updated     Int       @default(0)
+  skipped     Int       @default(0)
+  mediaCopied Int       @default(0)
+  notes       String?
+  startedAt   DateTime  @default(now())
+  finishedAt  DateTime?
+
+  @@map("import_runs")
+}

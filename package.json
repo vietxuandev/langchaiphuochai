@@ -1,0 +1,56 @@
+{
+  "name": "phuochai-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Website danh bạ lưu trú & thông tin du lịch Phước Hải - NestJS + GraphQL + PostgreSQL + Next.js",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build:shared": "npm run build -w @phuochai/shared",
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm run dev -w @phuochai/api\" \"npm run dev -w @phuochai/web\"",
+    "dev:api": "npm run dev -w @phuochai/api",
+    "dev:web": "npm run dev -w @phuochai/web",
+    "build": "npm run build:shared && npm run build -w @phuochai/api && npm run build -w @phuochai/web",
+    "typecheck": "npm run typecheck -w @phuochai/shared && npm run typecheck -w @phuochai/api && npm run typecheck -w @phuochai/web",
+    "codegen": "npm run codegen -w @phuochai/web",
+    "db:local": "npm run db:local -w @phuochai/api",
+    "db:migrate": "npm run db:migrate -w @phuochai/api",
+    "db:push": "npm run db:push -w @phuochai/api",
+    "db:seed": "npm run db:seed -w @phuochai/api",
+    "db:studio": "npm run db:studio -w @phuochai/api",
+    "data:prepare": "node scripts/prepare-data.mjs",
+    "setup:local": "npm run data:prepare && npm run db:push && npm run db:seed && npm run codegen",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "verify:editor": "node scripts/verify-editor-roundtrip.mjs",
+    "verify:editor:render": "npm run verify:editor:render -w @phuochai/web",
+    "verify": "npm run typecheck && npm run verify:schemas && npm run verify:content && npm run verify:addresses && npm run verify:editor:render",
+    "verify:avatar": "npm run verify:avatar -w @phuochai/web",
+    "uploads:report": "node scripts/uploads-report.mjs",
+    "verify:schemas": "node scripts/verify-schemas.mjs",
+    "verify:mutations": "node scripts/verify-mutations.mjs",
+    "verify:api": "npm run verify:queries && npm run verify:mutations && npm run verify:avatar",
+    "verify:all": "npm run verify && npm run verify:editor && npm run verify:seed && npm run verify:api",
+    "verify:seed": "node scripts/verify-seed.mjs",
+    "migrate:addresses": "node scripts/migrate-addresses.mjs",
+    "verify:addresses": "node scripts/verify-addresses.mjs",
+    "normalize:dashes": "node scripts/normalize-dashes.mjs",
+    "verify:content": "node scripts/verify-content.mjs",
+    "verify:queries": "node scripts/verify-queries.mjs",
+    "strip:tags": "node scripts/strip-tags-block.mjs",
+    "docker:prod:config": "docker compose -f docker-compose.coolify.yml --env-file .env.coolify config",
+    "docker:prod:seed": "docker compose -f docker-compose.coolify.yml --profile tools run --rm seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "overrides": {
+    "@apollo/client": "3.13.9"
+  }
+}

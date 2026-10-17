@@ -1,0 +1,34 @@
+# Bỏ khỏi build context để image build nhanh và nhẹ
+node_modules
+**/node_modules
+.npm-cache
+.next
+**/.next
+dist
+**/dist
+*.tsbuildinfo
+
+# Dữ liệu: ảnh + dataset được mount vào container lúc chạy, không bake vào image
+data
+
+# Biến môi trường và file cục bộ
+.env
+.env.*
+!.env.example
+!.env.coolify.example
+
+# Git, editor, log, file tạm
+.git
+.gitignore
+.vscode
+.idea
+*.log
+*.tmp.*
+.DS_Store
+
+# Tài liệu (không cần trong image)
+*.md
+docs
+
+# Dự án crawl cũ (không thuộc website)
+../phuochai-scraper

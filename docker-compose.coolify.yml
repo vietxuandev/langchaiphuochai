@@ -1,0 +1,123 @@
+# =============================================================================
+# Docker Compose cho Coolify (production) - Làng Chài Phước Hải
+#
+# Khác bản docker-compose.yml (dùng cho máy local):
+#  - KHÔNG publish port ra host: Coolify/Traefik tự route vào container theo domain.
+#  - Mật khẩu/secret lấy từ biến môi trường của Coolify (không hardcode).
+#  - Ảnh upload nằm ở thư mục trên host (DATA_DIR) để dễ backup và rsync.
+#  - Có healthcheck để Coolify biết khi nào container sẵn sàng.
+#
+# Cách dùng: xem DEPLOY.md
+# =============================================================================
+services:
+  # ------------------------------ PostgreSQL ---------------------------------
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-phuochai}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Cần đặt DB_PASSWORD trong Coolify}
+      POSTGRES_DB: ${DB_NAME:-phuochai}
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-phuochai} -d ${DB_NAME:-phuochai}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+
+  # ------------------------------- NestJS API --------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      TZ: Asia/Ho_Chi_Minh
+      DATABASE_URL: postgresql://${DB_USER:-phuochai}:${DB_PASSWORD:?Cần đặt DB_PASSWORD}@db:5432/${DB_NAME:-phuochai}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?Cần đặt JWT_SECRET trong Coolify}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://langchaiphuochai.com}
+      UPLOAD_DIR: /app/data/upload
+      SCHEMA_PATH: /app/apps/api/schema.graphql
+    volumes:
+      # <DATA_DIR> trên host -> /app/data trong container
+      #   upload/ : ảnh phục vụ tại /upload/...
+      #   seed/   : dataset.json (để chạy import ngay trong container api nếu cần)
+      - ${DATA_DIR:-/data/langchaiphuochai}:/app/data
+    expose:
+      - '4000'
+    depends_on:
+      db:
+        condition: service_healthy
+    # Áp dụng migration rồi mới chạy API (an toàn khi deploy lại nhiều lần)
+    command: >
+      sh -c "npx prisma migrate deploy --schema apps/api/prisma/schema.prisma &&
+             node apps/api/dist/src/main.js"
+    networks:
+      - internal
+
+  # ------------------------------- Next.js web -------------------------------
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Next nhúng các biến này vào bản build nên phải truyền lúc build
+        API_INTERNAL_URL: http://api:4000
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://langchaiphuochai.com}
+        NEXT_PUBLIC_GRAPHQL_URL: /graphql
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      TZ: Asia/Ho_Chi_Minh
+      # Gọi API qua mạng nội bộ Docker (proxy /graphql, /api/upload, /upload/*)
+      API_INTERNAL_URL: http://api:4000
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://langchaiphuochai.com}
+      NEXT_PUBLIC_GRAPHQL_URL: /graphql
+    expose:
+      - '3000'
+    depends_on:
+      - api
+    networks:
+      - internal
+
+  # --------------------------- Công cụ một lần --------------------------------
+  # Import dữ liệu crawl (chạy tay 1 lần sau khi deploy):
+  #   docker compose -f docker-compose.coolify.yml --profile tools run --rm seed
+  seed:
+    profiles: ['tools']
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      NODE_ENV: production
+      TZ: Asia/Ho_Chi_Minh
+      DATABASE_URL: postgresql://${DB_USER:-phuochai}:${DB_PASSWORD:?Cần đặt DB_PASSWORD}@db:5432/${DB_NAME:-phuochai}?schema=public
+      DATASET_PATH: /app/data/seed/dataset.json
+      UPLOAD_DIR: /app/data/upload
+      JWT_SECRET: ${JWT_SECRET:?Cần đặt JWT_SECRET}
+    volumes:
+      # Cần cả dataset (data/seed) và ảnh (data/upload)
+      - ${DATA_DIR:-/data/langchaiphuochai}:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "npx prisma migrate deploy --schema apps/api/prisma/schema.prisma &&
+             npx tsx apps/api/prisma/seed.ts"
+    networks:
+      - internal
+
+volumes:
+  pgdata:
+
+networks:
+  internal:
+    driver: bridge

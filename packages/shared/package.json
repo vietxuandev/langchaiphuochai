@@ -1,0 +1,29 @@
+{
+  "name": "@phuochai/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kiểu dữ liệu, enum và zod schema dùng chung cho API (NestJS) và web (Next.js)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "verify:schemas": "node ../../scripts/verify-schemas.mjs"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

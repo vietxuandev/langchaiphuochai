@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.next/
+.npm-cache/
+.env
+.env.local
+generated/
+*.log
+.DS_Store
+
+# Dữ liệu sinh ra từ project scraper: dataset JSON + ảnh upload (~190MB) - không commit
+# Trên server, dữ liệu được đặt ở DATA_DIR và mount vào container (xem DEPLOY.md)
+data/
+
+# Thư mục cấu hình Docker tạm khi build thử trên máy
+.docker-local/

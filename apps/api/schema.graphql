@@ -1,0 +1,549 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+input AdminCreateUserInput {
+  email: String!
+  name: String!
+  password: String!
+  role: Role!
+}
+
+type AuthPayload {
+  accessToken: String!
+  user: User!
+}
+
+type Category {
+  childCount: Int!
+  children: [Category!]!
+  createdAt: DateTime!
+  declaredCount: Int
+  description: String
+  discoveredCount: Int
+  id: String!
+  imagePath: String
+  isLocationFilter: Boolean!
+  level: Int!
+  name: String!
+  parent: Category
+  parentId: String
+  postCount: Int!
+  section: PostType!
+  seoTitle: String
+  slug: String!
+  sortOrder: Int!
+  sourceUrl: String
+  updatedAt: DateTime!
+}
+
+input CategoryInput {
+  description: String
+  imagePath: String
+  name: String!
+  parentId: String
+  section: PostType!
+  seoTitle: String
+  slug: String
+  sortOrder: Int
+}
+
+input ChangePasswordInput {
+  confirmPassword: String!
+  currentPassword: String!
+  newPassword: String!
+}
+
+type DashboardStats {
+  archivedPosts: Int!
+  draftPosts: Int!
+  postsByMonth: [MonthlyCount!]!
+  postsByStatus: [StatusCount!]!
+  postsByType: [TypeCount!]!
+  publishedPosts: Int!
+  totalCategories: Int!
+  totalPosts: Int!
+  totalUsers: Int!
+  totalViews: Int!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+"""Giá trị JSON tuỳ ý (object, array, string, number, boolean)"""
+scalar JSON
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type MonthlyCount {
+  count: Int!
+  month: String!
+}
+
+type Mutation {
+  """Lưu trữ bài viết (editor/admin)"""
+  archivePost(id: String!): Post!
+
+  """Đổi mật khẩu"""
+  changePassword(input: ChangePasswordInput!): Boolean!
+
+  """Tạo danh mục (quản trị viên)"""
+  createCategory(input: CategoryInput!): Category!
+
+  """Tạo bài viết mới (thành viên tạo bản nháp, editor có thể xuất bản)"""
+  createPost(input: PostInput!): Post!
+
+  """Tạo người dùng mới (quản trị viên)"""
+  createUser(input: AdminCreateUserInput!): User!
+
+  """Vô hiệu hoá người dùng"""
+  deactivateUser(id: String!): User!
+
+  """Xoá danh mục rỗng (quản trị viên)"""
+  deleteCategory(id: String!): Boolean!
+
+  """Xoá bài viết"""
+  deletePost(id: String!): Boolean!
+
+  """Tăng lượt xem bài viết"""
+  incrementPostViews(id: String!): Boolean!
+
+  """Đăng nhập bằng email và mật khẩu"""
+  login(input: LoginInput!): AuthPayload!
+
+  """Xuất bản bài viết (editor/admin)"""
+  publishPost(id: String!): Post!
+
+  """Đăng ký tài khoản thành viên mới"""
+  register(input: RegisterInput!): AuthPayload!
+
+  """Chuyển bài viết về bản nháp (editor/admin)"""
+  unpublishPost(id: String!): Post!
+
+  """Cập nhật danh mục (quản trị viên)"""
+  updateCategory(input: UpdateCategoryInput!): Category!
+
+  """Cập nhật bài viết"""
+  updatePost(input: UpdatePostInput!): Post!
+
+  """Cập nhật hồ sơ cá nhân"""
+  updateProfile(input: UpdateProfileInput!): User!
+
+  """Cập nhật vai trò / trạng thái người dùng"""
+  updateUser(input: UpdateUserInput!): User!
+}
+
+type PaginatedPosts {
+  hasNextPage: Boolean!
+  items: [Post!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+type PaginatedUsers {
+  items: [User!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+type Post {
+  addressRaw: String
+  areaM2: Float
+  areaText: String
+  attributes: JSON
+  author: User
+  authorId: String
+  bathrooms: Int
+  bedrooms: Int
+  category: Category
+  categoryId: String
+
+  """Tỉnh/thành phố - luôn là Thành phố Hồ Chí Minh"""
+  city: String
+  code: String
+  contactEmail: String
+  contactName: String
+  contactPhone: String
+  contactZalo: String
+  contentHtml: String
+  contentText: String
+  createdAt: DateTime!
+  currency: String
+  dimensions: String
+  direction: String
+  extras: JSON
+  floors: Int
+  hasManager: Boolean
+  heroImage: PostImage
+  id: String!
+  images: [PostImage!]!
+  legal: String
+  lengthM: Float
+  pricePerM2Raw: String
+  pricePerM2Value: Float
+  priceRaw: String
+  priceUnit: String
+  priceValue: Float
+  publishedAt: DateTime
+  roadWidth: String
+  seo: JSON
+  seoTitle: String
+  slug: String!
+  sourceKey: String
+  status: PostStatus!
+  summary: String
+  tags: [Tag!]!
+  tagsText: [String!]!
+  title: String!
+  type: PostType!
+  updatedAt: DateTime!
+  verified: Boolean
+  views: Int!
+
+  """Xã/phường (TP. Hồ Chí Minh)"""
+  ward: String
+  warnings: [String!]!
+  widthM: Float
+}
+
+input PostFilterInput {
+  authorId: String
+  categoryId: String
+  categorySlug: String
+  keyword: String
+  maxPrice: Float
+  minPrice: Float
+  onlyMine: Boolean
+  onlyWithImage: Boolean
+  page: Int = 1
+  pageSize: Int = 12
+  sortBy: PostSortField = CREATED_AT
+  sortOrder: SortDirection = DESC
+  status: PostStatus
+  tag: String
+  type: PostType
+
+  """Lọc theo xã/phường"""
+  ward: String
+}
+
+type PostImage {
+  alt: String
+  bytes: Int
+  id: String!
+  path: String!
+  role: String!
+  sha256: String
+  sortOrder: Int!
+}
+
+input PostImageInput {
+  alt: String
+  path: String!
+  role: String = "gallery"
+  sortOrder: Int = 0
+}
+
+input PostInput {
+  addressRaw: String
+  areaM2: Float
+  areaText: String
+  attributes: JSON
+  bathrooms: Int
+  bedrooms: Int
+  categoryId: String
+  city: String
+  contactEmail: String
+  contactName: String
+  contactPhone: String
+  contactZalo: String
+  contentHtml: String
+  dimensions: String
+  direction: String
+  floors: Int
+  hasManager: Boolean
+  images: [PostImageInput!]
+  legal: String
+  lengthM: Float
+  pricePerM2Value: Float
+  priceRaw: String
+  priceUnit: String
+  priceValue: Float
+  publishedAt: String
+  roadWidth: String
+  seoDescription: String
+  seoTitle: String
+  slug: String
+  status: PostStatus
+  summary: String
+  tags: [String!]
+  title: String!
+  type: PostType!
+  verified: Boolean
+
+  """Xã/phường - phải thuộc danh mục TP. Hồ Chí Minh"""
+  ward: String
+  widthM: Float
+}
+
+"""Trường sắp xếp danh sách bài viết"""
+enum PostSortField {
+  """Ngày tạo"""
+  CREATED_AT
+
+  """Giá"""
+  PRICE
+
+  """Ngày xuất bản"""
+  PUBLISHED_AT
+
+  """Tiêu đề"""
+  TITLE
+
+  """Lượt xem"""
+  VIEWS
+}
+
+"""Trạng thái bài viết"""
+enum PostStatus {
+  """Lưu trữ"""
+  ARCHIVED
+
+  """Bản nháp - chưa hiển thị công khai"""
+  DRAFT
+
+  """Đã xuất bản"""
+  PUBLISHED
+}
+
+"""Loại nội dung"""
+enum PostType {
+  """Nơi lưu trú (khách sạn, homestay, villa...)"""
+  ACCOMMODATION
+
+  """Tin tức & cẩm nang du lịch"""
+  NEWS
+
+  """Trang thông tin tĩnh"""
+  PAGE
+
+  """Bất động sản"""
+  REAL_ESTATE
+}
+
+type PublicStats {
+  accommodations: Int!
+  categories: Int!
+  cities: Int!
+  news: Int!
+  realEstates: Int!
+  totalPosts: Int!
+}
+
+type Query {
+  """Kiểm tra API đang chạy"""
+  apiHealth: String!
+
+  """
+  Danh sách danh mục kèm số bài viết (mặc định ẩn các trang lọc theo tỉnh/thành)
+  """
+  categories(includeLocationFilters: Boolean = false, section: PostType): [Category!]!
+
+  """Chi tiết danh mục theo slug"""
+  category(slug: String!): Category!
+
+  """Cây danh mục nhiều cấp"""
+  categoryTree(section: PostType): [Category!]!
+
+  """Thống kê dashboard (editor/admin)"""
+  dashboardStats: DashboardStats!
+
+  """Bài nổi bật theo loại (dùng cho trang chủ)"""
+  featuredPosts(limit: Int = 8, type: PostType!): [Post!]!
+
+  """Bài mới nhất theo loại"""
+  latestPosts(limit: Int = 6, type: PostType!): [Post!]!
+
+  """Thông tin người dùng đang đăng nhập"""
+  me: User
+
+  """Kiểm tra API công khai"""
+  ping(echo: String): String!
+
+  """Chi tiết bài viết theo slug (tự tăng lượt xem)"""
+  post(countView: Boolean = false, slug: String!): Post!
+
+  """Chi tiết bài viết theo id"""
+  postById(id: String!): Post!
+
+  """
+  Số bài theo xã/phường (chỉ các xã/phường đang có bài) - dùng cho bộ lọc
+  """
+  postWards(type: PostType): [WardCount!]!
+
+  """
+  Danh sách bài viết có phân trang, lọc theo loại/danh mục/giá/khu vực/từ khoá
+  """
+  posts(filter: PostFilterInput): PaginatedPosts!
+
+  """Thống kê công khai cho trang chủ"""
+  publicStats: PublicStats!
+
+  """Bài viết liên quan"""
+  relatedPosts(limit: Int = 4, slug: String!): [Post!]!
+
+  """Chi tiết người dùng (quản trị viên)"""
+  user(id: String!): User!
+
+  """Danh sách người dùng (quản trị viên)"""
+  users(isActive: Boolean, keyword: String, page: Int = 1, pageSize: Int = 20, role: Role): PaginatedUsers!
+}
+
+input RegisterInput {
+  confirmPassword: String!
+  email: String!
+  name: String!
+  password: String!
+}
+
+"""
+Vai trò người dùng: ADMIN (quản trị), EDITOR (người đăng bài), USER (thành viên)
+"""
+enum Role {
+  """Quản trị viên - toàn quyền hệ thống"""
+  ADMIN
+
+  """Người đăng bài - tạo, sửa và xuất bản bài viết"""
+  EDITOR
+
+  """Thành viên - chỉ tạo bản nháp và quản lý hồ sơ"""
+  USER
+}
+
+"""Thứ tự sắp xếp"""
+enum SortDirection {
+  """Tăng dần"""
+  ASC
+
+  """Giảm dần"""
+  DESC
+}
+
+type StatusCount {
+  count: Int!
+  label: String!
+  value: String!
+}
+
+type Tag {
+  id: String!
+  name: String!
+  slug: String!
+}
+
+type TypeCount {
+  count: Int!
+  label: String!
+  value: String!
+}
+
+input UpdateCategoryInput {
+  description: String
+  id: String!
+  imagePath: String
+  name: String
+  parentId: String
+  section: PostType
+  seoTitle: String
+  slug: String
+  sortOrder: Int
+}
+
+input UpdatePostInput {
+  addressRaw: String
+  areaM2: Float
+  areaText: String
+  attributes: JSON
+  bathrooms: Int
+  bedrooms: Int
+  categoryId: String
+  city: String
+  contactEmail: String
+  contactName: String
+  contactPhone: String
+  contactZalo: String
+  contentHtml: String
+  dimensions: String
+  direction: String
+  floors: Int
+  hasManager: Boolean
+  id: String!
+  images: [PostImageInput!]
+  legal: String
+  lengthM: Float
+  pricePerM2Value: Float
+  priceRaw: String
+  priceUnit: String
+  priceValue: Float
+  publishedAt: String
+  roadWidth: String
+  seoDescription: String
+  seoTitle: String
+  slug: String
+  status: PostStatus
+  summary: String
+  tags: [String!]
+  title: String
+  type: PostType
+  verified: Boolean
+
+  """Xã/phường - phải thuộc danh mục TP. Hồ Chí Minh"""
+  ward: String
+  widthM: Float
+}
+
+input UpdateProfileInput {
+  avatarUrl: String
+  bio: String
+  name: String!
+  phone: String
+}
+
+input UpdateUserInput {
+  id: String!
+  isActive: Boolean
+  name: String
+  role: Role
+}
+
+type User {
+  avatarUrl: String
+  bio: String
+  createdAt: DateTime!
+  email: String!
+  id: String!
+  isActive: Boolean!
+  lastLoginAt: DateTime
+  name: String!
+  phone: String
+  postCount: Int
+  role: Role!
+  updatedAt: DateTime!
+}
+
+"""Số bài viết theo xã/phường"""
+type WardCount {
+  count: Int!
+
+  """Tên xã/phường chuẩn"""
+  ward: String!
+}

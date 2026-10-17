@@ -1,0 +1,319 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Biến theme - bảng màu biển (teal/turquoise) + điểm nhấn san hô
+   ========================================================================== */
+@layer base {
+  :root {
+    /* Bộ font hệ thống: không phụ thuộc mạng khi build (next/font/google cần Internet) */
+    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+      'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-display: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+      'Helvetica Neue', Arial, sans-serif;
+
+    --background: 0 0% 100%;
+    --foreground: 200 15% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 200 15% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 200 15% 12%;
+
+    /* Xanh biển đậm làm màu chủ đạo */
+    --primary: 183 72% 30%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 183 30% 95%;
+    --secondary-foreground: 183 60% 20%;
+
+    --muted: 200 20% 96%;
+    --muted-foreground: 200 10% 45%;
+
+    /* San hô làm màu nhấn */
+    --accent: 20 85% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 200 18% 90%;
+    --input: 200 18% 90%;
+    --ring: 183 72% 30%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 200 20% 8%;
+    --foreground: 200 15% 96%;
+
+    --card: 200 18% 11%;
+    --card-foreground: 200 15% 96%;
+
+    --popover: 200 18% 11%;
+    --popover-foreground: 200 15% 96%;
+
+    /* Ở nền tối, primary sáng hơn để đủ tương phản */
+    --primary: 183 60% 45%;
+    --primary-foreground: 200 20% 8%;
+
+    --secondary: 200 16% 18%;
+    --secondary-foreground: 183 45% 90%;
+
+    --muted: 200 16% 16%;
+    --muted-foreground: 200 12% 66%;
+
+    --accent: 20 80% 58%;
+    --accent-foreground: 200 20% 8%;
+
+    --destructive: 0 62% 47%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 200 14% 22%;
+    --input: 200 14% 22%;
+    --ring: 183 60% 45%;
+  }
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    @apply bg-primary/20 text-foreground;
+  }
+
+  /* Thanh cuộn mảnh, hợp tông biển */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    background-clip: content-box;
+    border: 2px solid transparent;
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.45);
+  }
+
+  /* Tôn trọng người dùng không muốn hiệu ứng chuyển động */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+/* ==========================================================================
+   Nội dung bài viết (HTML nhập từ site cũ) - dùng class .prose-phuochai
+   ========================================================================== */
+@layer components {
+  .prose-phuochai {
+    @apply text-base leading-7 text-foreground;
+  }
+
+  .prose-phuochai > * + * {
+    @apply mt-4;
+  }
+
+  .prose-phuochai h1 {
+    @apply mt-8 scroll-mt-24 font-display text-3xl font-bold tracking-tight;
+  }
+
+  .prose-phuochai h2 {
+    @apply mt-8 scroll-mt-24 font-display text-2xl font-semibold tracking-tight;
+  }
+
+  .prose-phuochai h3 {
+    @apply mt-6 scroll-mt-24 font-display text-xl font-semibold tracking-tight;
+  }
+
+  .prose-phuochai h4 {
+    @apply mt-6 scroll-mt-24 font-display text-lg font-semibold tracking-tight;
+  }
+
+  .prose-phuochai h5,
+  .prose-phuochai h6 {
+    @apply mt-4 scroll-mt-24 font-display text-base font-semibold tracking-tight;
+  }
+
+  .prose-phuochai p {
+    @apply my-4;
+  }
+
+  .prose-phuochai strong {
+    @apply font-semibold text-foreground;
+  }
+
+  .prose-phuochai ul {
+    @apply my-4 list-disc space-y-2 pl-6;
+  }
+
+  .prose-phuochai ol {
+    @apply my-4 list-decimal space-y-2 pl-6;
+  }
+
+  .prose-phuochai li > ul,
+  .prose-phuochai li > ol {
+    @apply my-2;
+  }
+
+  .prose-phuochai img {
+    @apply my-4 rounded-lg;
+  }
+
+  .prose-phuochai figure {
+    @apply my-6;
+  }
+
+  .prose-phuochai figure img {
+    @apply my-0;
+  }
+
+  .prose-phuochai figcaption {
+    @apply mt-2 text-center text-sm text-muted-foreground;
+  }
+
+  .prose-phuochai table {
+    @apply my-6 w-full border-collapse overflow-hidden rounded-lg border border-border text-sm;
+  }
+
+  .prose-phuochai thead {
+    @apply bg-muted;
+  }
+
+  .prose-phuochai th {
+    @apply border border-border px-4 py-2 text-left font-semibold;
+  }
+
+  .prose-phuochai td {
+    @apply border border-border px-4 py-2 align-top;
+  }
+
+  .prose-phuochai blockquote {
+    @apply my-6 border-l-4 border-primary/40 bg-muted/50 py-2 pl-4 italic text-muted-foreground;
+  }
+
+  .prose-phuochai a {
+    @apply text-primary underline underline-offset-4 transition-colors hover:text-primary/80;
+  }
+
+  .prose-phuochai iframe {
+    @apply my-6 aspect-video w-full rounded-lg;
+  }
+
+  .prose-phuochai hr {
+    @apply my-8 border-border;
+  }
+
+  .prose-phuochai code {
+    @apply rounded bg-muted px-1.5 py-0.5 text-sm;
+  }
+
+  .prose-phuochai pre {
+    @apply my-4 overflow-x-auto rounded-lg bg-muted p-4 text-sm;
+  }
+
+  .prose-phuochai pre code {
+    @apply bg-transparent p-0;
+  }
+}
+
+/* ==========================================================================
+   Editor trực quan (Tiptap) - placeholder, bảng, tay kéo giãn cột
+   ========================================================================== */
+@layer components {
+  /* Chữ gợi ý khi bài viết chưa có nội dung */
+  .tiptap p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    @apply pointer-events-none float-left h-0 text-muted-foreground;
+  }
+
+  /* Bảng trong editor: cuộn ngang khi quá rộng, ô đang chọn được tô nền */
+  .tiptap .tableWrapper {
+    @apply my-4 overflow-x-auto;
+  }
+
+  .tiptap table {
+    @apply w-full border-collapse table-fixed;
+  }
+
+  .tiptap th,
+  .tiptap td {
+    @apply relative min-w-[80px] border border-border px-3 py-2 align-top;
+  }
+
+  .tiptap th {
+    @apply bg-muted font-semibold;
+  }
+
+  .tiptap .selectedCell::after {
+    content: '';
+    @apply pointer-events-none absolute inset-0 z-[2] bg-primary/10;
+  }
+
+  .tiptap .column-resize-handle {
+    @apply pointer-events-none absolute -bottom-[2px] -right-[2px] top-0 w-1 bg-primary;
+  }
+
+  .tiptap.resize-cursor {
+    cursor: col-resize;
+  }
+
+  /* Ảnh chèn trong editor */
+  .tiptap img {
+    @apply my-4 h-auto max-w-full rounded-lg;
+  }
+
+  .tiptap img.ProseMirror-selectednode {
+    @apply ring-2 ring-primary;
+  }
+
+  /* Liên kết và trích dẫn hiển thị rõ khi soạn thảo */
+  .tiptap a {
+    @apply text-primary underline underline-offset-2;
+  }
+
+  .tiptap blockquote {
+    @apply my-4 border-l-4 border-primary/40 bg-muted/40 px-4 py-2 italic;
+  }
+
+  .tiptap code {
+    @apply rounded bg-muted px-1.5 py-0.5 text-sm;
+  }
+
+  .tiptap pre {
+    @apply my-4 overflow-x-auto rounded-lg bg-muted p-4 text-sm;
+  }
+}

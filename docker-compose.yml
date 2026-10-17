@@ -1,0 +1,83 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: phuochai-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: phuochai
+      POSTGRES_PASSWORD: phuochai
+      POSTGRES_DB: phuochai
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U phuochai -d phuochai']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: phuochai-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://phuochai:phuochai@db:5432/phuochai?schema=public
+      JWT_SECRET: ${JWT_SECRET:-phuochai-super-secret-doi-trong-production}
+      JWT_EXPIRES_IN: 7d
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,https://langchaiphuochai.com}
+      UPLOAD_DIR: /app/data/upload
+      SCHEMA_PATH: /app/apps/api/schema.graphql
+    volumes:
+      - ./data:/app/data
+    ports:
+      - '4000:4000'
+    depends_on:
+      db:
+        condition: service_healthy
+    # Áp dụng migration rồi mới khởi động API
+    command: sh -c "npx prisma migrate deploy --schema apps/api/prisma/schema.prisma && node apps/api/dist/src/main.js"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: phuochai-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Server-side (RSC) gọi API qua mạng nội bộ của Docker
+      API_INTERNAL_URL: http://api:4000
+      # Trình duyệt gọi qua proxy /graphql của Next
+      NEXT_PUBLIC_GRAPHQL_URL: /graphql
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://langchaiphuochai.com}
+    ports:
+      - '3000:3000'
+    depends_on:
+      - api
+
+  # Import dữ liệu crawl: docker compose run --rm seed
+  seed:
+    profiles: ['tools']
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://phuochai:phuochai@db:5432/phuochai?schema=public
+      DATASET_PATH: /app/data/seed/dataset.json
+      JWT_SECRET: ${JWT_SECRET:-phuochai-super-secret-doi-trong-production}
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "npx prisma migrate deploy --schema apps/api/prisma/schema.prisma && npx tsx apps/api/prisma/seed.ts"
+
+volumes:
+  pgdata:
