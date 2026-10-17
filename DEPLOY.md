@@ -147,12 +147,40 @@ Sau khi deploy lần đầu, database còn trống. Có 2 cách:
 DATASET_PATH=/app/data/seed/dataset.json UPLOAD_DIR=/app/data/upload npx tsx apps/api/prisma/seed.ts
 ```
 
-**Cách B - SSH vào server, dùng service `seed` trong compose**
+**Cách B - SSH vào server (khi không muốn dùng UI)**
+
+Thư mục `/data/coolify/services/<uuid>` thuộc **root** với quyền `700` nên user thường bị
+`Permission denied`. Lưu ý `cd` là lệnh của shell nên **`sudo cd` không chạy được**.
 
 ```bash
-cd /data/coolify/services/<uuid-của-resource>     # xem đường dẫn trong Coolify → resource → General
-sudo docker compose -f docker-compose.coolify.yml --profile tools run --rm seed
+# Xem trước có những file gì (thường là docker-compose.yml do Coolify render)
+sudo ls -la /data/coolify/services/<uuid>/
+
+# Cách 1: vào root rồi cd
+sudo -i
+cd /data/coolify/services/<uuid>
+docker compose --profile tools run --rm seed
+exit
+
+# Cách 2: không cần cd
+sudo docker compose \
+  -f /data/coolify/services/<uuid>/docker-compose.yml \
+  --project-directory /data/coolify/services/<uuid> \
+  --profile tools run --rm seed
 ```
+
+**Cách C - chạy trực tiếp trong container `api`** (nhanh nhất, không cần file compose)
+
+Container `api` đã có sẵn `DATABASE_URL` và `UPLOAD_DIR`, chỉ cần truyền `DATASET_PATH`:
+
+```bash
+sudo docker ps --format '{{.Names}}' | grep -i api          # lấy tên container
+sudo docker exec -it <tên-container-api> sh -c \
+  "DATASET_PATH=/app/data/seed/dataset.json npx tsx apps/api/prisma/seed.ts"
+```
+
+Kiểm tra trước khi seed: `sudo ls /data/langchaiphuochai/seed/dataset.json`
+(nếu chưa có thì làm lại bước 2 — rsync dữ liệu lên server).
 
 Kết quả mong đợi (log cuối):
 
