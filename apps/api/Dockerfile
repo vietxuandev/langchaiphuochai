@@ -36,8 +36,9 @@ RUN mkdir -p /app/data/upload
 
 EXPOSE 4000
 
+# Dùng $PORT để đổi cổng bằng biến môi trường (không cần sửa Dockerfile)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:4000/health > /dev/null 2>&1 || exit 1
+  CMD wget -qO- "http://127.0.0.1:${PORT:-4000}/health" > /dev/null 2>&1 || exit 1
 
 # Migration được chạy trong docker-compose (prisma migrate deploy) trước khi start
 CMD ["node", "apps/api/dist/src/main.js"]

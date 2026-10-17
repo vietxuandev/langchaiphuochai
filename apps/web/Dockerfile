@@ -65,8 +65,9 @@ RUN mkdir -p /app/apps/web/.next/cache && chown -R nextjs:nodejs /app/apps/web/.
 USER nextjs
 EXPOSE 3000
 
+# Dùng $PORT để đổi cổng bằng biến môi trường (không cần sửa Dockerfile)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:3000/ > /dev/null 2>&1 || exit 1
+  CMD wget -qO- "http://127.0.0.1:${PORT:-3000}/" > /dev/null 2>&1 || exit 1
 
 # server.js tối giản do Next sinh ra (không dùng `next start`)
 CMD ["node", "apps/web/server.js"]

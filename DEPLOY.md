@@ -291,7 +291,84 @@ Muốn giảm tiếp `api`: tách bước migration/seed ra image riêng, hoặc
 
 ---
 
-## 12. Ghi chú kỹ thuật về cấu hình Docker
+## 12. Đổi cổng (port)
+
+Có **3 lớp cổng** khác nhau, sửa đúng lớp mới không bị 502:
+
+| Lớp | Là gì | Sửa ở đâu |
+| --- | --- | --- |
+| **A. Cổng app lắng nghe trong container** | `next server.js` nghe `$PORT` (mặc định 3000), API nghe `$PORT` (mặc định 4000) | **Compose**: biến `WEB_PORT` / `API_PORT` (hoặc `environment.PORT`). Dockerfile chỉ là mặc định |
+| **B. Cổng Coolify/Traefik trỏ vào container** | Traefik kết nối tới container qua cổng ở `expose` | **UI Coolify**: service `web` → **Ports Exposes** (và port trong Domain nếu có). Phải khớp lớp A |
+| **C. Cổng người dùng gõ trên trình duyệt** | Thực tế là 443/80 của Traefik | Không cần sửa gì; Coolify lo TLS. Muốn cổng lạ (vd 8080) thì cấu hình ở Traefik của server |
+
+### Trường hợp thường gặp: chỉ muốn web chạy cổng khác 3000
+
+**Cách 1 - không sửa code (khuyến nghị)**: giữ nguyên 3000 bên trong, chỉ đổi domain trong Coolify UI.
+Người dùng vẫn vào bằng `https://langchaiphuochai.com` (443). Không cần build lại gì.
+
+**Cách 2 - đổi cổng app thật sự** (ví dụ 8080), chỉ cần biến môi trường:
+
+1. Trong Coolify → Environment Variables, thêm:
+   ```
+   WEB_PORT=8080
+   ```
+2. Vào service `web` → **Ports Exposes** = `8080` (và cập nhật port trong Domain nếu đang ghi `3000`)
+3. Bấm **Deploy** (compose render lại `expose`, container listen 8080)
+
+Đã kiểm chứng: đổi `WEB_PORT=8080` + `API_PORT=4100` chỉ bằng env → web LISTEN `0.0.0.0:8080`,
+API LISTEN `0.0.0.0:4100`, healthcheck đạt, trang và proxy vẫn hoạt động.
+
+### Lưu ý quan trọng khi đổi `API_PORT`
+
+`API_INTERNAL_URL` được **nhúng vào bản build** của Next (rewrites). Compose đã tự suy ra
+`http://api:${API_PORT:-4000}`, nhưng vì là biến build nên **phải Deploy lại (build lại image web)**.
+Nếu chỉ `restart`, web vẫn gọi cổng cũ → trang trắng / `Internal Server Error` / ảnh 404.
+
+Nếu không có nhu cầu đặc biệt: **để API ở 4000** (mạng nội bộ Docker, không ai thấy) và chỉ đổi cổng web.
+
+### Coolify UI có ô đặt cổng cho service compose không?
+
+**Với resource kiểu Docker Compose: Coolify KHÔNG có ô "cổng app lắng nghe".** Cơ chế thật sự:
+
+1. Coolify đọc file compose, lấy cổng service khai báo ở `expose` (hoặc `ports`).
+2. Coolify sinh label Traefik `traefik.http.services.<service>.loadbalancer.server.port=<cổng đó>`
+   để proxy kết nối vào container.
+3. UI của bạn dùng để đặt **domain** (mục *Domains* trong service card, hoặc biến
+   `SERVICE_FQDN_WEB` tuỳ phiên bản). Domain không quyết định cổng app nghe.
+
+⇒ Vì vậy **đổi cổng app thì sửa ở compose** (hoặc biến env mà compose dùng). Trong repo này
+cổng đã được tham số hoá nên bạn chỉ cần thêm biến, **không phải sửa file**:
+
+```
+WEB_PORT=8080     # web
+API_PORT=4100     # api (nhớ Deploy lại vì là biến build của web)
+```
+
+Sau đó vào service `web` → kiểm tra **Ports Exposes** hiển thị `8080` (Coolify đọc từ compose;
+một số phiên bản cho sửa tay ở đây - nếu có thì set cho khớp), rồi **Deploy**.
+
+**Cách xác minh sau khi deploy** (chắc chắn proxy đang trỏ đúng cổng):
+
+```bash
+# 1) App nghe cổng nào trong container
+docker exec <container-web> sh -c "netstat -tlnp || ss -tlnp"
+
+# 2) Traefik được bảo trỏ vào cổng nào
+docker inspect <container-web> --format '{{json .Config.Labels}}' \
+  | tr ',' '\n' | grep loadbalancer.server.port
+
+# 3) Hai số này PHẢI giống nhau. Nếu khác -> proxy 502, sửa WEB_PORT/expose trong compose
+#    (hoặc ô Ports Exposes trong UI nếu phiên bản có) rồi Deploy lại.
+```
+
+### Healthcheck
+
+Healthcheck trong Dockerfile dùng `${PORT:-3000}` / `${PORT:-4000}` nên đổi cổng bằng env
+là healthcheck tự theo, không phải sửa Dockerfile.
+
+---
+
+## 13. Ghi chú kỹ thuật về cấu hình Docker
 
 - **`API_INTERNAL_URL` là biến build**: `next.config.mjs` dùng nó cho `rewrites()` và Next nhúng
   vào `.next/routes-manifest.json` lúc build → `docker-compose.coolify.yml` truyền qua `build.args`.
