@@ -40,8 +40,12 @@ git remote add origin git@github.com:<tài-khoản>/langchai-phuochai.git
 git push -u origin main
 ```
 
-`.gitignore` đã loại `node_modules/`, `data/` (190MB ảnh + dataset), `.env`, `.next`, `dist` -
+`.gitignore` đã loại `node_modules/`, `/data/` (190MB ảnh + dataset), `.env`, `.next`, `dist` -
 nên repo chỉ vài MB.
+
+> ⚠️ **Kiểm tra trước khi push**: chạy `npm run verify:repo`. Script này báo nếu file cần cho build
+> chưa được git theo dõi. Đã từng gặp lỗi deploy vì `.gitignore` viết `data/` (không có `/` đầu) khiến
+> git bỏ qua `packages/shared/src/data/` và `apps/web/src/lib/data/` — server build thất bại exit code 2.
 
 Sau đó trong Coolify: **Settings → Sources → Add** (GitHub App hoặc Deploy Key) để cấp quyền đọc repo.
 
@@ -231,6 +235,7 @@ mất thư mục này là mất toàn bộ ảnh.**
 | Lỗi `JWT_SECRET ... required` | Chưa đặt `JWT_SECRET` trong Environment Variables. |
 | `prisma migrate deploy` lỗi | DB chưa healthy hoặc `DB_PASSWORD` có ký tự đặc biệt chưa URL-encode. |
 | Build web **OOM / killed** | Server thiếu RAM: thêm swap 2GB hoặc build trên máy khác rồi push image. |
+| Build lỗi **exit code 2** ở bước `npm run build:shared` | Thiếu `packages/shared/src/data/hcm-wards.json` trong git. Nguyên nhân: `.gitignore` ghi `data/` (thiếu `/` đầu) nên git bỏ qua **mọi** thư mục tên `data`, kể cả `packages/shared/src/data/` và `apps/web/src/lib/data/`. Kiểm tra: `git ls-files packages/shared/src/data/hcm-wards.json`. Sửa `.gitignore` thành `/data/` rồi `git add -A && git commit && git push`. Chạy `npm run verify:repo` trước khi deploy. |
 | Đổi domain nhưng vẫn trỏ domain cũ | `NEXT_PUBLIC_SITE_URL` là **biến build** - sửa env rồi **Deploy lại** (không chỉ restart). |
 | `Cannot find module '@phuochai/shared'` | Build sai context: **Base Directory** phải là `/` (repo root) và compose file `docker-compose.coolify.yml`. |
 
