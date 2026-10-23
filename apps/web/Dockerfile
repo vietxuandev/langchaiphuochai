@@ -62,6 +62,8 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 # JS/CSS cho trình duyệt: Next KHÔNG đưa vào standalone
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+# File tĩnh trong public/ (ảnh hero, favicon...) cũng KHÔNG nằm trong standalone
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 
 # Next có thể ghi cache (ISR/image) -> cần quyền cho user chạy
 RUN mkdir -p /app/apps/web/.next/cache && chown -R nextjs:nodejs /app/apps/web/.next

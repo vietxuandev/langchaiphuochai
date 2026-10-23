@@ -7,6 +7,8 @@ dist/
 # File do graphql-codegen sinh ra (Dockerfile chạy codegen trước khi build)
 /apps/web/src/generated/
 *.log
+# File cache của TypeScript (sinh ra khi build)
+*.tsbuildinfo
 .DS_Store
 
 # Dữ liệu sinh ra từ project scraper: dataset JSON + ảnh upload (~190MB) - không commit

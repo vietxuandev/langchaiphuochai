@@ -35,6 +35,8 @@ const REQUIRED_FILES = [
   'apps/web/Dockerfile',
   'apps/web/codegen.ts',
   'apps/web/next.config.mjs',
+  // Ảnh tĩnh của trang chủ (nếu thiếu, hero sẽ không có ảnh nền)
+  'apps/web/public/hero-phuoc-hai.jpg',
   'docker-compose.coolify.yml',
   '.dockerignore',
 ];

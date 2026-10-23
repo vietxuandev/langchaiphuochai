@@ -46,9 +46,27 @@ export default async function HomePage() {
     <div>
       {/* ------------------------------- HERO ------------------------------- */}
       <section className="relative overflow-hidden bg-hero-gradient text-white">
-        <div className="absolute inset-0 opacity-15">
-          <div className="absolute -left-24 top-10 h-72 w-72 rounded-full bg-white/40 blur-3xl" />
-          <div className="absolute right-0 top-1/2 h-80 w-80 rounded-full bg-coral-300/50 blur-3xl" />
+        {/*
+          Ảnh nền: bãi biển + khu nghỉ dưỡng Phước Hải (public/hero-phuoc-hai.jpg, 1600px, ~140KB).
+          Dùng <img> + object-cover thay vì next/image để không phụ thuộc sharp khi chạy standalone.
+          `bg-hero-gradient` ở <section> giữ lại làm màu nền dự phòng nếu ảnh không tải được.
+        */}
+        <div className="absolute inset-0">
+          <img
+            src="/hero-phuoc-hai.jpg"
+            alt="Bãi biển và khu nghỉ dưỡng ven biển Phước Hải"
+            className="h-full w-full object-cover object-[62%_60%]"
+            fetchPriority="high"
+            decoding="async"
+          />
+          {/*
+            Lớp phủ: đậm ở nửa trái (nơi có chữ trắng) và gần như trong suốt ở bên phải
+            để khu nghỉ dưỡng + bãi biển vẫn hiện rõ.
+          */}
+          <div className="absolute inset-0 bg-gradient-to-r from-sea-900/95 via-sea-900/75 via-45% to-sea-900/0 to-75%" />
+          <div className="absolute inset-0 bg-gradient-to-t from-sea-900/80 via-sea-900/10 via-30% to-transparent" />
+          {/* Trên điện thoại chữ trải hết chiều ngang nên cần phủ đều hơn để đủ tương phản */}
+          <div className="absolute inset-0 bg-sea-900/40 sm:hidden" />
         </div>
 
         <div className="container relative py-16 lg:py-24">

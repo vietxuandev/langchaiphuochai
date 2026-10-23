@@ -2,7 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { Public } from './common/decorators';
 
 /**
- * Endpoint kiểm tra tình trạng API — dùng cho healthcheck của Docker/Coolify.
+ * Endpoint kiểm tra tình trạng API - dùng cho healthcheck của Docker/Coolify.
  *
  * GET /health  →  { status: 'ok', uptime, timestamp }
  */

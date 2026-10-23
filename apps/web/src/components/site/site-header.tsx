@@ -35,8 +35,8 @@ const SECTION_LINKS: { type: PostType; label: string; href: string }[] = [
 /** Logo dạng SVG nội tuyến để không phụ thuộc file ảnh. */
 function Logo() {
   return (
-    <Link href="/" className="flex items-center gap-2">
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-hero-gradient text-white shadow-soft">
+    <Link href="/" className="flex min-w-0 items-center gap-2">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-hero-gradient text-white shadow-soft">
         <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
           <path d="M2 17c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2" strokeLinecap="round" />
           <path d="M12 3v8" strokeLinecap="round" />
@@ -44,11 +44,12 @@ function Logo() {
           <circle cx="12" cy="13" r="2.2" />
         </svg>
       </span>
-      <span className="leading-tight">
-        <span className="block font-display text-lg font-bold leading-tight tracking-tight text-sea-700">
+      <span className="min-w-0 leading-tight">
+        <span className="block truncate font-display text-base font-bold leading-tight tracking-tight text-sea-700 sm:text-lg">
           {BRAND.name}
         </span>
-        <span className="block text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+        {/* Tagline chỉ hiện từ sm trở lên để header không tràn ngang trên điện thoại nhỏ */}
+        <span className="hidden text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground sm:block">
           Lưu trú &amp; Du lịch
         </span>
       </span>
@@ -95,11 +96,11 @@ function AuthMenu() {
 
   if (!user) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
           <Link href="/dang-nhap">Đăng nhập</Link>
         </Button>
-        <Button size="sm" asChild>
+        <Button size="sm" className="hidden sm:inline-flex" asChild>
           <Link href="/dang-ky">Đăng ký</Link>
         </Button>
       </div>
@@ -206,7 +207,7 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
       </div>
 
       <div className="container flex h-16 items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Mở menu">
@@ -270,7 +271,7 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
           </Link>
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <SearchBox className="hidden w-64 xl:block" />
           <AuthMenu />
         </div>

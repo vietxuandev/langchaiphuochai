@@ -317,7 +317,8 @@ Lưu ý khi bảo trì image web:
 - `server.js` bind theo `HOSTNAME` -> phải đặt `HOSTNAME=0.0.0.0`, nếu không proxy không vào được.
 - Cần `outputFileTracingRoot` trong `next.config.mjs` để trace `@phuochai/shared` của monorepo.
 - Runtime chạy `node apps/web/server.js` (không dùng `next start`).
-- Repo không có thư mục `public/`; nếu thêm sau này thì phải `COPY` thêm vào image.
+- `public/` (ảnh hero, favicon...) **không** nằm trong standalone -> Dockerfile đã `COPY` riêng.
+  Thêm file mới vào `public/` thì không phải sửa Dockerfile, chỉ cần deploy lại.
 
 Muốn giảm tiếp `api`: tách bước migration/seed ra image riêng, hoặc prune devDependencies ở stage runtime
 (nhưng khi đó mất `prisma` CLI và `tsx` trong container).
