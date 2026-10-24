@@ -317,11 +317,3 @@
     @apply my-4 overflow-x-auto rounded-lg bg-muted p-4 text-sm;
   }
 }
-
-/* ==========================================================================
-   Hero trang chủ - font serif biên tập (đồng bộ với project dulichphuochai)
-   ========================================================================== */
-.font-editorial {
-  font-family: Georgia, 'Times New Roman', Times, serif;
-  letter-spacing: -0.035em;
-}

@@ -1,15 +1,5 @@
 import Link from 'next/link';
-import {
-  ArrowRight,
-  Building2,
-  Compass,
-  Home,
-  MapPinned,
-  Newspaper,
-  Sparkles,
-  TrendingUp,
-  UtensilsCrossed,
-} from 'lucide-react';
+import { ArrowRight, TrendingUp } from 'lucide-react';
 import { PostType } from '@phuochai/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,15 +9,6 @@ import { HomeHero } from '@/components/site/home-hero';
 import { PostCard } from '@/components/site/post-card';
 import { getCategoriesBySection, getNavCategories } from '@/lib/data/categories';
 import { getPublicStats, getPosts } from '@/lib/data/home';
-
-const QUICK_LINKS = [
-  { label: 'Homestay', slug: 'homestay', icon: Home },
-  { label: 'Khách sạn', slug: 'khach-san', icon: Building2 },
-  { label: 'Villa', slug: 'villa', icon: Sparkles },
-  { label: 'Quán ăn', slug: 'an-uong', icon: UtensilsCrossed },
-  { label: 'Điểm tham quan', slug: 'diem-tham-quan', icon: Compass },
-  { label: 'Bất động sản', slug: 'nha-ven-bien', icon: MapPinned },
-];
 
 /** Trang chủ: hero + thống kê + các khối nội dung nổi bật. */
 export default async function HomePage() {
@@ -43,45 +24,7 @@ export default async function HomePage() {
 
   return (
     <div>
-      <HomeHero />
-
-      {/* ---------------------- Thống kê & lối vào nhanh ---------------------- */}
-      <section id="kham-pha" className="scroll-mt-24 bg-[#f7f3eb] dark:bg-[#0a2226]">
-        <div className="container py-10">
-          <div className="rounded-[2rem] border border-[#123d45]/10 bg-[#fffdf8] p-5 shadow-[0_20px_50px_rgba(18,61,69,.08)] dark:border-white/10 dark:bg-[#102f34] dark:shadow-none sm:p-7">
-            <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
-              {[
-                { label: 'Nơi lưu trú', value: stats.accommodations, icon: Home },
-                { label: 'Bài viết & cẩm nang', value: stats.news, icon: Newspaper },
-                { label: 'Bất động sản', value: stats.realEstates, icon: Building2 },
-                { label: 'Danh mục', value: stats.categories, icon: MapPinned },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center gap-3">
-                  <span className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl bg-[#e6f4f1] text-[#0b6973] dark:bg-white/10 dark:text-[#8de0d4]">
-                    <item.icon className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <p className="font-display text-2xl font-bold leading-none text-[#123d45] dark:text-white">{item.value}</p>
-                    <p className="mt-1 text-xs text-[#6a7f82] dark:text-white/60">{item.label}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-2 border-t border-[#123d45]/10 pt-5 dark:border-white/10">
-              {QUICK_LINKS.map((link) => (
-                <Link
-                  key={link.slug}
-                  href={`/danh-muc/${link.slug}`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#123d45]/10 bg-white px-3.5 py-1.5 text-xs font-semibold text-[#36575c] transition hover:border-[#0b6973]/30 hover:text-[#0b6973] dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:border-[#8de0d4]/40 dark:hover:text-[#8de0d4]"
-                >
-                  <link.icon className="h-3.5 w-3.5" /> {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <HomeHero stats={stats} />
 
       {/* --------------------------- Nơi lưu trú --------------------------- */}
       <section className="container py-14">
