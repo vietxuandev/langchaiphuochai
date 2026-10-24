@@ -6,7 +6,6 @@ import {
   Home,
   MapPinned,
   Newspaper,
-  Search,
   Sparkles,
   TrendingUp,
   UtensilsCrossed,
@@ -15,8 +14,8 @@ import { PostType } from '@phuochai/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { SectionHeading } from '@/components/ui/section-heading';
+import { HomeHero } from '@/components/site/home-hero';
 import { PostCard } from '@/components/site/post-card';
 import { getCategoriesBySection, getNavCategories } from '@/lib/data/categories';
 import { getPublicStats, getPosts } from '@/lib/data/home';
@@ -44,91 +43,42 @@ export default async function HomePage() {
 
   return (
     <div>
-      {/* ------------------------------- HERO ------------------------------- */}
-      <section className="relative overflow-hidden bg-hero-gradient text-white">
-        {/*
-          Ảnh nền: bãi biển + khu nghỉ dưỡng Phước Hải (public/hero-phuoc-hai.jpg, 1600px, ~140KB).
-          Dùng <img> + object-cover thay vì next/image để không phụ thuộc sharp khi chạy standalone.
-          `bg-hero-gradient` ở <section> giữ lại làm màu nền dự phòng nếu ảnh không tải được.
-        */}
-        <div className="absolute inset-0">
-          <img
-            src="/hero-phuoc-hai.jpg"
-            alt="Bãi biển và khu nghỉ dưỡng ven biển Phước Hải"
-            className="h-full w-full object-cover object-[62%_60%]"
-            fetchPriority="high"
-            decoding="async"
-          />
-          {/*
-            Lớp phủ: đậm ở nửa trái (nơi có chữ trắng) và gần như trong suốt ở bên phải
-            để khu nghỉ dưỡng + bãi biển vẫn hiện rõ.
-          */}
-          <div className="absolute inset-0 bg-gradient-to-r from-sea-900/95 via-sea-900/75 via-45% to-sea-900/0 to-75%" />
-          <div className="absolute inset-0 bg-gradient-to-t from-sea-900/80 via-sea-900/10 via-30% to-transparent" />
-          {/* Trên điện thoại chữ trải hết chiều ngang nên cần phủ đều hơn để đủ tương phản */}
-          <div className="absolute inset-0 bg-sea-900/40 sm:hidden" />
-        </div>
+      <HomeHero />
 
-        <div className="container relative py-16 lg:py-24">
-          <div className="max-w-3xl">
-            <Badge className="bg-white/15 text-white backdrop-blur">
-              <Sparkles className="mr-1 h-3.5 w-3.5" /> Danh bạ lưu trú &amp; du lịch Phước Hải
-            </Badge>
-            <h1 className="mt-4 font-display text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-              Tìm nơi lưu trú, điểm đến và ẩm thực
-              <span className="block text-coral-200">tuyệt vời nhất tại Phước Hải</span>
-            </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/85 sm:text-base">
-              {stats.totalPosts}+ địa điểm và bài viết được tổng hợp, chuẩn hoá từ dữ liệu gốc - giúp bạn chọn chỗ ở,
-              lên lịch trình và tìm hiểu về vùng biển Phước Hải chỉ trong vài phút.
-            </p>
+      {/* ---------------------- Thống kê & lối vào nhanh ---------------------- */}
+      <section id="kham-pha" className="scroll-mt-24 bg-[#f7f3eb] dark:bg-[#0a2226]">
+        <div className="container py-10">
+          <div className="rounded-[2rem] border border-[#123d45]/10 bg-[#fffdf8] p-5 shadow-[0_20px_50px_rgba(18,61,69,.08)] dark:border-white/10 dark:bg-[#102f34] dark:shadow-none sm:p-7">
+            <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+              {[
+                { label: 'Nơi lưu trú', value: stats.accommodations, icon: Home },
+                { label: 'Bài viết & cẩm nang', value: stats.news, icon: Newspaper },
+                { label: 'Bất động sản', value: stats.realEstates, icon: Building2 },
+                { label: 'Danh mục', value: stats.categories, icon: MapPinned },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-3">
+                  <span className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl bg-[#e6f4f1] text-[#0b6973] dark:bg-white/10 dark:text-[#8de0d4]">
+                    <item.icon className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="font-display text-2xl font-bold leading-none text-[#123d45] dark:text-white">{item.value}</p>
+                    <p className="mt-1 text-xs text-[#6a7f82] dark:text-white/60">{item.label}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-            <form action="/tim-kiem" className="mt-7 flex max-w-xl gap-2">
-              <div className="relative flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  name="q"
-                  placeholder="Nhập tên homestay, quán ăn, bãi tắm..."
-                  className="h-12 border-transparent bg-white pl-9 text-foreground shadow-lg"
-                  aria-label="Tìm kiếm"
-                />
-              </div>
-              <Button type="submit" size="lg" className="h-12 bg-coral-500 hover:bg-coral-600">
-                Tìm kiếm
-              </Button>
-            </form>
-
-            <div className="mt-6 flex flex-wrap gap-2">
+            <div className="mt-6 flex flex-wrap gap-2 border-t border-[#123d45]/10 pt-5 dark:border-white/10">
               {QUICK_LINKS.map((link) => (
                 <Link
                   key={link.slug}
                   href={`/danh-muc/${link.slug}`}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-3.5 py-1.5 text-xs font-medium backdrop-blur transition hover:bg-white/25"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#123d45]/10 bg-white px-3.5 py-1.5 text-xs font-semibold text-[#36575c] transition hover:border-[#0b6973]/30 hover:text-[#0b6973] dark:border-white/10 dark:bg-white/5 dark:text-white/70 dark:hover:border-[#8de0d4]/40 dark:hover:text-[#8de0d4]"
                 >
                   <link.icon className="h-3.5 w-3.5" /> {link.label}
                 </Link>
               ))}
             </div>
-          </div>
-        </div>
-
-        {/* Thống kê */}
-        <div className="container relative pb-12">
-          <div className="grid grid-cols-2 gap-3 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur sm:grid-cols-4 sm:gap-6 sm:p-6">
-            {[
-              { label: 'Nơi lưu trú', value: stats.accommodations, icon: Home },
-              { label: 'Bài viết & cẩm nang', value: stats.news, icon: Newspaper },
-              { label: 'Bất động sản', value: stats.realEstates, icon: Building2 },
-              { label: 'Danh mục', value: stats.categories, icon: MapPinned },
-            ].map((item) => (
-              <div key={item.label} className="text-center sm:text-left">
-                <div className="flex items-center justify-center gap-2 sm:justify-start">
-                  <item.icon className="h-4 w-4 text-coral-200" />
-                  <span className="font-display text-2xl font-bold">{item.value}</span>
-                </div>
-                <p className="mt-0.5 text-xs text-white/80">{item.label}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
