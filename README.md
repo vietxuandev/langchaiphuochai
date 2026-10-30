@@ -436,6 +436,9 @@ chứ không chỉ restart.
 - **Editor Tiptap** được cấu hình đủ extension để giữ nguyên cấu trúc nội dung cũ (tiêu đề, danh sách, bảng, ảnh, liên kết);
   cần `immediatelyRender: false` khi dùng với Next.js và **`TooltipProvider`** bọc ngoài (Radix yêu cầu).
 - **Bảo mật**: JWT lưu ở `localStorage` cho mục đích demo; production nên chuyển sang httpOnly cookie + refresh token.
+- **Icon & manifest**: favicon/apple-touch-icon/PWA manifest dùng quy ước App Router
+  (`src/app/favicon.ico`, `icon.png`, `apple-icon.png`, `manifest.ts`) nên Next tự chèn `<link>`;
+  tên/màu trong manifest lấy từ `BRAND` nên không lệch thương hiệu. Icon 192/512 trong `public/icons/`.
 - **Healthcheck**: API có endpoint `GET /health` (dùng cho Docker/Coolify), ngoài ra `{ ping }` trong GraphQL.
 - **Ảnh**: API phục vụ `/upload/*` từ `data/upload`; Next.js proxy `/graphql`, `/api/upload`, `/upload/*` về API để tránh CORS.
 - `npm run db:local` dùng PostgreSQL nhúng (chỉ cho dev). Production dùng service `db` trong Docker Compose.

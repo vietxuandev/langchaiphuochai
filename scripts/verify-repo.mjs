@@ -35,8 +35,13 @@ const REQUIRED_FILES = [
   'apps/web/Dockerfile',
   'apps/web/codegen.ts',
   'apps/web/next.config.mjs',
-  // Ảnh tĩnh của trang chủ (nếu thiếu, hero sẽ không có ảnh nền)
-  'apps/web/public/hero-phuoc-hai.jpg',
+  // Icon & manifest của website (Next tự chèn link từ các file này)
+  'apps/web/src/app/favicon.ico',
+  'apps/web/src/app/icon.png',
+  'apps/web/src/app/apple-icon.png',
+  'apps/web/src/app/manifest.ts',
+  'apps/web/public/icons/android-chrome-192x192.png',
+  'apps/web/public/icons/android-chrome-512x512.png',
   'docker-compose.coolify.yml',
   '.dockerignore',
 ];
