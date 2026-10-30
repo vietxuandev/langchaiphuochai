@@ -10,6 +10,7 @@ import { GraphQLSchemaBuilderModule, GraphQLSchemaFactory } from '@nestjs/graphq
 import { printSchema } from 'graphql';
 import { AuthResolver } from '../src/auth/auth.resolver';
 import { CategoriesResolver } from '../src/categories/categories.resolver';
+import { CrawlerResolver } from '../src/crawler/crawler.resolver';
 import { PostsResolver } from '../src/posts/posts.resolver';
 import { StatsResolver } from '../src/stats/stats.resolver';
 import { UsersResolver } from '../src/users/users.resolver';
@@ -23,6 +24,7 @@ async function main(): Promise<void> {
     AuthResolver,
     UsersResolver,
     CategoriesResolver,
+    CrawlerResolver,
     PostsResolver,
     StatsResolver,
   ]);

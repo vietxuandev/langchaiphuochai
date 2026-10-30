@@ -296,8 +296,35 @@ Bản này cũng đổi schema: ảnh dùng cột `path` (thay cho `url`/`localP
 - **Bài viết**: bảng TanStack (tìm kiếm, lọc, sắp xếp, phân trang, xuất bản/thu hồi/xoá).
 - **Form bài viết**: **editor trực quan (Tiptap)** cho nội dung + 4 tab thông tin (địa điểm, giá & diện tích,
   liên hệ, SEO) + **upload ảnh** + tags. Không cần biết HTML.
+- **Crawl bài mới** (ADMIN) `/quan-tri/crawl`: lấy bài mới đăng trên website cũ (phuochai.com) để duyệt
+  trước khi import - xem mục 8.1.
 - **Danh mục** (ADMIN), **Người dùng** (ADMIN), **Tài khoản** (đổi mật khẩu, hồ sơ).
 - Dark mode, toast, skeleton, empty state, xác nhận trước khi xoá.
+
+### 8.1 Crawl bài mới từ website cũ (`/quan-tri/crawl`, chỉ ADMIN)
+
+Công cụ để đồng bộ các bài mới đăng trên site cũ sau lần import ban đầu. Chạy **2 bước**:
+
+1. **Kiểm tra** (`crawlCheck`) - tải trang nhưng **chỉ đọc tiêu đề và mô tả ngắn** (đọc bằng regex trên
+   HTML: `<h1>`, `<meta name="description">` / `og:description`, sapo `p.mb-1`; không dựng DOM, không quét
+   ảnh, không đọc nội dung bài), đối chiếu database rồi trả danh sách `Bài mới` / `Đã có` / `Lỗi`.
+   **Không ghi database và không giữ nội dung bài trong RAM** (server không cache gì: id của mỗi bài
+   chính là URL đã mã hoá base64url).
+   - Dán URL/đường dẫn (`/tin-tuc/abc-166.html`) hoặc slug (`abc-166`).
+   - Hoặc bật **Quét trang danh sách** để tự tìm bài mới (duyệt BFS: trang danh sách -> trang danh mục -> bài).
+   - Nội dung đầy đủ chỉ được tải khi bấm **Xem** (hộp thoại) hoặc **Import** (tải lại trang 1 lần nữa).
+2. **Import** (`crawlImport`) - chỉ những bài được tick mới được ghi:
+   - Tải toàn bộ ảnh về `upload/posts/<năm>/<tháng>/` rồi thay `src` trong nội dung bằng `/upload/...`
+   - Viết lại liên kết trỏ về site cũ sang đường dẫn mới; link không còn tồn tại thì bỏ liên kết, giữ chữ
+   - Giữ anchor trong trang (`#menu1`), giữ `mailto:`/`tel:`
+   - Gán danh mục theo slug, tạo tag theo tên, chuẩn hoá địa chỉ (xã/phường + TP.HCM)
+   - Trạng thái sau import: **Bản nháp** (mặc định, an toàn) hoặc **Đã đăng**
+   - Bỏ qua bài đã có (theo `sourceKey` hoặc slug) - chạy lại nhiều lần không tạo trùng
+
+Phần đọc/parse HTML được **port từ `phuochai-scraper`** vào `apps/api/src/crawler/legacy/` (giữ nguyên
+logic để dữ liệu mới có cùng cấu trúc với dữ liệu đã import; đã đối chiếu 8 bài mẫu khớp 100% với dataset gốc).
+
+Biến môi trường: `LEGACY_SITE_URL` (mặc định `https://phuochai.com`). Server chạy API phải truy cập được site cũ.
 
 ---
 

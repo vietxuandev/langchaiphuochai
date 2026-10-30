@@ -299,3 +299,50 @@ mutation DeactivateUser($id: String!) {
     isActive
   }
 }
+
+
+# ---------------------------------------------------------------------------
+# Crawl bài mới từ website cũ (chỉ ADMIN)
+# ---------------------------------------------------------------------------
+query CrawlCheck($input: CrawlCheckInput) {
+  crawlCheck(input: $input) {
+    checked
+    warnings
+    candidates {
+      id
+      url
+      sourceKey
+      slug
+      title
+      type
+      itemType
+      description
+      thumbnailUrl
+      publishedAt
+      status
+      existingPostId
+      existingPostSlug
+      error
+    }
+  }
+}
+
+query CrawlPreview($id: String!) {
+  crawlPreview(id: $id) {
+    html
+    text
+  }
+}
+
+mutation CrawlImport($input: CrawlImportInput!) {
+  crawlImport(input: $input) {
+    created {
+      id
+      slug
+      title
+      status
+    }
+    skipped
+    errors
+  }
+}

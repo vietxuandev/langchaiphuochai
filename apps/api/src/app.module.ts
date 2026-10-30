@@ -8,6 +8,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
+import { CrawlerModule } from './crawler/crawler.module';
 import { GqlAuthGuard, RolesGuard } from './common/guards';
 import { PostsModule } from './posts/posts.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -74,6 +75,7 @@ const uploadRoot = process.env.UPLOAD_DIR ?? join(process.cwd(), '../../data/upl
     AuthModule,
     UsersModule,
     CategoriesModule,
+    CrawlerModule,
     PostsModule,
     StatsModule,
     UploadsModule,

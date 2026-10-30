@@ -54,6 +54,104 @@ input ChangePasswordInput {
   newPassword: String!
 }
 
+type CrawlCandidate {
+  """Mô tả ngắn của bài (không phải nội dung)"""
+  description: String
+
+  """Lý do lỗi (status = ERROR)"""
+  error: String
+
+  """ID bài đã có trong database (status = EXISTING)"""
+  existingPostId: String
+  existingPostSlug: String
+
+  """URL bài viết đã mã hoá base64url (dùng để import)"""
+  id: String!
+
+  """Loại nội dung gốc trên site cũ"""
+  itemType: String
+  publishedAt: DateTime
+
+  """Slug gốc trên website cũ"""
+  slug: String!
+
+  """
+  Khoá gốc, ví dụ "news:166"
+  """
+  sourceKey: String!
+
+  """NEW = bài mới, EXISTING = đã có, ERROR = lỗi"""
+  status: CrawlCandidateStatus!
+
+  """Ảnh đại diện (og:image) trên site cũ"""
+  thumbnailUrl: String
+  title: String!
+  type: PostType!
+
+  """URL bài viết trên website cũ"""
+  url: String!
+}
+
+"""Trạng thái bài viết trong danh sách chờ duyệt crawl"""
+enum CrawlCandidateStatus {
+  """Không tải hoặc không parse được"""
+  ERROR
+
+  """Đã có trong database"""
+  EXISTING
+
+  """Bài mới, có thể import"""
+  NEW
+}
+
+input CrawlCheckInput {
+  """Số bài mới tối đa khi quét danh sách (mặc định 12)"""
+  listingLimit: Int
+
+  """Quét trang danh sách để tìm bài mới"""
+  scanListings: Boolean
+
+  """Slug bài viết trên web cũ"""
+  slugs: [String!]
+
+  """URL hoặc đường dẫn bài viết trên web cũ"""
+  urls: [String!]
+}
+
+type CrawlCheckResult {
+  candidates: [CrawlCandidate!]!
+  checked: Float!
+
+  """Cảnh báo (slug không tìm thấy, danh sách trống...)"""
+  warnings: [String!]!
+}
+
+input CrawlImportInput {
+  """Danh sách id của bài đã kiểm tra"""
+  ids: [String!]!
+
+  """
+  Trạng thái sau khi import: DRAFT (mặc định, cần duyệt tiếp) hoặc PUBLISHED
+  """
+  status: PostStatus
+}
+
+type CrawlImportResult {
+  """Các bài đã tạo"""
+  created: [CrawlCandidate!]!
+
+  """Bài lỗi kèm lý do"""
+  errors: [String!]!
+
+  """Bài bị bỏ qua (đã tồn tại)"""
+  skipped: [String!]!
+}
+
+type CrawlPreview {
+  html: String
+  text: String
+}
+
 type DashboardStats {
   archivedPosts: Int!
   draftPosts: Int!
@@ -91,6 +189,9 @@ type Mutation {
 
   """Đổi mật khẩu"""
   changePassword(input: ChangePasswordInput!): Boolean!
+
+  """Import các bài đã chọn vào database"""
+  crawlImport(input: CrawlImportInput!): CrawlImportResult!
 
   """Tạo danh mục (quản trị viên)"""
   createCategory(input: CategoryInput!): Category!
@@ -363,6 +464,12 @@ type Query {
 
   """Cây danh mục nhiều cấp"""
   categoryTree(section: PostType): [Category!]!
+
+  """Kiểm tra bài mới trên website cũ (không ghi vào database)"""
+  crawlCheck(input: CrawlCheckInput): CrawlCheckResult!
+
+  """Xem nội dung đầy đủ của một bài đã kiểm tra"""
+  crawlPreview(id: String!): CrawlPreview!
 
   """Thống kê dashboard (editor/admin)"""
   dashboardStats: DashboardStats!

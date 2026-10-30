@@ -7,6 +7,7 @@ import {
   ChevronRight,
   ExternalLink,
   FileText,
+  DownloadCloud,
   FolderTree,
   LayoutDashboard,
   LogOut,
@@ -40,6 +41,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/quan-tri/bai-viet', label: 'Bài viết', icon: FileText, minRole: Role.USER },
   { href: '/quan-tri/danh-muc', label: 'Danh mục', icon: FolderTree, minRole: Role.ADMIN },
   { href: '/quan-tri/nguoi-dung', label: 'Người dùng', icon: Users, minRole: Role.ADMIN },
+  { href: '/quan-tri/crawl', label: 'Crawl bài mới', icon: DownloadCloud, minRole: Role.ADMIN },
   { href: '/quan-tri/tai-khoan', label: 'Tài khoản', icon: UserCircle, minRole: Role.USER },
 ];
 
