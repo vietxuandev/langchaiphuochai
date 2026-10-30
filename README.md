@@ -439,6 +439,10 @@ chứ không chỉ restart.
 - **Logo dùng chung**: component `BrandLogo` (`apps/web/src/components/site/brand-logo.tsx`) render
   `src/assets/logo-mark.png` (128px, tối ưu từ bộ favicon 512px) - dùng ở header, menu mobile, footer,
   sidebar quản trị và trang đăng nhập. Không vẽ lại SVG riêng ở từng nơi.
+- **SEO**: `src/app/robots.ts` (chặn `/quan-tri`, `/dang-nhap`, `/tim-kiem`, `/api/`) và
+  `src/app/sitemap.ts` (trang tĩnh + danh mục + toàn bộ bài đã xuất bản, `force-dynamic` vì lấy dữ liệu
+  từ API lúc chạy - nếu để Next render tĩnh lúc build thì sitemap sẽ rỗng vì build không có API).
+  Sitemap cache 10 phút trong bộ nhớ, không cache kết quả rỗng.
 - **Xác minh Google Search Console**: file `apps/web/public/googledb548b8b95ead655.html` phục vụ tại
   `https://langchaiphuochai.com/googledb548b8b95ead655.html`. Nội dung file phải giữ **nguyên văn**
   (Google so khớp từng byte); đổi domain thì phải tạo lại file trong Search Console.

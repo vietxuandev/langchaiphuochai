@@ -40,6 +40,9 @@ const REQUIRED_FILES = [
   'apps/web/src/app/icon.png',
   'apps/web/src/app/apple-icon.png',
   'apps/web/src/app/manifest.ts',
+  // SEO: robots.txt + sitemap.xml (sinh từ code)
+  'apps/web/src/app/robots.ts',
+  'apps/web/src/app/sitemap.ts',
   // Logo dùng chung trong UI (import trong brand-logo.tsx)
   'apps/web/src/assets/logo-mark.png',
   'apps/web/src/components/site/brand-logo.tsx',
