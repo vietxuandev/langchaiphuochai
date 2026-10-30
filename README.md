@@ -439,6 +439,9 @@ chứ không chỉ restart.
 - **Logo dùng chung**: component `BrandLogo` (`apps/web/src/components/site/brand-logo.tsx`) render
   `src/assets/logo-mark.png` (128px, tối ưu từ bộ favicon 512px) - dùng ở header, menu mobile, footer,
   sidebar quản trị và trang đăng nhập. Không vẽ lại SVG riêng ở từng nơi.
+- **Xác minh Google Search Console**: file `apps/web/public/googledb548b8b95ead655.html` phục vụ tại
+  `https://langchaiphuochai.com/googledb548b8b95ead655.html`. Nội dung file phải giữ **nguyên văn**
+  (Google so khớp từng byte); đổi domain thì phải tạo lại file trong Search Console.
 - **Icon & manifest**: favicon/apple-touch-icon/PWA manifest dùng quy ước App Router
   (`src/app/favicon.ico`, `icon.png`, `apple-icon.png`, `manifest.ts`) nên Next tự chèn `<link>`;
   tên/màu trong manifest lấy từ `BRAND` nên không lệch thương hiệu. Icon 192/512 trong `public/icons/`.

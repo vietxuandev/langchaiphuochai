@@ -45,6 +45,8 @@ const REQUIRED_FILES = [
   'apps/web/src/components/site/brand-logo.tsx',
   'apps/web/public/icons/android-chrome-192x192.png',
   'apps/web/public/icons/android-chrome-512x512.png',
+  // File xác minh chủ sở hữu với Google Search Console (phải phục vụ tại /google*.html)
+  'apps/web/public/googledb548b8b95ead655.html',
   'docker-compose.coolify.yml',
   '.dockerignore',
 ];
