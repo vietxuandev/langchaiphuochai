@@ -9,7 +9,7 @@ import {
 } from '@tanstack/react-table';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { MoreHorizontal, Plus, Search, ShieldAlert, UserCog, UserX } from 'lucide-react';
+import { CheckCircle2, MoreHorizontal, Plus, Search, ShieldAlert, Trash2, UserCog, UserX, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   ROLE_LABELS,
@@ -17,11 +17,23 @@ import {
   adminCreateUserSchema,
   formatDateTime,
   type AdminCreateUserInput,
+  UserStatus,
+  USER_STATUS_LABELS,
 } from '@phuochai/shared';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Dialog,
   DialogContent,
@@ -43,13 +55,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pagination } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/lib/auth/auth-context';
 import {
   useAdminUsersQuery,
+  useApproveUserMutation,
   useCreateUserMutation,
   useDeactivateUserMutation,
+  useRejectUserMutation,
+  useRemoveUserMutation,
   useUpdateUserMutation,
   type AdminUsersQuery,
 } from '@/generated/graphql';
@@ -68,12 +84,18 @@ export function UsersTable() {
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState('');
   const [role, setRole] = useState<string>('all');
+  const [status, setStatus] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [approveTarget, setApproveTarget] = useState<UserRow | null>(null);
+  const [approveRole, setApproveRole] = useState<Role>(Role.USER);
+  const [rejectTarget, setRejectTarget] = useState<UserRow | null>(null);
+  const [rejectNote, setRejectNote] = useState('');
 
   const { data, loading, refetch } = useAdminUsersQuery({
     variables: {
       keyword: keyword.trim() || undefined,
       role: role === 'all' ? undefined : (role as Role),
+      status: status === 'all' ? undefined : (status as UserStatus),
       page,
       pageSize: 15,
     },
@@ -84,6 +106,10 @@ export function UsersTable() {
   const [createUser] = useCreateUserMutation();
   const [updateUser] = useUpdateUserMutation();
   const [deactivateUser] = useDeactivateUserMutation();
+  const [approveUser, { loading: approving }] = useApproveUserMutation();
+  const [rejectUser, { loading: rejecting }] = useRejectUserMutation();
+  const [removeUser, { loading: removing }] = useRemoveUserMutation();
+  const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
 
   const form = useForm<AdminCreateUserInput>({
     resolver: zodResolver(adminCreateUserSchema) as never,
@@ -118,10 +144,21 @@ export function UsersTable() {
         ),
       },
       {
-        accessorKey: 'isActive',
+        accessorKey: 'status',
         header: 'Trạng thái',
-        cell: ({ row }) =>
-          row.original.isActive ? <Badge variant="success">Hoạt động</Badge> : <Badge variant="destructive">Đã khoá</Badge>,
+        cell: ({ row }) => {
+          if (row.original.status === UserStatus.PENDING) {
+            return <Badge variant="warning">Chờ duyệt</Badge>;
+          }
+          if (row.original.status === UserStatus.REJECTED) {
+            return <Badge variant="destructive">Bị từ chối</Badge>;
+          }
+          return row.original.isActive ? (
+            <Badge variant="success">Hoạt động</Badge>
+          ) : (
+            <Badge variant="destructive">Đã khoá</Badge>
+          );
+        },
       },
       {
         accessorKey: 'postCount',
@@ -150,6 +187,30 @@ export function UsersTable() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
+                {row.original.status === UserStatus.PENDING ? (
+                  <>
+                    <DropdownMenuLabel>Tài khoản chờ duyệt</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        setApproveTarget(row.original);
+                        setApproveRole(row.original.role as Role);
+                      }}
+                    >
+                      <CheckCircle2 className="mr-2 h-4 w-4" /> Duyệt và cấp quyền
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onSelect={() => {
+                        setRejectTarget(row.original);
+                        setRejectNote('');
+                      }}
+                    >
+                      <XCircle className="mr-2 h-4 w-4" /> Từ chối
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                ) : null}
                 <DropdownMenuLabel>Đổi vai trò</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {Object.entries(ROLE_LABELS).map(([value, label]) => (
@@ -170,6 +231,13 @@ export function UsersTable() {
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onSelect={() => setDeleteTarget(row.original)}
+                  disabled={row.original.role === Role.ADMIN || (row.original.postCount ?? 0) > 0}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Xoá tài khoản
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive"
                   disabled={!row.original.isActive}
@@ -193,6 +261,30 @@ export function UsersTable() {
     ],
     [currentUser?.id, updateUser, deactivateUser, refetch],
   );
+
+  const handleApprove = async () => {
+    if (!approveTarget) return;
+    try {
+      await approveUser({ variables: { id: approveTarget.id, role: approveRole } });
+      toast.success(`Đã duyệt ${approveTarget.email} với vai trò ${ROLE_LABELS[approveRole]}`);
+      setApproveTarget(null);
+      void refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Không duyệt được tài khoản');
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectTarget) return;
+    try {
+      await rejectUser({ variables: { id: rejectTarget.id, note: rejectNote || undefined } });
+      toast.success(`Đã từ chối ${rejectTarget.email}`);
+      setRejectTarget(null);
+      void refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Không từ chối được tài khoản');
+    }
+  };
 
   const table = useReactTable({ data: users, columns, getCoreRowModel: getCoreRowModel() });
 
@@ -265,6 +357,25 @@ export function UsersTable() {
               ))}
             </SelectContent>
           </Select>
+          <Select
+            value={status}
+            onValueChange={(value) => {
+              setStatus(value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[190px]">
+              <SelectValue placeholder="Trạng thái" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Mọi trạng thái</SelectItem>
+              {Object.entries(USER_STATUS_LABELS).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 
@@ -310,6 +421,107 @@ export function UsersTable() {
       <div className="flex justify-center">
         <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
+
+      {/* Duyệt tài khoản: chọn vai trò rồi xác nhận */}
+      <Dialog open={Boolean(approveTarget)} onOpenChange={(open) => (open ? undefined : setApproveTarget(null))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duyệt tài khoản</DialogTitle>
+            <DialogDescription>
+              Duyệt <strong>{approveTarget?.name}</strong> ({approveTarget?.email}) và cấp quyền truy cập.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Vai trò</Label>
+            <Select value={approveRole} onValueChange={(value) => setApproveRole(value as Role)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Sau khi duyệt, người dùng đăng nhập được ngay bằng email và mật khẩu đã đăng ký.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setApproveTarget(null)}>
+              Huỷ
+            </Button>
+            <Button type="button" onClick={handleApprove} disabled={approving}>
+              {approving ? 'Đang duyệt...' : 'Duyệt tài khoản'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Xoá tài khoản rác / bị từ chối (không có bài viết) */}
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => (open ? undefined : setDeleteTarget(null))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xoá tài khoản?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tài khoản <strong>{deleteTarget?.email}</strong> sẽ bị xoá vĩnh viễn khỏi hệ thống. Chỉ xoá được tài khoản
+              không phải quản trị viên và chưa có bài viết.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Huỷ</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={removing}
+              onClick={async () => {
+                if (!deleteTarget) return;
+                try {
+                  await removeUser({ variables: { id: deleteTarget.id } });
+                  toast.success(`Đã xoá ${deleteTarget.email}`);
+                  setDeleteTarget(null);
+                  void refetch();
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : 'Không xoá được tài khoản');
+                }
+              }}
+            >
+              {removing ? 'Đang xoá...' : 'Xoá tài khoản'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Từ chối tài khoản: ghi lý do (không bắt buộc) */}
+      <Dialog open={Boolean(rejectTarget)} onOpenChange={(open) => (open ? undefined : setRejectTarget(null))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Từ chối tài khoản</DialogTitle>
+            <DialogDescription>
+              Tài khoản <strong>{rejectTarget?.email}</strong> sẽ không đăng nhập được.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="reject-note">Lý do (không bắt buộc)</Label>
+            <Textarea
+              id="reject-note"
+              value={rejectNote}
+              onChange={(event) => setRejectNote(event.target.value)}
+              rows={3}
+              placeholder="Ví dụ: không đúng thông tin liên hệ..."
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setRejectTarget(null)}>
+              Huỷ
+            </Button>
+            <Button type="button" variant="destructive" onClick={handleReject} disabled={rejecting}>
+              {rejecting ? 'Đang xử lý...' : 'Từ chối'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>

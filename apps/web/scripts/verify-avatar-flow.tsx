@@ -151,7 +151,7 @@ async function main(): Promise<void> {
 
   /* -------------------- 0. Đăng nhập thật để có token -------------------- */
   const login = await gql<{ login: { accessToken: string; user: { avatarUrl: string | null; name: string } } }>(
-    'mutation { login(input: { email: "admin@langchaiphuochai.com", password: "Admin@123" }) { accessToken user { name avatarUrl } } }',
+    `mutation { login(input: { email: "${process.env.VERIFY_ADMIN_EMAIL ?? 'admin@langchaiphuochai.com'}", password: "${process.env.VERIFY_ADMIN_PASSWORD ?? 'Admin@123'}" }) { accessToken user { name avatarUrl } } }`,
   );
   const token = login.data?.login.accessToken;
   const dbAvatar = login.data?.login.user.avatarUrl ?? '';

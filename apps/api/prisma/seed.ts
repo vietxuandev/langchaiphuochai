@@ -12,16 +12,19 @@ import 'dotenv/config';
  * Biến môi trường:
  *   DATASET_PATH        đường dẫn dataset.json (mặc định <repo>/data/seed/dataset.json)
  *   UPLOAD_DIR          thư mục ảnh của server mới (mặc định <repo>/data/upload)
- *   SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD     (mặc định admin@langchaiphuochai.com / Admin@123)
- *   SEED_EDITOR_EMAIL / SEED_EDITOR_PASSWORD   (mặc định editor@langchaiphuochai.com / Editor@123)
- *   SEED_USER_EMAIL / SEED_USER_PASSWORD       (mặc định user@langchaiphuochai.com / User@123)
+ *   SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD     tài khoản quản trị đầu tiên (bắt buộc nếu DB chưa có ADMIN)
+ *   SEED_ADMIN_NAME                            tên hiển thị (mặc định "Quản trị viên")
+ *
+ * Lưu ý: seed KHÔNG tạo tài khoản demo. Nếu database đã có ADMIN thì giữ nguyên,
+ * không đổi mật khẩu. Tài khoản biên tập/thành viên do quản trị viên tự tạo trong
+ * trang quản trị (hoặc do người dùng đăng ký và chờ duyệt).
  *
  * Script idempotent: chạy lại nhiều lần chỉ cập nhật, không tạo bản ghi trùng.
  * Nếu chưa có dữ liệu: chạy `npm run data:prepare` ở gốc repo trước.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { Prisma, PostStatus, PostType, Role, PrismaClient } from '@prisma/client';
+import { Prisma, PostStatus, PostType, Role, UserStatus, PrismaClient } from '@prisma/client';
 import {
   PROVINCE_NAME,
   canonicalWardName,
@@ -560,58 +563,51 @@ function resolveUploadDir(datasetPath: string): string {
 /*                              Các bước import                               */
 /* -------------------------------------------------------------------------- */
 
-const SEED_USERS = [
-  {
-    email: process.env.SEED_ADMIN_EMAIL?.trim() || 'admin@langchaiphuochai.com',
-    password: process.env.SEED_ADMIN_PASSWORD || 'Admin@123',
-    name: 'Quản trị viên',
-    role: Role.ADMIN,
-    bio: 'Tài khoản quản trị website Làng Chài Phước Hải.',
-  },
-  {
-    email: process.env.SEED_EDITOR_EMAIL?.trim() || 'editor@langchaiphuochai.com',
-    password: process.env.SEED_EDITOR_PASSWORD || 'Editor@123',
-    name: 'Biên tập viên',
-    role: Role.EDITOR,
-    bio: 'Tài khoản biên tập nội dung.',
-  },
-  {
-    email: process.env.SEED_USER_EMAIL?.trim() || 'user@langchaiphuochai.com',
-    password: process.env.SEED_USER_PASSWORD || 'User@123',
-    name: 'Thành viên',
-    role: Role.USER,
-    bio: 'Tài khoản thành viên thường.',
-  },
-] as const;
+/**
+ * Tạo tài khoản quản trị **đầu tiên** nếu database chưa có ADMIN.
+ *
+ * Không tạo tài khoản demo và không ghi đè mật khẩu của ADMIN đã có: mật khẩu được
+ * đặt qua biến môi trường khi tạo lần đầu, sau đó quản trị viên tự đổi trong trang
+ * quản trị. Trả về id ADMIN để gán làm tác giả bài viết (null nếu chưa có).
+ */
+async function seedUsers(): Promise<string | null> {
+  log('1) Tài khoản quản trị');
 
-/** Tạo/cập nhật 3 tài khoản mặc định, trả về id tài khoản ADMIN. */
-async function seedUsers(): Promise<string> {
-  log('1) Tài khoản người dùng');
-  let adminId = '';
-
-  for (const user of SEED_USERS) {
-    const passwordHash = await bcrypt.hash(user.password, 10);
-
-    const row = await prisma.user.upsert({
-      where: { email: user.email },
-      create: {
-        email: user.email,
-        name: user.name,
-        passwordHash,
-        role: user.role,
-        bio: user.bio,
-        isActive: true,
-      },
-      // Seed luôn đặt lại mật khẩu theo env để môi trường dev luôn đăng nhập được.
-      update: { name: user.name, passwordHash, role: user.role, isActive: true },
-      select: { id: true },
-    });
-    if (user.role === Role.ADMIN) adminId = row.id;
-    log(`   ✓ ${user.email} (${user.role})`);
+  const existingAdmin = await prisma.user.findFirst({
+    where: { role: Role.ADMIN },
+    select: { id: true, email: true },
+  });
+  if (existingAdmin) {
+    log(`   ✓ Đã có quản trị viên (${existingAdmin.email}) - giữ nguyên mật khẩu`);
+    return existingAdmin.id;
   }
 
-  if (!adminId) throw new Error('Không tạo được tài khoản ADMIN.');
-  return adminId;
+  const email = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.SEED_ADMIN_PASSWORD;
+  if (!email || !password) {
+    log('   ⚠ Database chưa có quản trị viên và thiếu SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD');
+    log('     -> đặt 2 biến môi trường này rồi chạy lại để tạo tài khoản quản trị đầu tiên.');
+    log('        Ví dụ: SEED_ADMIN_EMAIL=ban@langchaiphuochai.com SEED_ADMIN_PASSWORD=... npm run db:seed');
+    return null;
+  }
+  if (password.length < 8) {
+    throw new Error('SEED_ADMIN_PASSWORD phải có ít nhất 8 ký tự');
+  }
+
+  const admin = await prisma.user.create({
+    data: {
+      email,
+      name: process.env.SEED_ADMIN_NAME?.trim() || 'Quản trị viên',
+      passwordHash: await bcrypt.hash(password, 10),
+      role: Role.ADMIN,
+      status: UserStatus.ACTIVE,
+      isActive: true,
+      approvedAt: new Date(),
+    },
+    select: { id: true, email: true },
+  });
+  log(`   ✓ Đã tạo quản trị viên ${admin.email}`);
+  return admin.id;
 }
 
 /** Xoá dữ liệu cũ khi chạy với cờ --fresh. */
@@ -806,7 +802,7 @@ function buildPostScalars(options: {
   item: SourceItem;
   slug: string;
   categoryId: string | null;
-  authorId: string;
+  authorId: string | null;
   links: ContentLinkMap;
 }) {
   const { item, slug, categoryId, authorId, links } = options;
@@ -949,7 +945,7 @@ async function importPosts(options: {
   datasetTotal: number;
   urlToCategoryId: Map<string, string>;
   categoryPathBySourcePath: Map<string, string>;
-  authorId: string;
+  authorId: string | null;
   stats: ImportStats;
 }): Promise<void> {
   const { items, datasetTotal, urlToCategoryId, categoryPathBySourcePath, authorId, stats } = options;

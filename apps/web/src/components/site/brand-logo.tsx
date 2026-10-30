@@ -1,6 +1,8 @@
 import { BRAND } from '@phuochai/shared';
-import logoMark from '@/assets/logo-mark.png';
 import { cn } from '@/lib/utils';
+
+/** Đường dẫn logo trong thư mục public. */
+const LOGO_MARK_SRC = '/icons/logo-mark.png';
 
 interface BrandLogoProps {
   /** Kích thước & bo góc, ví dụ "h-10 w-10". */
@@ -17,8 +19,9 @@ interface BrandLogoProps {
 /**
  * Logo thương hiệu dùng chung cho header, footer, sidebar quản trị và trang đăng nhập.
  *
- * Ảnh `logo-mark.png` (128px, ~30KB) được tối ưu từ bộ favicon 512px của dự án nên
+ * Ảnh `/icons/logo-mark.png` (128px, ~30KB) được tối ưu từ bộ favicon 512px của dự án nên
  * mọi nơi đều hiển thị cùng một logo, không còn SVG tự vẽ riêng lẻ.
+ * Dùng đường dẫn public (không import file ảnh) để không phụ thuộc bundler khi chạy test.
  */
 export function BrandLogo({
   className,
@@ -31,7 +34,7 @@ export function BrandLogo({
     <span className="flex min-w-0 items-center gap-2">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={logoMark.src}
+        src={LOGO_MARK_SRC}
         alt={`Logo ${BRAND.name}`}
         width={128}
         height={128}

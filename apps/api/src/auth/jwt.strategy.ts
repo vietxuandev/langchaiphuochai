@@ -22,7 +22,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   /** Trả về user công khai - object này được gắn vào `req.user`. */
   async validate(payload: JwtPayload) {
     const user = await this.users.findById(payload.sub);
-    if (!user || !user.isActive) {
+    // Tài khoản chờ duyệt / bị từ chối / bị khoá đều không dùng được token
+    if (!user || !user.isActive || user.status !== 'ACTIVE') {
       throw new UnauthorizedException('Phiên đăng nhập không còn hiệu lực');
     }
     return UsersService.toPublic(user);

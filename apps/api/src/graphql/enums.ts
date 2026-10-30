@@ -1,5 +1,5 @@
 import { registerEnumType } from '@nestjs/graphql';
-import { PostStatus, PostType, Role } from '@phuochai/shared';
+import { PostStatus, PostType, Role, UserStatus } from '@phuochai/shared';
 
 /** Đăng ký enum dùng chung với GraphQL schema (code-first). */
 registerEnumType(Role, {
@@ -20,6 +20,16 @@ registerEnumType(PostType, {
     NEWS: { description: 'Tin tức & cẩm nang du lịch' },
     REAL_ESTATE: { description: 'Bất động sản' },
     PAGE: { description: 'Trang thông tin tĩnh' },
+  },
+});
+
+registerEnumType(UserStatus, {
+  name: 'UserStatus',
+  description: 'Trạng thái duyệt tài khoản',
+  valuesMap: {
+    PENDING: { description: 'Đăng ký mới, chờ quản trị viên duyệt' },
+    ACTIVE: { description: 'Đã duyệt, được đăng nhập' },
+    REJECTED: { description: 'Bị từ chối' },
   },
 });
 

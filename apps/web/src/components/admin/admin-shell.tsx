@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/lib/auth/auth-context';
+import { usePendingUserCountQuery } from '@/generated/graphql';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -51,6 +52,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  // Số tài khoản đang chờ duyệt - hiện badge trên menu "Người dùng"
+  const { data: pendingData } = usePendingUserCountQuery({ skip: !hasRole(Role.ADMIN), fetchPolicy: 'cache-and-network' });
+  const pendingCount = pendingData?.pendingUserCount ?? 0;
 
   useEffect(() => {
     if (!loading && !user) {
@@ -93,7 +97,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           >
             <item.icon className="h-4 w-4" />
             {item.label}
-            {active ? <ChevronRight className="ml-auto h-4 w-4" /> : null}
+            {item.href === '/quan-tri/nguoi-dung' && pendingCount > 0 ? (
+              <Badge
+                variant="warning"
+                className="ml-auto shrink-0 px-1.5 text-[10px] tabular-nums"
+                title={`${pendingCount} tài khoản chờ duyệt`}
+              >
+                {pendingCount}
+              </Badge>
+            ) : null}
+            {active ? (
+              <ChevronRight
+                className={cn('h-4 w-4', pendingCount > 0 && item.href === '/quan-tri/nguoi-dung' ? 'ml-1' : 'ml-auto')}
+              />
+            ) : null}
           </Link>
         );
       })}

@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, Role, type User } from '@prisma/client';
+import { Prisma, Role, UserStatus, type User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import type { AdminCreateUserInput, UpdateUserInput } from '@phuochai/shared';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,8 +8,17 @@ export interface UserListFilter {
   keyword?: string;
   role?: Role;
   isActive?: boolean;
+  status?: UserStatus;
   page: number;
   pageSize: number;
+}
+
+/** Input tạo tài khoản do quản trị viên tạo (khác với tự đăng ký). */
+export interface AdminCreateUserInputWithStatus {
+  name: string;
+  email: string;
+  password: string;
+  role: Role;
 }
 
 @Injectable()
@@ -46,6 +55,7 @@ export class UsersService {
     const where: Prisma.UserWhereInput = {};
     if (filter.role) where.role = filter.role;
     if (filter.isActive !== undefined) where.isActive = filter.isActive;
+    if (filter.status) where.status = filter.status;
     if (filter.keyword) {
       where.OR = [
         { name: { contains: filter.keyword, mode: 'insensitive' } },
@@ -73,6 +83,7 @@ export class UsersService {
     };
   }
 
+  /** Quản trị viên tạo tài khoản: duyệt luôn (ACTIVE). */
   async create(input: AdminCreateUserInput) {
     const email = input.email.toLowerCase();
     const existing = await this.findByEmail(email);
@@ -84,9 +95,90 @@ export class UsersService {
         name: input.name,
         role: input.role as Role,
         passwordHash: await bcrypt.hash(input.password, 10),
+        status: UserStatus.ACTIVE,
+        isActive: true,
+        approvedAt: new Date(),
+        reviewNote: 'Tạo trực tiếp bởi quản trị viên',
       },
     });
     return UsersService.toPublic(user);
+  }
+
+  /**
+   * Tự đăng ký: tạo tài khoản ở trạng thái PENDING, chưa đăng nhập được.
+   * Quản trị viên duyệt (có thể cấp vai trò) thì mới hoạt động.
+   */
+  async register(input: { name: string; email: string; password: string }) {
+    const email = input.email.toLowerCase();
+    const existing = await this.findByEmail(email);
+    if (existing) throw new ConflictException('Email này đã được sử dụng');
+
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        name: input.name,
+        role: Role.USER,
+        passwordHash: await bcrypt.hash(input.password, 10),
+        status: UserStatus.PENDING,
+        isActive: false,
+      },
+    });
+    return UsersService.toPublic(user);
+  }
+
+  /** Quản trị viên duyệt tài khoản, có thể cấp vai trò ngay khi duyệt. */
+  async approve(id: string, role?: Role) {
+    await this.findByIdOrFail(id);
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: {
+        status: UserStatus.ACTIVE,
+        isActive: true,
+        role: role ?? undefined,
+        approvedAt: new Date(),
+        reviewNote: null,
+      },
+    });
+    return UsersService.toPublic(user);
+  }
+
+  /** Quản trị viên từ chối tài khoản (kèm lý do nếu có). */
+  async reject(id: string, note?: string) {
+    await this.findByIdOrFail(id);
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: {
+        status: UserStatus.REJECTED,
+        isActive: false,
+        approvedAt: null,
+        reviewNote: note?.trim() || null,
+      },
+    });
+    return UsersService.toPublic(user);
+  }
+
+  /**
+   * Xoá tài khoản (dành cho tài khoản rác/chờ duyệt bị từ chối).
+   * Không cho xoá ADMIN hoặc tài khoản đã có bài viết để tránh mất dữ liệu.
+   */
+  async remove(id: string) {
+    const user = await this.findByIdOrFail(id);
+    if (user.role === Role.ADMIN) {
+      throw new ConflictException('Không thể xoá tài khoản quản trị viên');
+    }
+    const posts = await this.prisma.post.count({ where: { authorId: id } });
+    if (posts > 0) {
+      throw new ConflictException(
+        `Tài khoản đã có ${posts} bài viết - hãy chuyển bài sang tài khoản khác hoặc vô hiệu hoá thay vì xoá`,
+      );
+    }
+    await this.prisma.user.delete({ where: { id } });
+    return true;
+  }
+
+  /** Số tài khoản đang chờ duyệt (hiện badge trên menu quản trị). */
+  async countPending(): Promise<number> {
+    return this.prisma.user.count({ where: { status: UserStatus.PENDING } });
   }
 
   async update(id: string, input: UpdateUserInput) {

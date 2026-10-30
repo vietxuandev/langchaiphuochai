@@ -1,5 +1,5 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
-import { Role } from '@phuochai/shared';
+import { Role, UserStatus } from '@phuochai/shared';
 
 /** Người dùng trả về qua GraphQL (không bao giờ chứa passwordHash). */
 @ObjectType('User')
@@ -27,6 +27,15 @@ export class UserEntity {
 
   @Field()
   isActive!: boolean;
+
+  @Field(() => UserStatus, { description: 'PENDING = chờ duyệt, ACTIVE = đang hoạt động, REJECTED = bị từ chối' })
+  status!: UserStatus;
+
+  @Field(() => Date, { nullable: true, description: 'Thời điểm quản trị viên duyệt tài khoản' })
+  approvedAt?: Date | null;
+
+  @Field(() => String, { nullable: true, description: 'Lý do từ chối (nếu có)' })
+  reviewNote?: string | null;
 
   @Field(() => Date, { nullable: true })
   lastLoginAt?: Date | null;
@@ -67,4 +76,17 @@ export class AuthPayload {
 
   @Field(() => UserEntity)
   user!: UserEntity;
+}
+
+/** Kết quả đăng ký: tài khoản mới chờ quản trị viên duyệt (không trả token). */
+@ObjectType('RegisterResult')
+export class RegisterResult {
+  @Field(() => UserEntity)
+  user!: UserEntity;
+
+  @Field({ description: 'true = tài khoản đang chờ duyệt, chưa đăng nhập được' })
+  requiresApproval!: boolean;
+
+  @Field({ description: 'Thông báo hiển thị cho người đăng ký' })
+  message!: string;
 }

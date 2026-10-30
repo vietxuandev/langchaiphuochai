@@ -10,6 +10,14 @@ export const Role = {
 } as const;
 export type Role = (typeof Role)[keyof typeof Role];
 
+/** Trạng thái duyệt tài khoản: đăng ký mới phải được quản trị viên duyệt. */
+export const UserStatus = {
+  PENDING: 'PENDING',
+  ACTIVE: 'ACTIVE',
+  REJECTED: 'REJECTED',
+} as const;
+export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus];
+
 export const PostType = {
   ACCOMMODATION: 'ACCOMMODATION',
   NEWS: 'NEWS',
@@ -38,6 +46,12 @@ export const ROLE_LABELS: Record<Role, string> = {
   [Role.ADMIN]: 'Quản trị viên',
   [Role.EDITOR]: 'Người đăng bài',
   [Role.USER]: 'Thành viên',
+};
+
+export const USER_STATUS_LABELS: Record<UserStatus, string> = {
+  [UserStatus.PENDING]: 'Chờ duyệt',
+  [UserStatus.ACTIVE]: 'Đang hoạt động',
+  [UserStatus.REJECTED]: 'Bị từ chối',
 };
 
 export const POST_TYPE_LABELS: Record<PostType, string> = {

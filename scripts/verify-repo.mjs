@@ -44,7 +44,7 @@ const REQUIRED_FILES = [
   'apps/web/src/app/robots.ts',
   'apps/web/src/app/sitemap.ts',
   // Logo dùng chung trong UI (import trong brand-logo.tsx)
-  'apps/web/src/assets/logo-mark.png',
+  'apps/web/public/icons/logo-mark.png',
   'apps/web/src/components/site/brand-logo.tsx',
   'apps/web/public/icons/android-chrome-192x192.png',
   'apps/web/public/icons/android-chrome-512x512.png',

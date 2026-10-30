@@ -238,28 +238,46 @@ npm run codegen                                  # sinh apps/web/src/generated/g
 
 ---
 
-## 7. Tài khoản test
+## 7. Tài khoản & duyệt người dùng
 
-| Vai trò | Email | Mật khẩu |
-| --- | --- | --- |
-| **Quản trị viên** | `admin@langchaiphuochai.com` | `Admin@123` |
-| **Người đăng bài** | `editor@langchaiphuochai.com` | `Editor@123` |
-| **Thành viên** | `user@langchaiphuochai.com` | `User@123` |
+### Tạo quản trị viên đầu tiên
 
-Trang đăng nhập có nút **điền nhanh** tài khoản demo. Có thể đổi qua biến môi trường
-`SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, …
+Seed **không tạo tài khoản demo**. Nếu database chưa có ADMIN, đặt 2 biến môi trường rồi chạy seed:
 
-**Nâng cấp database đã có từ bản trước** (đổi email tài khoản sang domain mới, giữ nguyên bài viết):
-
-```sql
-UPDATE users SET email = 'admin@langchaiphuochai.com'  WHERE email = 'admin@phuochai.com';
-UPDATE users SET email = 'editor@langchaiphuochai.com' WHERE email = 'editor@phuochai.com';
-UPDATE users SET email = 'user@langchaiphuochai.com'   WHERE email = 'user@phuochai.com';
+```bash
+SEED_ADMIN_EMAIL=ban@langchaiphuochai.com \
+SEED_ADMIN_PASSWORD='mat-khau-manh-tu-8-ky-tu' \
+npm run db:seed
 ```
 
-Bản này cũng đổi schema: ảnh dùng cột `path` (thay cho `url`/`localPath`) và đã bỏ các cột
-`legacyUrl`, `canonicalUrl`, `sourceUrl`. Chạy `npm run db:migrate` (hoặc `npm run db:push`) rồi `npm run db:seed`
-để cập nhật - seed sẽ ghi lại toàn bộ đường dẫn ảnh sang `/upload/...`.
+- Đã có ADMIN thì seed **giữ nguyên** tài khoản và mật khẩu (không ghi đè).
+- Không có ADMIN và thiếu biến môi trường: seed chỉ cảnh báo, không tạo tài khoản nào.
+- Đổi mật khẩu sau đó tại `/quan-tri/tai-khoan`.
+
+### Dọn tài khoản demo của bản cũ (chạy một lần)
+
+Bản trước tạo sẵn `editor@...` và `user@...`. Xoá bằng script (dry-run trước, `--apply` để xoá thật):
+
+```bash
+npm run db:prune-demo               # xem sẽ xoá gì
+npm run db:prune-demo -- --apply    # xoá thật
+```
+
+Script không bao giờ xoá ADMIN và bỏ qua tài khoản đã có bài viết (thêm `--force` nếu chắc chắn).
+Đổi danh sách email qua biến `DEMO_EMAILS=a@x.com,b@y.com`.
+
+### Đăng ký và duyệt tài khoản
+
+1. Khách đăng ký tại `/dang-ky` -> tài khoản được tạo ở trạng thái **Chờ duyệt**
+   (`status = PENDING`, `isActive = false`), **không** đăng nhập được.
+2. Quản trị viên vào `/quan-tri/nguoi-dung` (menu hiện badge "N chờ duyệt"), mở thao tác của tài khoản:
+   - **Duyệt và cấp quyền**: chọn vai trò (Thành viên / Người đăng bài / Quản trị viên) -> `ACTIVE`, đăng nhập được ngay.
+   - **Từ chối**: `REJECTED` + lý do tuỳ chọn; tài khoản không đăng nhập được.
+3. Quản trị viên vẫn có thể tạo tài khoản trực tiếp (nút "Thêm người dùng") - tài khoản này **ACTIVE** luôn.
+4. Khoá/mở khoá thủ công vẫn dùng cờ `isActive` độc lập với trạng thái duyệt.
+
+Thông báo khi chưa duyệt: đăng nhập sẽ báo "Tài khoản đang chờ quản trị viên duyệt"; bị từ chối báo
+"Yêu cầu đăng ký của bạn đã bị từ chối". Token cũ của tài khoản bị khoá/từ chối cũng mất hiệu lực.
 
 ### Ma trận phân quyền (đã kiểm thử tự động)
 

@@ -4,7 +4,7 @@ import { zodPipe } from '../common/zod.pipe';
 import { CurrentUser, Public } from '../common/decorators';
 import { changePasswordSchema, loginSchema, registerSchema, updateProfileSchema } from '@phuochai/shared';
 import type { ChangePasswordInput, LoginInput, RegisterInput, UpdateProfileInput } from '@phuochai/shared';
-import { AuthPayload, UserEntity } from '../users/entities/user.entity';
+import { AuthPayload, RegisterResult, UserEntity } from '../users/entities/user.entity';
 import {
   ChangePasswordInputType,
   LoginInputType,
@@ -28,8 +28,12 @@ export class AuthResolver {
   }
 
   @Public()
-  @Mutation(() => AuthPayload, { description: 'Đăng ký tài khoản thành viên mới' })
-  async register(@Args('input', { type: () => RegisterInputType }, zodPipe(registerSchema)) input: RegisterInput): Promise<AuthPayload> {
+  @Mutation(() => RegisterResult, {
+    description: 'Đăng ký tài khoản mới - tài khoản ở trạng thái chờ quản trị viên duyệt',
+  })
+  async register(
+    @Args('input', { type: () => RegisterInputType }, zodPipe(registerSchema)) input: RegisterInput,
+  ): Promise<RegisterResult> {
     return this.auth.register(input);
   }
 

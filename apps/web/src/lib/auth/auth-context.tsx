@@ -18,7 +18,8 @@ interface AuthContextValue {
   loading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<AuthUser>;
-  register: (name: string, email: string, password: string) => Promise<AuthUser>;
+  /** Đăng ký tài khoản mới: tài khoản chờ quản trị viên duyệt, KHÔNG đăng nhập ngay. */
+  register: (name: string, email: string, password: string) => Promise<{ requiresApproval: boolean; message: string }>;
   logout: () => void;
   refresh: () => Promise<void>;
   hasRole: (role: Role) => boolean;
@@ -81,11 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       const payload = result.data?.register;
       if (!payload) throw new Error('Đăng ký thất bại');
-      setToken(payload.accessToken);
-      const me = payload.user as AuthUser;
-      setUser(me);
-      setStoredUser(me);
-      return me;
+      // Tài khoản mới ở trạng thái chờ duyệt -> không lưu token, không đăng nhập
+      return { requiresApproval: payload.requiresApproval, message: payload.message };
     },
     [registerMutation],
   );

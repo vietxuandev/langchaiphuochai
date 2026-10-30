@@ -46,17 +46,6 @@ export function LoginForm() {
     }
   });
 
-  /** Điền nhanh tài khoản demo để review. */
-  const fillDemo = (role: 'admin' | 'editor' | 'user') => {
-    const accounts = {
-      admin: { email: 'admin@langchaiphuochai.com', password: 'Admin@123' },
-      editor: { email: 'editor@langchaiphuochai.com', password: 'Editor@123' },
-      user: { email: 'user@langchaiphuochai.com', password: 'User@123' },
-    } as const;
-    setValue('email', accounts[role].email);
-    setValue('password', accounts[role].password);
-  };
-
   return (
     <Card className="border-border/70 shadow-card">
       <CardHeader>
@@ -82,21 +71,6 @@ export function LoginForm() {
             {submitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </Button>
         </form>
-
-        <div className="mt-5 rounded-lg border border-dashed border-border bg-muted/40 p-3">
-          <p className="text-xs font-medium text-muted-foreground">Tài khoản demo (bấm để điền nhanh):</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <Button type="button" size="sm" variant="outline" onClick={() => fillDemo('admin')}>
-              Quản trị viên
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => fillDemo('editor')}>
-              Người đăng bài
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => fillDemo('user')}>
-              Thành viên
-            </Button>
-          </div>
-        </div>
 
         <p className="mt-5 text-center text-sm text-muted-foreground">
           Chưa có tài khoản?{' '}

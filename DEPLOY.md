@@ -216,12 +216,13 @@ Checklist thủ công:
 - [ ] `/luu-tru`, `/tin-tuc`, `/bat-dong-san` có dữ liệu, bộ lọc xã/phường hoạt động
 - [ ] `/danh-muc/noi-luu-tru` hiện số bài đúng (Homestay 23, Villa 63...)
 - [ ] Bấm một tag trong bài viết → thấy bài viết đó trong kết quả
-- [ ] `/dang-nhap` → đăng nhập `admin@langchaiphuochai.com` / `Admin@123`
+- [ ] `/dang-nhap` → đăng nhập bằng tài khoản quản trị đã tạo (`SEED_ADMIN_EMAIL` / mật khẩu bạn đặt)
 - [ ] `/quan-tri` mở được dashboard
 - [ ] Tài khoản → đổi ảnh đại diện → **Lưu** → reload vẫn thấy ảnh (chứng tỏ volume ghi được)
 - [ ] Tạo/sửa bài viết, upload ảnh trong editor hoạt động
 
-> **Đổi mật khẩu 3 tài khoản seed ngay sau khi kiểm tra** (Tài khoản → Đổi mật khẩu).
+> Seed không còn tạo tài khoản demo. Duyệt tài khoản mới tại `/quan-tri/nguoi-dung` (badge số chờ duyệt
+> hiện trên menu). Nếu database cũ còn `editor@` / `user@` thì chạy `npm run db:prune-demo -- --apply`.
 
 ---
 

@@ -151,8 +151,15 @@ query AdminCategories {
   }
 }
 
-query AdminUsers($keyword: String, $role: Role, $isActive: Boolean, $page: Int, $pageSize: Int) {
-  users(keyword: $keyword, role: $role, isActive: $isActive, page: $page, pageSize: $pageSize) {
+query AdminUsers(
+  $keyword: String
+  $role: Role
+  $isActive: Boolean
+  $status: UserStatus
+  $page: Int
+  $pageSize: Int
+) {
+  users(keyword: $keyword, role: $role, isActive: $isActive, status: $status, page: $page, pageSize: $pageSize) {
     items {
       id
       email
@@ -160,6 +167,9 @@ query AdminUsers($keyword: String, $role: Role, $isActive: Boolean, $page: Int, 
       role
       avatarUrl
       isActive
+      status
+      approvedAt
+      reviewNote
       lastLoginAt
       createdAt
       postCount
@@ -188,7 +198,8 @@ mutation Login($input: LoginInput!) {
 
 mutation Register($input: RegisterInput!) {
   register(input: $input) {
-    accessToken
+    requiresApproval
+    message
     user {
       id
       email
@@ -345,4 +356,38 @@ mutation CrawlImport($input: CrawlImportInput!) {
     skipped
     errors
   }
+}
+
+# ---------------------------------------------------------------------------
+# Duyệt tài khoản đăng ký mới (chỉ ADMIN)
+# ---------------------------------------------------------------------------
+mutation ApproveUser($id: String!, $role: Role) {
+  approveUser(id: $id, role: $role) {
+    id
+    email
+    name
+    role
+    status
+    isActive
+    approvedAt
+  }
+}
+
+mutation RejectUser($id: String!, $note: String) {
+  rejectUser(id: $id, note: $note) {
+    id
+    email
+    name
+    status
+    isActive
+    reviewNote
+  }
+}
+
+query PendingUserCount {
+  pendingUserCount
+}
+
+mutation RemoveUser($id: String!) {
+  removeUser(id: $id)
 }

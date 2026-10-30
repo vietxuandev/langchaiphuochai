@@ -184,6 +184,14 @@ type MonthlyCount {
 }
 
 type Mutation {
+  """Duyệt tài khoản đăng ký mới (có thể cấp vai trò)"""
+  approveUser(
+    id: String!
+
+    """Vai trò cấp khi duyệt"""
+    role: Role
+  ): User!
+
   """Lưu trữ bài viết (editor/admin)"""
   archivePost(id: String!): Post!
 
@@ -220,8 +228,19 @@ type Mutation {
   """Xuất bản bài viết (editor/admin)"""
   publishPost(id: String!): Post!
 
-  """Đăng ký tài khoản thành viên mới"""
-  register(input: RegisterInput!): AuthPayload!
+  """Đăng ký tài khoản mới - tài khoản ở trạng thái chờ quản trị viên duyệt"""
+  register(input: RegisterInput!): RegisterResult!
+
+  """Từ chối tài khoản đăng ký mới"""
+  rejectUser(
+    id: String!
+
+    """Lý do từ chối"""
+    note: String
+  ): User!
+
+  """Xoá tài khoản (từ chối/chờ duyệt, không có bài viết)"""
+  removeUser(id: String!): Boolean!
 
   """Chuyển bài viết về bản nháp (editor/admin)"""
   unpublishPost(id: String!): Post!
@@ -483,6 +502,9 @@ type Query {
   """Thông tin người dùng đang đăng nhập"""
   me: User
 
+  """Số tài khoản đang chờ duyệt"""
+  pendingUserCount: Int!
+
   """Kiểm tra API công khai"""
   ping(echo: String): String!
 
@@ -512,7 +534,16 @@ type Query {
   user(id: String!): User!
 
   """Danh sách người dùng (quản trị viên)"""
-  users(isActive: Boolean, keyword: String, page: Int = 1, pageSize: Int = 20, role: Role): PaginatedUsers!
+  users(
+    isActive: Boolean
+    keyword: String
+    page: Int = 1
+    pageSize: Int = 20
+    role: Role
+
+    """Lọc theo trạng thái duyệt"""
+    status: UserStatus
+  ): PaginatedUsers!
 }
 
 input RegisterInput {
@@ -520,6 +551,15 @@ input RegisterInput {
   email: String!
   name: String!
   password: String!
+}
+
+type RegisterResult {
+  """Thông báo hiển thị cho người đăng ký"""
+  message: String!
+
+  """true = tài khoản đang chờ duyệt, chưa đăng nhập được"""
+  requiresApproval: Boolean!
+  user: User!
 }
 
 """
@@ -633,6 +673,8 @@ input UpdateUserInput {
 }
 
 type User {
+  """Thời điểm quản trị viên duyệt tài khoản"""
+  approvedAt: DateTime
   avatarUrl: String
   bio: String
   createdAt: DateTime!
@@ -643,8 +685,26 @@ type User {
   name: String!
   phone: String
   postCount: Int
+
+  """Lý do từ chối (nếu có)"""
+  reviewNote: String
   role: Role!
+
+  """PENDING = chờ duyệt, ACTIVE = đang hoạt động, REJECTED = bị từ chối"""
+  status: UserStatus!
   updatedAt: DateTime!
+}
+
+"""Trạng thái duyệt tài khoản"""
+enum UserStatus {
+  """Đã duyệt, được đăng nhập"""
+  ACTIVE
+
+  """Đăng ký mới, chờ quản trị viên duyệt"""
+  PENDING
+
+  """Bị từ chối"""
+  REJECTED
 }
 
 """Số bài viết theo xã/phường"""

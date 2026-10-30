@@ -10,9 +10,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/* -------------------------------------------------------------------------- */
-/*                              Người dùng & quyền                            */
-/* -------------------------------------------------------------------------- */
+/**
+ * --------------------------------------------------------------------------
+ */
+/**
+ * Người dùng & quyền
+ */
+/**
+ * --------------------------------------------------------------------------
+ */
 
 enum Role {
   ADMIN
@@ -21,28 +27,42 @@ enum Role {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String     @id @default(cuid())
+  email        String     @unique
   passwordHash String
   name         String
-  role         Role     @default(USER)
+  role         Role       @default(USER)
   avatarUrl    String?
   bio          String?
   phone        String?
-  isActive     Boolean  @default(true)
+  /// Khoá/mở khoá thủ công bởi quản trị viên (độc lập với trạng thái duyệt).
+  isActive     Boolean    @default(true)
+  /// Kết quả duyệt tài khoản đăng ký mới.
+  status       UserStatus @default(ACTIVE)
+  /// Thời điểm quản trị viên duyệt.
+  approvedAt   DateTime?
+  /// Ghi chú của quản trị viên khi từ chối.
+  reviewNote   String?
   lastLoginAt  DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   posts Post[]
 
   @@index([role])
+  @@index([status])
   @@map("users")
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                  Danh mục                                  */
-/* -------------------------------------------------------------------------- */
+/**
+ * --------------------------------------------------------------------------
+ */
+/**
+ * Danh mục
+ */
+/**
+ * --------------------------------------------------------------------------
+ */
 
 enum PostType {
   ACCOMMODATION
@@ -52,19 +72,19 @@ enum PostType {
 }
 
 model Category {
-  id               String    @id @default(cuid())
+  id               String   @id @default(cuid())
   name             String
-  slug             String    @unique
+  slug             String   @unique
   section          PostType
   description      String?
   seoTitle         String?
   imagePath        String?
-  level            Int       @default(0)
-  sortOrder        Int       @default(0)
+  level            Int      @default(0)
+  sortOrder        Int      @default(0)
   declaredCount    Int?
   discoveredCount  Int?
-  childCount       Int       @default(0)
-  isLocationFilter Boolean   @default(false)
+  childCount       Int      @default(0)
+  isLocationFilter Boolean  @default(false)
 
   parentId String?
   parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
@@ -80,9 +100,22 @@ model Category {
   @@map("categories")
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                 Bài viết                                   */
-/* -------------------------------------------------------------------------- */
+/**
+ * --------------------------------------------------------------------------
+ */
+/**
+ * Bài viết
+ */
+/**
+ * --------------------------------------------------------------------------
+ */
+
+/// Trạng thái duyệt tài khoản: đăng ký mới vào PENDING, quản trị viên duyệt -> ACTIVE.
+enum UserStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+}
 
 enum PostStatus {
   DRAFT
@@ -116,12 +149,12 @@ model Post {
   city       String?
 
   // Giá
-  priceRaw         String?
-  priceValue       BigInt?
-  priceUnit        String?
-  currency         String? @default("VND")
-  pricePerM2Raw    String?
-  pricePerM2Value  BigInt?
+  priceRaw        String?
+  priceValue      BigInt?
+  priceUnit       String?
+  currency        String? @default("VND")
+  pricePerM2Raw   String?
+  pricePerM2Value BigInt?
 
   // Thuộc tính lưu trú / bất động sản
   areaM2     Float?
@@ -205,9 +238,15 @@ model Tag {
   @@map("tags")
 }
 
-/* -------------------------------------------------------------------------- */
-/*                          Phiên bản dữ liệu crawl                           */
-/* -------------------------------------------------------------------------- */
+/**
+ * --------------------------------------------------------------------------
+ */
+/**
+ * Phiên bản dữ liệu crawl
+ */
+/**
+ * --------------------------------------------------------------------------
+ */
 
 model ImportRun {
   id          String    @id @default(cuid())

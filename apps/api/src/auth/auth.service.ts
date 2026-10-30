@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import type { LoginInput, RegisterInput } from '@phuochai/shared';
-import { Role } from '@prisma/client';
+import { Role, UserStatus } from '@prisma/client';
 import { UsersService } from '../users/users.service';
 
 export interface JwtPayload {
@@ -26,10 +26,18 @@ export class AuthService {
   async login(input: LoginInput) {
     const user = await this.users.findByEmail(input.email);
     if (!user) throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
-    if (!user.isActive) throw new UnauthorizedException('Tài khoản đã bị vô hiệu hoá');
 
+    // Kiểm tra mật khẩu trước để không tiết lộ trạng thái tài khoản cho người lạ
     const valid = await bcrypt.compare(input.password, user.passwordHash);
     if (!valid) throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
+
+    if (user.status === UserStatus.PENDING) {
+      throw new UnauthorizedException('Tài khoản đang chờ quản trị viên duyệt');
+    }
+    if (user.status === UserStatus.REJECTED) {
+      throw new UnauthorizedException('Yêu cầu đăng ký của bạn đã bị từ chối');
+    }
+    if (!user.isActive) throw new UnauthorizedException('Tài khoản đã bị vô hiệu hoá');
 
     await this.users.markLogin(user.id);
     return {
@@ -38,16 +46,21 @@ export class AuthService {
     };
   }
 
+  /**
+   * Tự đăng ký: tài khoản vào trạng thái chờ duyệt, **không** trả token.
+   * Quản trị viên duyệt (và cấp vai trò) thì mới đăng nhập được.
+   */
   async register(input: RegisterInput) {
-    const user = await this.users.create({
+    const user = await this.users.register({
       name: input.name,
       email: input.email,
       password: input.password,
-      role: Role.USER,
     });
+
     return {
-      accessToken: await this.sign({ id: user.id, email: user.email, role: user.role }),
       user,
+      requiresApproval: true,
+      message: 'Đăng ký thành công. Tài khoản đang chờ quản trị viên duyệt.',
     };
   }
 

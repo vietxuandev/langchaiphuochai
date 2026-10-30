@@ -1,11 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { UserPlus } from 'lucide-react';
+import { CheckCircle2, MailCheck, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { registerSchema, type RegisterInput } from '@phuochai/shared';
 import { Button } from '@/components/ui/button';
@@ -16,9 +15,10 @@ import { useAuth } from '@/lib/auth/auth-context';
 
 /** Form đăng ký thành viên mới (mặc định vai trò USER). */
 export function RegisterForm() {
-  const router = useRouter();
   const { register: registerUser } = useAuth();
   const [submitting, setSubmitting] = useState(false);
+  /** Thông báo sau khi đăng ký: tài khoản chờ quản trị viên duyệt. */
+  const [submitted, setSubmitted] = useState<{ email: string; message: string } | null>(null);
 
   const {
     register,
@@ -32,10 +32,9 @@ export function RegisterForm() {
   const onSubmit = handleSubmit(async (values) => {
     setSubmitting(true);
     try {
-      const user = await registerUser(values.name, values.email, values.password);
-      toast.success(`Tạo tài khoản thành công. Xin chào ${user.name}!`);
-      router.push('/quan-tri');
-      router.refresh();
+      const result = await registerUser(values.name, values.email, values.password);
+      setSubmitted({ email: values.email, message: result.message });
+      toast.success('Đăng ký thành công - vui lòng chờ quản trị viên duyệt');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Đăng ký thất bại');
     } finally {
@@ -48,10 +47,32 @@ export function RegisterForm() {
       <CardHeader>
         <CardTitle className="font-display text-2xl">Đăng ký tài khoản</CardTitle>
         <CardDescription>
-          Tài khoản thành viên có thể tạo bản nháp bài viết và quản lý hồ sơ cá nhân.
+          Sau khi đăng ký, tài khoản sẽ ở trạng thái <strong>chờ duyệt</strong>. Quản trị viên duyệt và cấp quyền thì
+          bạn mới đăng nhập được.
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {submitted ? (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 rounded-lg border border-emerald-300 bg-emerald-50 p-4 text-sm dark:border-emerald-900 dark:bg-emerald-950/40">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <div className="space-y-1">
+                <p className="font-medium text-emerald-900 dark:text-emerald-200">Đã gửi yêu cầu đăng ký</p>
+                <p className="text-emerald-800/90 dark:text-emerald-200/80">
+                  Tài khoản <strong>{submitted.email}</strong> đang chờ quản trị viên duyệt và cấp quyền. Bạn sẽ đăng nhập
+                  được ngay sau khi được duyệt.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+              <MailCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              Nếu cần gấp, vui lòng liên hệ quản trị viên website để được duyệt sớm.
+            </div>
+            <Button asChild className="w-full" variant="outline">
+              <Link href="/dang-nhap">Về trang đăng nhập</Link>
+            </Button>
+          </div>
+        ) : (
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Họ và tên</Label>
@@ -85,13 +106,16 @@ export function RegisterForm() {
             {submitting ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
           </Button>
         </form>
+        )}
 
+        {!submitted ? (
         <p className="mt-5 text-center text-sm text-muted-foreground">
           Đã có tài khoản?{' '}
           <Link href="/dang-nhap" className="font-medium text-primary hover:underline">
             Đăng nhập
           </Link>
         </p>
+        ) : null}
       </CardContent>
     </Card>
   );

@@ -46,7 +46,8 @@
     "strip:tags": "node scripts/strip-tags-block.mjs",
     "docker:prod:config": "docker compose -f docker-compose.coolify.yml --env-file .env.coolify config",
     "docker:prod:seed": "docker compose -f docker-compose.coolify.yml --profile tools run --rm seed",
-    "verify:repo": "node scripts/verify-repo.mjs"
+    "verify:repo": "node scripts/verify-repo.mjs",
+    "db:prune-demo": "npm run db:prune-demo -w @phuochai/api --"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

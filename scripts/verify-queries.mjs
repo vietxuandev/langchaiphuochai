@@ -9,7 +9,10 @@
  * Chạy: npm run verify:queries   (cần API đang chạy)
  */
 const GRAPHQL = process.env.API_URL ?? 'http://localhost:4000/graphql';
-const ADMIN = { email: 'admin@langchaiphuochai.com', password: 'Admin@123' };
+const ADMIN = {
+  email: process.env.VERIFY_ADMIN_EMAIL ?? 'admin@langchaiphuochai.com',
+  password: process.env.VERIFY_ADMIN_PASSWORD ?? 'Admin@123',
+};
 
 let failed = 0;
 

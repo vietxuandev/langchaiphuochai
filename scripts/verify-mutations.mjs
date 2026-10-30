@@ -13,13 +13,39 @@
  * Chạy: npm run verify:mutations   (cần API đang chạy)
  */
 const GRAPHQL = process.env.API_URL ?? 'http://localhost:4000/graphql';
+// Tài khoản dùng để kiểm thử. Có thể đổi qua biến môi trường khi admin đã đổi mật khẩu.
 const ACCOUNTS = {
-  admin: { email: 'admin@langchaiphuochai.com', password: 'Admin@123' },
-  editor: { email: 'editor@langchaiphuochai.com', password: 'Editor@123' },
-  user: { email: 'user@langchaiphuochai.com', password: 'User@123' },
+  admin: {
+    email: process.env.VERIFY_ADMIN_EMAIL ?? 'admin@langchaiphuochai.com',
+    password: process.env.VERIFY_ADMIN_PASSWORD ?? 'Admin@123',
+  },
+  editor: { email: 'verify-editor@example.com', password: 'Verify@12345' },
+  user: { email: 'verify-member@example.com', password: 'Verify@12345' },
 };
 
 let failed = 0;
+
+/** Đăng nhập, nếu tài khoản chưa tồn tại thì tạo bằng quyền admin rồi đăng nhập lại. */
+async function ensureLogin(account, adminToken, role = 'USER') {
+  const attempt = await gql(
+    `mutation($i: LoginInput!) { login(input: $i) { accessToken } }`,
+    { i: { email: account.email, password: account.password } },
+  );
+  if (attempt.data?.login?.accessToken) return attempt.data.login.accessToken;
+
+  await gql(
+    `mutation($i: AdminCreateUserInput!) { createUser(input: $i) { id } }`,
+    { i: { name: `Verify ${role}`, email: account.email, password: account.password, role } },
+    adminToken,
+  );
+
+  const retry = await gql(
+    `mutation($i: LoginInput!) { login(input: $i) { accessToken } }`,
+    { i: { email: account.email, password: account.password } },
+  );
+  if (!retry.data?.login?.accessToken) throw new Error(`Không tạo/đăng nhập được ${account.email}`);
+  return retry.data.login.accessToken;
+}
 
 async function gql(query, variables, token) {
   const response = await fetch(GRAPHQL, {
@@ -88,8 +114,8 @@ async function login(account) {
 
 async function main() {
   const adminToken = await login(ACCOUNTS.admin);
-  const editorToken = await login(ACCOUNTS.editor);
-  const userToken = await login(ACCOUNTS.user);
+  const editorToken = await ensureLogin(ACCOUNTS.editor, adminToken, 'EDITOR');
+  const memberToken = await ensureLogin(ACCOUNTS.user, adminToken, 'USER');
 
   /* ---------------------------- Nhóm 1: xác thực ---------------------------- */
   console.log('\n- Xác thực & hồ sơ -');
@@ -99,7 +125,7 @@ async function main() {
     expectError: 'không đúng',
   });
   await step('register (email trùng)', {
-    query: 'mutation($input: RegisterInput!) { register(input: $input) { accessToken } }',
+    query: 'mutation($input: RegisterInput!) { register(input: $input) { requiresApproval message user { id } } }',
     variables: {
       input: {
         name: 'Trùng',
@@ -110,6 +136,72 @@ async function main() {
     },
     expectError: 'đã được sử dụng',
   });
+
+  // Luồng duyệt tài khoản: đăng ký mới phải ở PENDING, chưa đăng nhập được
+  const pendingEmail = `verify-pending-${Date.now()}@example.com`;
+  const registered = await step('register (tài khoản mới -> chờ duyệt)', {
+    query:
+      'mutation($input: RegisterInput!) { register(input: $input) { requiresApproval message user { id email status isActive } } }',
+    variables: {
+      input: {
+        name: 'Chờ duyệt',
+        email: pendingEmail,
+        password: 'Test@1234',
+        confirmPassword: 'Test@1234',
+      },
+    },
+    check: (data) =>
+      data.register.requiresApproval === true &&
+      data.register.user.status === 'PENDING' &&
+      data.register.user.isActive === false
+        ? true
+        : `requiresApproval/status/isActive chưa đúng: ${JSON.stringify(data.register)}`,
+  });
+  const pendingId = registered.data.register.user.id;
+
+  await step('login (chờ duyệt - phải bị chặn)', {
+    query: 'mutation($i: LoginInput!) { login(input: $i) { accessToken } }',
+    variables: { i: { email: pendingEmail, password: 'Test@1234' } },
+    expectError: 'chờ quản trị viên duyệt',
+  });
+
+  await step('approveUser (duyệt và cấp quyền)', {
+    query: 'mutation($id: String!, $role: Role) { approveUser(id: $id, role: $role) { id email status isActive role } }',
+    variables: { id: pendingId, role: 'EDITOR' },
+    token: adminToken,
+    check: (data) =>
+      data.approveUser.status === 'ACTIVE' && data.approveUser.role === 'EDITOR'
+        ? true
+        : `sau khi duyệt phải là ACTIVE/EDITOR: ${JSON.stringify(data.approveUser)}`,
+  });
+
+  await step('login (đã duyệt - phải đăng nhập được)', {
+    query: 'mutation($i: LoginInput!) { login(input: $i) { accessToken user { status } } }',
+    variables: { i: { email: pendingEmail, password: 'Test@1234' } },
+    check: (data) =>
+      data.login.accessToken && data.login.user.status === 'ACTIVE'
+        ? true
+        : 'phải trả accessToken và status ACTIVE',
+  });
+
+  await step('rejectUser (từ chối tài khoản)', {
+    query: 'mutation($id: String!, $note: String) { rejectUser(id: $id, note: $note) { id status isActive reviewNote } }',
+    variables: { id: pendingId, note: 'Kiểm thử' },
+    token: adminToken,
+    check: (data) =>
+      data.rejectUser.status === 'REJECTED' && data.rejectUser.reviewNote === 'Kiểm thử'
+        ? true
+        : `phải là REJECTED kèm lý do: ${JSON.stringify(data.rejectUser)}`,
+  });
+
+  await step('login (bị từ chối - phải bị chặn)', {
+    query: 'mutation($i: LoginInput!) { login(input: $i) { accessToken } }',
+    variables: { i: { email: pendingEmail, password: 'Test@1234' } },
+    expectError: 'đã bị từ chối',
+  });
+
+  // dọn tài khoản kiểm thử vừa đăng ký
+  await gql('mutation($id: String!) { removeUser(id: $id) }', { id: pendingId }, adminToken);
 
   const meBefore = await gql('{ me { name bio phone avatarUrl } }', undefined, adminToken);
   const original = meBefore.data.me;
@@ -326,7 +418,7 @@ async function main() {
   await step('createPost (USER gửi PUBLISHED - phải thành DRAFT)', {
     query: 'mutation($input: PostInput!) { createPost(input: $input) { id status } }',
     variables: { input: { type: 'NEWS', title: `Bài của thành viên ${Date.now()}`, status: 'PUBLISHED' } },
-    token: userToken,
+    token: memberToken,
     check: (data) => (data.createPost.status === 'DRAFT' ? true : `rò rỉ quyền: ${data.createPost.status}`),
   }).then(async ({ data }) => {
     const id = data?.createPost?.id;
@@ -348,8 +440,10 @@ async function main() {
         process.env.DATABASE_URL ?? 'postgresql://phuochai:phuochai@localhost:55432/phuochai',
     });
     await client.connect();
+    // Dọn toàn bộ tài khoản do script tạo (kiểm thử + tài khoản dịch vụ của bộ test)
     const removed = await client.query(
-      "delete from users where email like 'kiem-thu-%@langchaiphuochai.com' returning email",
+      "delete from users where email like 'kiem-thu-%@langchaiphuochai.com' " +
+        "or email like 'verify-%@example.com' returning email",
     );
     await client.end();
     if (removed.rowCount > 0) {
