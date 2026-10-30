@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Facebook, Mail, MapPin, Phone } from 'lucide-react';
+import { BrandLogo } from '@/components/site/brand-logo';
 import { BRAND, PostType } from '@phuochai/shared';
 import type { CategoryNodeFragment } from '@/generated/graphql';
 
@@ -17,7 +18,13 @@ export function SiteFooter({ categories }: SiteFooterProps) {
     <footer className="mt-16 border-t border-border bg-sea-900 text-sea-50">
       <div className="container grid gap-10 py-12 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <p className="font-display text-lg font-bold text-white">{BRAND.name}</p>
+          <div className="flex items-center gap-2">
+
+            <BrandLogo className="h-10 w-10" />
+
+            <p className="font-display text-lg font-bold text-white">{BRAND.name}</p>
+
+          </div>
           <p className="mt-3 text-sm leading-relaxed text-sea-100/80">
             Danh bạ lưu trú và cẩm nang du lịch Phước Hải: khách sạn, homestay, villa, điểm đến, ăn uống và kinh
             nghiệm cần thiết cho chuyến đi của bạn.

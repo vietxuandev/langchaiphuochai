@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { BRAND } from '@phuochai/shared';
+import { BrandLogo } from '@/components/site/brand-logo';
 
 /** Layout cho trang đăng nhập / đăng ký: tối giản, tập trung vào form. */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -7,8 +8,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden overflow-hidden bg-hero-gradient p-12 text-white lg:flex lg:flex-col lg:justify-between">
         <div className="absolute -left-16 top-1/3 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-        <Link href="/" className="relative font-display text-xl font-bold">
-          {BRAND.name}
+        <Link href="/">
+          <BrandLogo className="h-12 w-12" withName inverted subtitle={BRAND.tagline} />
         </Link>
         <div className="relative max-w-md">
           <h2 className="font-display text-3xl font-bold leading-tight">

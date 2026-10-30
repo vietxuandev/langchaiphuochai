@@ -436,6 +436,9 @@ chứ không chỉ restart.
 - **Editor Tiptap** được cấu hình đủ extension để giữ nguyên cấu trúc nội dung cũ (tiêu đề, danh sách, bảng, ảnh, liên kết);
   cần `immediatelyRender: false` khi dùng với Next.js và **`TooltipProvider`** bọc ngoài (Radix yêu cầu).
 - **Bảo mật**: JWT lưu ở `localStorage` cho mục đích demo; production nên chuyển sang httpOnly cookie + refresh token.
+- **Logo dùng chung**: component `BrandLogo` (`apps/web/src/components/site/brand-logo.tsx`) render
+  `src/assets/logo-mark.png` (128px, tối ưu từ bộ favicon 512px) - dùng ở header, menu mobile, footer,
+  sidebar quản trị và trang đăng nhập. Không vẽ lại SVG riêng ở từng nơi.
 - **Icon & manifest**: favicon/apple-touch-icon/PWA manifest dùng quy ước App Router
   (`src/app/favicon.ico`, `icon.png`, `apple-icon.png`, `manifest.ts`) nên Next tự chèn `<link>`;
   tên/màu trong manifest lấy từ `BRAND` nên không lệch thương hiệu. Icon 192/512 trong `public/icons/`.

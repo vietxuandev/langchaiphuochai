@@ -40,6 +40,9 @@ const REQUIRED_FILES = [
   'apps/web/src/app/icon.png',
   'apps/web/src/app/apple-icon.png',
   'apps/web/src/app/manifest.ts',
+  // Logo dùng chung trong UI (import trong brand-logo.tsx)
+  'apps/web/src/assets/logo-mark.png',
+  'apps/web/src/components/site/brand-logo.tsx',
   'apps/web/public/icons/android-chrome-192x192.png',
   'apps/web/public/icons/android-chrome-512x512.png',
   'docker-compose.coolify.yml',

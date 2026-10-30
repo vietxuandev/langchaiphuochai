@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import {
-  Building2,
   ChevronRight,
   ExternalLink,
   FileText,
@@ -19,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { BRAND, ROLE_LABELS, Role } from '@phuochai/shared';
+import { BrandLogo } from '@/components/site/brand-logo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -104,9 +104,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         {/* Sidebar desktop */}
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-background p-4 lg:flex">
           <Link href="/" className="mb-6 flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-hero-gradient text-white">
-              <Building2 className="h-5 w-5" />
-            </span>
+            <BrandLogo className="h-9 w-9" />
             <span>
               <span className="block font-display text-sm font-bold">{BRAND.shortName}</span>
               <span className="block text-[10px] uppercase tracking-widest text-muted-foreground">Quản trị</span>
@@ -153,7 +151,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </SheetTrigger>
               <SheetContent side="left" className="w-72 p-4">
                 <SheetHeader className="mb-4 text-left">
-                  <SheetTitle>Quản trị</SheetTitle>
+                  <SheetTitle className="flex items-center gap-2">
+                    <BrandLogo className="h-8 w-8" />
+                    <span>
+                      <span className="block font-display text-sm font-bold">{BRAND.shortName}</span>
+                      <span className="block text-[10px] font-normal uppercase tracking-widest text-muted-foreground">
+                        Quản trị
+                      </span>
+                    </span>
+                  </SheetTitle>
                 </SheetHeader>
                 {SidebarContent}
               </SheetContent>

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ChevronDown, Heart, MapPin, Menu, Phone, Search, User as UserIcon, LayoutDashboard } from 'lucide-react';
 import { BRAND, PostType, ROLE_LABELS, type Role } from '@phuochai/shared';
+import { BrandLogo } from '@/components/site/brand-logo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,23 +37,8 @@ const SECTION_LINKS: { type: PostType; label: string; href: string }[] = [
 function Logo() {
   return (
     <Link href="/" className="flex min-w-0 items-center gap-2">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-hero-gradient text-white shadow-soft">
-        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <path d="M2 17c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 5-2" strokeLinecap="round" />
-          <path d="M12 3v8" strokeLinecap="round" />
-          <path d="M8.5 6.5 12 3l3.5 3.5" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="12" cy="13" r="2.2" />
-        </svg>
-      </span>
-      <span className="min-w-0 leading-tight">
-        <span className="block truncate font-display text-base font-bold leading-tight tracking-tight text-sea-700 sm:text-lg">
-          {BRAND.name}
-        </span>
-        {/* Tagline chỉ hiện từ sm trở lên để header không tràn ngang trên điện thoại nhỏ */}
-        <span className="hidden text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground sm:block">
-          Lưu trú &amp; Du lịch
-        </span>
-      </span>
+      {/* Logo thật của dự án (public asset từ bộ favicon), không còn SVG tự vẽ */}
+      <BrandLogo className="h-10 w-10" withName subtitle="Lưu trú & Du lịch" />
     </Link>
   );
 }
@@ -216,7 +202,15 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
             </SheetTrigger>
             <SheetContent side="left" className="w-80 overflow-y-auto p-0">
               <SheetHeader className="border-b p-4 text-left">
-                <SheetTitle>Danh mục</SheetTitle>
+                <SheetTitle className="flex items-center gap-2">
+                  <BrandLogo className="h-9 w-9" />
+                  <span>
+                    <span className="block font-display text-base font-bold text-sea-700">{BRAND.name}</span>
+                    <span className="block text-[10px] font-normal uppercase tracking-[0.16em] text-muted-foreground">
+                      Lưu trú &amp; Du lịch
+                    </span>
+                  </span>
+                </SheetTitle>
               </SheetHeader>
               <div className="space-y-4 p-4">
                 <SearchBox onSubmit={() => setMobileOpen(false)} />
