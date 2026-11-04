@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import { buildImageUrl } from '@phuochai/shared';
 import { notFound } from 'next/navigation';
+import { JsonLd } from '@/components/seo/json-ld';
 import { PostDetail } from '@/components/site/post-detail';
 import { getPostBySlugOrNotFound, getRelatedPosts } from '@/lib/data/posts';
+import { postJsonLd } from '@/lib/seo/structured-data';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -34,5 +36,10 @@ export default async function AccommodationDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  return <PostDetail post={post} related={related} />;
+  return (
+    <>
+      <JsonLd id="jsonld-post" data={postJsonLd(post)} />
+      <PostDetail post={post} related={related} />
+    </>
+  );
 }

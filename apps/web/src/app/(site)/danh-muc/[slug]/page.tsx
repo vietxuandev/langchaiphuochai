@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PostType } from '@phuochai/shared';
+import { JsonLd } from '@/components/seo/json-ld';
 import { PageHeader } from '@/components/site/page-header';
 import { PostListing } from '@/components/site/post-listing';
 import { getCategoryBySlug } from '@/lib/data/category';
 import { getPosts } from '@/lib/data/posts';
 import { buildPostFilter } from '@/lib/filters';
+import { categoryJsonLd } from '@/lib/seo/structured-data';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -48,6 +50,10 @@ export default async function CategoryPage({ params }: PageProps) {
 
   return (
     <div className="container py-8">
+      <JsonLd
+        id="jsonld-category"
+        data={categoryJsonLd(category, initialPosts.items)}
+      />
       <PageHeader
         eyebrow={category.parent?.name ?? 'Danh mục'}
         title={category.name}
