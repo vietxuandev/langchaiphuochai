@@ -16,7 +16,7 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:local": "tsc -p tsconfig.json && node dist/scripts/local-postgres.js",
-    "schema:emit": "tsx scripts/emit-schema.ts",
+    "schema:emit": "nest build && node dist/scripts/emit-schema.js",
     "uploads:report": "node ../../scripts/uploads-report.mjs",
     "db:prune-demo": "tsx scripts/prune-demo-users.ts"
   },

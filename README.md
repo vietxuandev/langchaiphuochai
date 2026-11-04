@@ -497,3 +497,43 @@ chứ không chỉ restart.
 - **Healthcheck**: API có endpoint `GET /health` (dùng cho Docker/Coolify), ngoài ra `{ ping }` trong GraphQL.
 - **Ảnh**: API phục vụ `/upload/*` từ `data/upload`; Next.js proxy `/graphql`, `/api/upload`, `/upload/*` về API để tránh CORS.
 - `npm run db:local` dùng PostgreSQL nhúng (chỉ cho dev). Production dùng service `db` trong Docker Compose.
+
+---
+
+## 14. Thông báo quản trị
+
+### In-app (polling)
+
+- Chuông ở topbar `/quan-tri`, badge số chưa đọc, dropdown 5 thông báo mới nhất.
+- Trang đầy đủ: `/quan-tri/thong-bao` (lọc Tất cả / Chưa đọc, phân trang, đánh dấu đã đọc).
+- Poll mỗi **30 giây** khi tab đang hiển thị; dừng khi tab bị ẩn. Không dùng WebSocket/Redis.
+- Mỗi admin/editor có row `Notification` riêng; query luôn scope theo `userId` từ JWT.
+
+### Sự kiện đang phát
+
+| Sự kiện | Loại | Người nhận |
+| --- | --- | --- |
+| User tự đăng ký → `PENDING` | `USER_PENDING` | ADMIN |
+| Bài mới tạo ở trạng thái nháp | `POST_PENDING` | ADMIN (trừ người tạo) |
+| Bài được publish (tạo mới hoặc đổi trạng thái) | `POST_PUBLISHED` | ADMIN (trừ người publish) |
+| Đăng nhập sai nhiều lần | `SECURITY_LOGIN_FAILED` | ADMIN |
+
+Ngưỡng cảnh báo đăng nhập: **5 lần / email** hoặc **10 lần / IP hash** trong **15 phút**. Mỗi email + giờ chỉ tạo một cảnh báo (dedupe). Hệ thống chỉ ghi `LoginAttempt` (email, IP hash, user agent, success), **không lưu mật khẩu/IP thô**, và không tự khoá tài khoản.
+
+### Telegram
+
+Điền env cho service `api`:
+
+```env
+TELEGRAM_BOT_TOKEN=123456:ABC...
+TELEGRAM_CHAT_ID=123456789          # có thể truyền nhiều id, cách nhau dấu phẩy
+ADMIN_BASE_URL=https://langchaiphuochai.com
+```
+
+Cách lấy nhanh:
+1. Chat với `@BotFather` → `/newbot` → lấy token.
+2. Add bot vào group admin (hoặc chat riêng), gửi một tin nhắn.
+3. Gọi `https://api.telegram.org/bot<token>/getUpdates` để lấy `chat.id`.
+4. Điền env và deploy lại `api`.
+
+Nếu thiếu token/chat id, hệ thống bỏ qua Telegram và chỉ giữ thông báo in-app. Link trong Telegram dùng `ADMIN_BASE_URL` + `actionUrl` và chỉ chấp nhận path `/quan-tri/...`.

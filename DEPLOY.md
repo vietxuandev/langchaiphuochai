@@ -96,6 +96,9 @@ ls -lh /data/langchaiphuochai/seed/dataset.json
 | `CORS_ORIGINS` | ✅ | `https://langchaiphuochai.com` | Domain được phép gọi API |
 | `DATA_DIR` | ✅ | `/data/langchaiphuochai` | Thư mục dữ liệu trên host (bước 2) |
 | `JWT_EXPIRES_IN` | | `7d` | Thời hạn token |
+| `TELEGRAM_BOT_TOKEN` | | token từ `@BotFather` | Gửi thông báo quản trị qua Telegram (tuỳ chọn) |
+| `TELEGRAM_CHAT_ID` | | `123456789` hoặc `-100...` | Chat/group nhận thông báo; nhiều id cách nhau dấu phẩy |
+| `ADMIN_BASE_URL` | | `https://langchaiphuochai.com` | Base URL để tạo link trong tin nhắn Telegram |
 
 > `JWT_SECRET` và `DB_PASSWORD` dùng cú pháp `${VAR:?...}` nên nếu thiếu, Coolify sẽ báo lỗi ngay
 > thay vì chạy với giá trị mặc định không an toàn.

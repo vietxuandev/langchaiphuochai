@@ -1,12 +1,39 @@
-# ------------------------------------------------------
-# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
-# ------------------------------------------------------
-
 input AdminCreateUserInput {
   email: String!
   name: String!
   password: String!
   role: Role!
+}
+
+type AdminNotification {
+  """Đường dẫn nội bộ trong /quan-tri"""
+  actionUrl: String
+  body: String
+  createdAt: DateTime!
+  entityId: String
+  entityType: String
+  id: ID!
+  readAt: DateTime
+  severity: NotificationSeverity!
+  title: String!
+  type: NotificationType!
+}
+
+input AdminNotificationFilterInput {
+  severity: NotificationSeverity
+  type: NotificationType
+  unreadOnly: Boolean
+}
+
+type AdminNotificationPage {
+  items: [AdminNotification!]!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+  totalPages: Int!
+
+  """Tổng số thông báo chưa đọc của người dùng hiện tại"""
+  unreadCount: Int!
 }
 
 type AuthPayload {
@@ -225,6 +252,12 @@ type Mutation {
   """Đăng nhập bằng email và mật khẩu"""
   login(input: LoginInput!): AuthPayload!
 
+  """Đánh dấu một thông báo đã đọc"""
+  markAdminNotificationRead(id: String!): Boolean!
+
+  """Đánh dấu tất cả thông báo đã đọc"""
+  markAllAdminNotificationsRead: Int!
+
   """Xuất bản bài viết (editor/admin)"""
   publishPost(id: String!): Post!
 
@@ -256,6 +289,30 @@ type Mutation {
 
   """Cập nhật vai trò / trạng thái người dùng"""
   updateUser(input: UpdateUserInput!): User!
+}
+
+"""Mức độ ưu tiên của thông báo"""
+enum NotificationSeverity {
+  """Thông tin"""
+  INFO
+
+  """Khẩn cấp"""
+  URGENT
+
+  """Cần chú ý"""
+  WARNING
+}
+
+"""Loại thông báo quản trị"""
+enum NotificationType {
+  CRAWL_COMPLETED
+  CRAWL_FAILED
+  POST_PENDING
+  POST_PUBLISHED
+  SECURITY_LOGIN_FAILED
+  SYSTEM_ERROR
+  UPLOAD_FAILED
+  USER_PENDING
 }
 
 type PaginatedPosts {
@@ -470,6 +527,9 @@ type PublicStats {
 }
 
 type Query {
+  """Danh sách thông báo của quản trị viên"""
+  adminNotifications(filter: AdminNotificationFilterInput, page: Int = 1, pageSize: Int = 20): AdminNotificationPage!
+
   """Kiểm tra API đang chạy"""
   apiHealth: String!
 

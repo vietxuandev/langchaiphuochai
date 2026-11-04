@@ -1,5 +1,12 @@
 import { registerEnumType } from '@nestjs/graphql';
-import { PostStatus, PostType, Role, UserStatus } from '@phuochai/shared';
+import {
+  NotificationSeverity,
+  NotificationType,
+  PostStatus,
+  PostType,
+  Role,
+  UserStatus,
+} from '@phuochai/shared';
 
 /** Đăng ký enum dùng chung với GraphQL schema (code-first). */
 registerEnumType(Role, {
@@ -74,5 +81,20 @@ registerEnumType(PostSortField, {
     PRICE: { description: 'Giá' },
     VIEWS: { description: 'Lượt xem' },
     TITLE: { description: 'Tiêu đề' },
+  },
+});
+
+registerEnumType(NotificationType, {
+  name: 'NotificationType',
+  description: 'Loại thông báo quản trị',
+});
+
+registerEnumType(NotificationSeverity, {
+  name: 'NotificationSeverity',
+  description: 'Mức độ ưu tiên của thông báo',
+  valuesMap: {
+    INFO: { description: 'Thông tin' },
+    WARNING: { description: 'Cần chú ý' },
+    URGENT: { description: 'Khẩn cấp' },
   },
 });

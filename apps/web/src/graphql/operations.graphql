@@ -391,3 +391,40 @@ query PendingUserCount {
 mutation RemoveUser($id: String!) {
   removeUser(id: $id)
 }
+
+# ---------------------------------------------------------------------------
+# Thông báo quản trị (in-app, polling)
+# ---------------------------------------------------------------------------
+fragment AdminNotificationFields on AdminNotification {
+  id
+  type
+  severity
+  title
+  body
+  actionUrl
+  entityType
+  entityId
+  readAt
+  createdAt
+}
+
+query AdminNotifications($filter: AdminNotificationFilterInput, $page: Int, $pageSize: Int) {
+  adminNotifications(filter: $filter, page: $page, pageSize: $pageSize) {
+    items {
+      ...AdminNotificationFields
+    }
+    total
+    page
+    pageSize
+    totalPages
+    unreadCount
+  }
+}
+
+mutation MarkAdminNotificationRead($id: String!) {
+  markAdminNotificationRead(id: $id)
+}
+
+mutation MarkAllAdminNotificationsRead {
+  markAllAdminNotificationsRead
+}

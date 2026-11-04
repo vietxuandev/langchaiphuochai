@@ -1,7 +1,14 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PostStatus, PostType, Prisma, Role } from '@prisma/client';
-import { hasAtLeastRole, canPublish, slugify } from '@phuochai/shared';
+import {
+  hasAtLeastRole,
+  canPublish,
+  slugify,
+  NotificationSeverity,
+  NotificationType,
+} from '@phuochai/shared';
 import type { PostInput } from '@phuochai/shared';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CategoriesService } from '../categories/categories.service';
 import type { PostEntity, PostFilterInput, PostImageEntity, TagEntity } from './entities/post.entity';
@@ -26,9 +33,12 @@ export interface Viewer {
 
 @Injectable()
 export class PostsService {
+  private readonly logger = new Logger(PostsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly categories: CategoriesService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /* ------------------------------------------------------------------ */
@@ -188,7 +198,14 @@ export class PostsService {
       include: POST_INCLUDE,
     });
 
-    return this.toEntity(created);
+    const post = this.toEntity(created);
+    if (status === PostStatus.PUBLISHED) {
+      await this.notifyPost(post, viewer, 'published');
+    } else if (status === PostStatus.DRAFT) {
+      await this.notifyPost(post, viewer, 'pending');
+    }
+
+    return post;
   }
 
   async update(input: PostInput & { id: string }, viewer: Viewer): Promise<PostEntity> {
@@ -232,7 +249,12 @@ export class PostsService {
       include: POST_INCLUDE,
     });
 
-    return this.toEntity(updated);
+    const post = this.toEntity(updated);
+    if (status === PostStatus.PUBLISHED && current.status !== PostStatus.PUBLISHED) {
+      await this.notifyPost(post, viewer, 'published');
+    }
+
+    return post;
   }
 
   async remove(id: string, viewer: Viewer): Promise<boolean> {
@@ -260,12 +282,45 @@ export class PostsService {
       },
       include: POST_INCLUDE,
     });
-    return this.toEntity(updated);
+
+    const post = this.toEntity(updated);
+    if (status === PostStatus.PUBLISHED && current.status !== PostStatus.PUBLISHED) {
+      await this.notifyPost(post, viewer, 'published');
+    }
+
+    return post;
   }
 
   /* ------------------------------------------------------------------ */
   /*                          Hàm hỗ trợ                                */
   /* ------------------------------------------------------------------ */
+
+  /** Gửi thông báo cho admin khi bài mới chờ duyệt hoặc vừa được xuất bản. */
+  private async notifyPost(
+    post: PostEntity,
+    viewer: Viewer,
+    kind: 'pending' | 'published',
+  ): Promise<void> {
+    const pending = kind === 'pending';
+
+    try {
+      await this.notifications.notifyAdmins({
+        roles: [Role.ADMIN],
+        type: pending ? NotificationType.POST_PENDING : NotificationType.POST_PUBLISHED,
+        severity: pending ? NotificationSeverity.WARNING : NotificationSeverity.INFO,
+        title: pending ? 'Bài viết mới chờ duyệt' : 'Bài viết đã được xuất bản',
+        body: `${post.title} — ${post.author?.name ?? viewer.name}`,
+        entityType: 'post',
+        entityId: post.id,
+        actionUrl: `/quan-tri/bai-viet/${post.id}`,
+        dedupeKey: `post:${post.id}:${kind}`,
+        excludeUserIds: [viewer.id],
+      });
+    } catch (error) {
+      // Không để lỗi thông báo làm hỏng thao tác lưu bài.
+      this.logger.warn(`Không tạo được thông báo bài viết: ${(error as Error).message}`);
+    }
+  }
 
   private assertCanView(post: { status: PostStatus; authorId: string | null }, viewer?: Viewer | null): void {
     if (post.status === PostStatus.PUBLISHED) return;

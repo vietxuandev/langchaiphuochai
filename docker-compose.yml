@@ -33,6 +33,10 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,https://langchaiphuochai.com}
       UPLOAD_DIR: /app/data/upload
       SCHEMA_PATH: /app/apps/api/schema.graphql
+      # Thông báo quản trị qua Telegram (để trống thì chỉ dùng in-app)
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      ADMIN_BASE_URL: ${ADMIN_BASE_URL:-http://localhost:3000}
     volumes:
       - ./data:/app/data
     ports:

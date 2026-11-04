@@ -7,10 +7,11 @@ import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { NestFactory } from '@nestjs/core';
 import { GraphQLSchemaBuilderModule, GraphQLSchemaFactory } from '@nestjs/graphql';
-import { printSchema } from 'graphql';
+import { lexicographicSortSchema, printSchema } from 'graphql';
 import { AuthResolver } from '../src/auth/auth.resolver';
 import { CategoriesResolver } from '../src/categories/categories.resolver';
 import { CrawlerResolver } from '../src/crawler/crawler.resolver';
+import { NotificationsResolver } from '../src/notifications/notifications.resolver';
 import { PostsResolver } from '../src/posts/posts.resolver';
 import { StatsResolver } from '../src/stats/stats.resolver';
 import { UsersResolver } from '../src/users/users.resolver';
@@ -25,12 +26,13 @@ async function main(): Promise<void> {
     UsersResolver,
     CategoriesResolver,
     CrawlerResolver,
+    NotificationsResolver,
     PostsResolver,
     StatsResolver,
   ]);
 
   const output = process.env.SCHEMA_PATH ?? join(process.cwd(), 'schema.graphql');
-  writeFileSync(output, printSchema(schema), 'utf8');
+  writeFileSync(output, printSchema(lexicographicSortSchema(schema)), 'utf8');
   console.log(`Đã ghi GraphQL schema vào ${output}`);
   await app.close();
 }

@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { zodPipe } from '../common/zod.pipe';
 import { CurrentUser, Public } from '../common/decorators';
 import { changePasswordSchema, loginSchema, registerSchema, updateProfileSchema } from '@phuochai/shared';
@@ -23,8 +23,28 @@ export class AuthResolver {
 
   @Public()
   @Mutation(() => AuthPayload, { description: 'Đăng nhập bằng email và mật khẩu' })
-  async login(@Args('input', { type: () => LoginInputType }, zodPipe(loginSchema)) input: LoginInput): Promise<AuthPayload> {
-    return this.auth.login(input);
+  async login(
+    @Args('input', { type: () => LoginInputType }, zodPipe(loginSchema)) input: LoginInput,
+    @Context()
+    context: {
+      req: {
+        headers: Record<string, string | string[] | undefined>;
+        ip?: string;
+        socket?: { remoteAddress?: string };
+      };
+    },
+  ): Promise<AuthPayload> {
+    const forwarded = context.req.headers['x-forwarded-for'];
+    const ip =
+      (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim() ||
+      context.req.ip ||
+      context.req.socket?.remoteAddress;
+    const userAgent = context.req.headers['user-agent'];
+
+    return this.auth.login(input, {
+      ip,
+      userAgent: typeof userAgent === 'string' ? userAgent : undefined,
+    });
   }
 
   @Public()

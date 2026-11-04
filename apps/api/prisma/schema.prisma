@@ -48,10 +48,71 @@ model User {
   updatedAt    DateTime   @updatedAt
 
   posts Post[]
+  notifications Notification[]
 
   @@index([role])
   @@index([status])
   @@map("users")
+}
+
+/** Loại thông báo hiển thị trong khu vực quản trị. */
+enum NotificationType {
+  USER_PENDING
+  POST_PENDING
+  POST_PUBLISHED
+  SECURITY_LOGIN_FAILED
+  CRAWL_COMPLETED
+  CRAWL_FAILED
+  UPLOAD_FAILED
+  SYSTEM_ERROR
+}
+
+enum NotificationSeverity {
+  INFO
+  WARNING
+  URGENT
+}
+
+/** Thông báo in-app, mỗi người nhận có một row riêng để dễ đọc/đánh dấu. */
+model Notification {
+  id         String               @id @default(cuid())
+  userId     String
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type       NotificationType
+  severity   NotificationSeverity @default(INFO)
+  title      String
+  body       String?
+  entityType String?
+  entityId   String?
+  actionUrl  String?
+  metadata   Json?
+  dedupeKey  String?
+  readAt     DateTime?
+  createdAt  DateTime             @default(now())
+  expiresAt  DateTime?
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt, createdAt])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+/** Lưu vết đăng nhập để phát hiện brute-force; không lưu mật khẩu/IP thô. */
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ipHash    String?
+  userAgent String?
+  success   Boolean  @default(false)
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([ipHash, createdAt])
+  @@index([createdAt])
+  @@map("login_attempts")
 }
 
 /**

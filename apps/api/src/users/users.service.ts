@@ -1,7 +1,13 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma, Role, UserStatus, type User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import type { AdminCreateUserInput, UpdateUserInput } from '@phuochai/shared';
+import {
+  NotificationSeverity,
+  NotificationType,
+  type AdminCreateUserInput,
+  type UpdateUserInput,
+} from '@phuochai/shared';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface UserListFilter {
@@ -23,7 +29,12 @@ export interface AdminCreateUserInputWithStatus {
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(UsersService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   /** Bỏ passwordHash trước khi trả ra ngoài. */
   static toPublic(user: User & { _count?: { posts: number } }) {
@@ -123,6 +134,24 @@ export class UsersService {
         isActive: false,
       },
     });
+
+    try {
+      await this.notifications.notifyAdmins({
+        roles: [Role.ADMIN],
+        type: NotificationType.USER_PENDING,
+        severity: NotificationSeverity.WARNING,
+        title: 'Tài khoản mới chờ duyệt',
+        body: `${user.name} (${user.email})`,
+        entityType: 'user',
+        entityId: user.id,
+        actionUrl: '/quan-tri/nguoi-dung?status=PENDING',
+        dedupeKey: `user:${user.id}:pending`,
+      });
+    } catch (error) {
+      // Đăng ký vẫn phải thành công kể cả khi tạo thông báo lỗi.
+      this.logger.warn(`Không tạo được thông báo đăng ký: ${(error as Error).message}`);
+    }
+
     return UsersService.toPublic(user);
   }
 
@@ -234,6 +263,50 @@ export class UsersService {
 
   async markLogin(id: string): Promise<void> {
     await this.prisma.user.update({ where: { id }, data: { lastLoginAt: new Date() } });
+  }
+
+  /** Ghi nhận một lần đăng nhập để phát hiện brute-force; lỗi ghi log không chặn đăng nhập. */
+  async recordLoginAttempt(input: {
+    email: string;
+    ipHash?: string;
+    userAgent?: string;
+    success: boolean;
+    userId?: string;
+  }): Promise<void> {
+    try {
+      await this.prisma.loginAttempt.create({
+        data: {
+          email: input.email.toLowerCase(),
+          ipHash: input.ipHash ?? null,
+          userAgent: input.userAgent?.slice(0, 500) ?? null,
+          success: input.success,
+          userId: input.userId ?? null,
+        },
+      });
+    } catch (error) {
+      this.logger.warn(`Không ghi được login attempt: ${(error as Error).message}`);
+    }
+  }
+
+  /** Đếm số lần đăng nhập thất bại gần đây theo email và theo IP hash. */
+  async countRecentFailedLogins(
+    email: string,
+    ipHash: string | undefined,
+    minutes = 15,
+  ): Promise<{ byEmail: number; byIp: number }> {
+    const since = new Date(Date.now() - minutes * 60 * 1000);
+    const [byEmail, byIp] = await Promise.all([
+      this.prisma.loginAttempt.count({
+        where: { email: email.toLowerCase(), success: false, createdAt: { gte: since } },
+      }),
+      ipHash
+        ? this.prisma.loginAttempt.count({
+            where: { ipHash, success: false, createdAt: { gte: since } },
+          })
+        : Promise.resolve(0),
+    ]);
+
+    return { byEmail, byIp };
   }
 
   async countAll(): Promise<number> {

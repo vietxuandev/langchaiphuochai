@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import {
+  Bell,
   ChevronRight,
   ExternalLink,
   FileText,
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { BRAND, ROLE_LABELS, Role } from '@phuochai/shared';
+import { AdminNotificationBell } from '@/components/admin/admin-notification-bell';
 import { BrandLogo } from '@/components/site/brand-logo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,6 +44,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/quan-tri/bai-viet', label: 'Bài viết', icon: FileText, minRole: Role.USER },
   { href: '/quan-tri/danh-muc', label: 'Danh mục', icon: FolderTree, minRole: Role.ADMIN },
   { href: '/quan-tri/nguoi-dung', label: 'Người dùng', icon: Users, minRole: Role.ADMIN },
+  { href: '/quan-tri/thong-bao', label: 'Thông báo', icon: Bell, minRole: Role.EDITOR },
   { href: '/quan-tri/crawl', label: 'Crawl bài mới', icon: DownloadCloud, minRole: Role.ADMIN },
   { href: '/quan-tri/tai-khoan', label: 'Tài khoản', icon: UserCircle, minRole: Role.USER },
 ];
@@ -190,6 +193,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </p>
 
             <div className="ml-auto flex items-center gap-2">
+              {hasRole(Role.EDITOR) ? <AdminNotificationBell /> : null}
               <Button
                 variant="ghost"
                 size="icon"

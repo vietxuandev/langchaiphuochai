@@ -42,6 +42,44 @@ export const MediaRole = {
 } as const;
 export type MediaRole = (typeof MediaRole)[keyof typeof MediaRole];
 
+/** Loại thông báo quản trị (giá trị khớp enum Prisma/GraphQL). */
+export const NotificationType = {
+  USER_PENDING: 'USER_PENDING',
+  POST_PENDING: 'POST_PENDING',
+  POST_PUBLISHED: 'POST_PUBLISHED',
+  SECURITY_LOGIN_FAILED: 'SECURITY_LOGIN_FAILED',
+  CRAWL_COMPLETED: 'CRAWL_COMPLETED',
+  CRAWL_FAILED: 'CRAWL_FAILED',
+  UPLOAD_FAILED: 'UPLOAD_FAILED',
+  SYSTEM_ERROR: 'SYSTEM_ERROR',
+} as const;
+export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
+
+export const NotificationSeverity = {
+  INFO: 'INFO',
+  WARNING: 'WARNING',
+  URGENT: 'URGENT',
+} as const;
+export type NotificationSeverity = (typeof NotificationSeverity)[keyof typeof NotificationSeverity];
+
+export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
+  [NotificationType.USER_PENDING]: 'Tài khoản mới chờ duyệt',
+  [NotificationType.POST_PENDING]: 'Bài viết chờ duyệt',
+  [NotificationType.POST_PUBLISHED]: 'Bài viết đã xuất bản',
+  [NotificationType.SECURITY_LOGIN_FAILED]: 'Cảnh báo đăng nhập',
+  [NotificationType.CRAWL_COMPLETED]: 'Crawl hoàn tất',
+  [NotificationType.CRAWL_FAILED]: 'Crawl thất bại',
+  [NotificationType.UPLOAD_FAILED]: 'Upload thất bại',
+  [NotificationType.SYSTEM_ERROR]: 'Lỗi hệ thống',
+};
+
+export const NOTIFICATION_SEVERITY_LABELS: Record<NotificationSeverity, string> = {
+  [NotificationSeverity.INFO]: 'Thông tin',
+  [NotificationSeverity.WARNING]: 'Cảnh báo',
+  [NotificationSeverity.URGENT]: 'Khẩn cấp',
+};
+
+
 export const ROLE_LABELS: Record<Role, string> = {
   [Role.ADMIN]: 'Quản trị viên',
   [Role.EDITOR]: 'Người đăng bài',
