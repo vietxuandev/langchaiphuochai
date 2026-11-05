@@ -317,3 +317,10 @@
     @apply my-4 overflow-x-auto rounded-lg bg-muted p-4 text-sm;
   }
 }
+
+/* Chữ trên ảnh hero: bóng nhẹ để tăng tương phản, không cần phủ tối toàn ảnh */
+.hero-text-shadow {
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.35),
+    0 6px 24px rgba(0, 0, 0, 0.22);
+}

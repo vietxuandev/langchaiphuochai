@@ -52,25 +52,19 @@ export function HomeHero({ stats }: HomeHeroProps) {
         sizes="100vw"
         className="object-cover"
       />
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            'linear-gradient(90deg, rgba(5,34,39,.82) 0%, rgba(5,34,39,.46) 48%, rgba(5,34,39,.18) 100%)',
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#082f35]/80 via-transparent to-black/20" />
+      {/* Scrim rất nhẹ, chỉ phủ nửa trái để chữ dễ đọc mà vẫn giữ ảnh rõ */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-full bg-gradient-to-r from-[#082f35]/45 via-[#082f35]/18 to-transparent sm:w-3/4 lg:w-1/2" />
 
       <div className="container relative py-16 lg:py-24">
         <div className="max-w-4xl">
-          <Badge className="bg-white/[0.15] text-white backdrop-blur">
+          <Badge className="hero-text-shadow bg-white/[0.15] text-white backdrop-blur">
             <Sparkles className="mr-1 h-3.5 w-3.5" /> Danh bạ lưu trú &amp; du lịch Phước Hải
           </Badge>
-          <h1 className="mt-4 font-display text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
+          <h1 className="hero-text-shadow mt-4 font-display text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
             Tìm nơi lưu trú, điểm đến và ẩm thực
             <span className="block text-coral-200">tuyệt vời nhất tại Phước Hải</span>
           </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">
+          <p className="hero-text-shadow mt-4 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">
             {stats.totalPosts}+ địa điểm và bài viết được tổng hợp, chuẩn hoá từ dữ liệu gốc - giúp bạn chọn chỗ ở,
             lên lịch trình và tìm hiểu về vùng biển Phước Hải chỉ trong vài phút.
           </p>
