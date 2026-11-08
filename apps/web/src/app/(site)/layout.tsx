@@ -1,6 +1,7 @@
 import { JsonLd } from '@/components/seo/json-ld';
 import { SiteFooter } from '@/components/site/site-footer';
 import { SiteHeader } from '@/components/site/site-header';
+import { ZaloFloatButton } from '@/components/site/zalo-float-button';
 import { getNavCategories } from '@/lib/data/categories';
 import { siteJsonLd } from '@/lib/seo/structured-data';
 
@@ -16,6 +17,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <SiteHeader categories={categories} />
       <main className="flex-1">{children}</main>
       <SiteFooter categories={categories} />
+      <ZaloFloatButton />
     </div>
   );
 }
