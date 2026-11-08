@@ -16,9 +16,16 @@ export function ZaloFloatButton() {
       rel="noopener noreferrer"
       aria-label={`Nhắn tin qua Zalo: ${BRAND.phoneDisplay}`}
       title={`Nhắn tin qua Zalo: ${BRAND.phoneDisplay}`}
-      className="fixed bottom-5 right-5 z-40 block h-14 w-14 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0068FF] focus-visible:ring-offset-2 sm:bottom-6 sm:right-6"
+      className="fixed bottom-5 right-5 z-40 block h-12 w-12 drop-shadow-[0_4px_10px_rgba(0,0,0,0.22)] transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0068FF] focus-visible:ring-offset-2 sm:bottom-6 sm:right-6"
     >
-      <Image src={zaloIcon} alt="" width={56} height={56} className="h-full w-full" unoptimized />
+      <Image
+        src={zaloIcon}
+        alt=""
+        width={48}
+        height={48}
+        className="animate-zalo-shake h-full w-full"
+        unoptimized
+      />
     </a>
   );
 }

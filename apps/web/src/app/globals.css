@@ -324,3 +324,47 @@
     0 1px 2px rgba(0, 0, 0, 0.35),
     0 6px 24px rgba(0, 0, 0, 0.22);
 }
+
+/* Icon Zalo: thỉnh thoảng lắc nhẹ để thu hút chú ý, không lắc liên tục */
+@keyframes zalo-shake {
+  0%,
+  86%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  88% {
+    transform: translateX(-2px) rotate(-6deg);
+  }
+  90% {
+    transform: translateX(2px) rotate(6deg);
+  }
+  92% {
+    transform: translateX(-2px) rotate(-4deg);
+  }
+  94% {
+    transform: translateX(2px) rotate(4deg);
+  }
+  96% {
+    transform: translateX(-1px) rotate(-2deg);
+  }
+  98% {
+    transform: translateX(0) rotate(0deg);
+  }
+}
+
+.animate-zalo-shake {
+  animation: zalo-shake 6s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.animate-zalo-shake:hover,
+.animate-zalo-shake:focus-visible {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-zalo-shake {
+    animation: none;
+  }
+}
