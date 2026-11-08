@@ -20,7 +20,8 @@ export const BRAND = {
   zalo: '0869123020',
   email: 'lienhe@langchaiphuochai.com',
   address: 'Xã Phước Hải, TP. Hồ Chí Minh',
-  facebook: 'https://www.facebook.com/langchaiphuochai',
+  facebook: 'https://www.facebook.com/langchaibienphuochai',
+  facebookName: 'Làng Chài Biển Phước Hải',
 } as const;
 
 /** Thư mục lưu ảnh upload trên server mới (đường dẫn public bắt đầu bằng `/upload`). */

@@ -39,8 +39,13 @@ export function SiteFooter({ categories }: SiteFooterProps) {
             <a href={`mailto:${BRAND.email}`} className="flex items-center gap-2 hover:text-white">
               <Mail className="h-4 w-4" /> {BRAND.email}
             </a>
-            <a href={BRAND.facebook} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-white">
-              <Facebook className="h-4 w-4" /> Facebook
+            <a
+              href={BRAND.facebook}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 hover:text-white"
+            >
+              <Facebook className="h-4 w-4" /> {BRAND.facebookName}
             </a>
           </div>
         </div>

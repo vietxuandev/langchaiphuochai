@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Compass,
   Eye,
+  Facebook,
   FileText,
   Landmark,
   Mail,
@@ -266,6 +267,11 @@ export function PostDetail({ post, related }: PostDetailProps) {
 
               <div className="space-y-2 text-xs text-muted-foreground">
                 <ShareButtons path={postHref(post)} />
+                <Button variant="outline" size="sm" className="mt-2 w-full" asChild>
+                  <a href={BRAND.facebook} target="_blank" rel="noopener noreferrer">
+                    <Facebook className="mr-2 h-4 w-4" /> Theo dõi {BRAND.facebookName}
+                  </a>
+                </Button>
               </div>
             </CardContent>
           </Card>
