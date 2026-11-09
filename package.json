@@ -36,7 +36,7 @@
     "verify:schemas": "node scripts/verify-schemas.mjs",
     "verify:mutations": "node scripts/verify-mutations.mjs",
     "verify:api": "npm run verify:queries && npm run verify:mutations && npm run verify:avatar",
-    "verify:all": "npm run verify && npm run verify:editor && npm run verify:seed && npm run verify:api",
+    "verify:all": "npm run verify && npm run verify:editor && npm run verify:seed && npm run verify:api && npm run verify:mcp",
     "verify:seed": "node scripts/verify-seed.mjs",
     "migrate:addresses": "node scripts/migrate-addresses.mjs",
     "verify:addresses": "node scripts/verify-addresses.mjs",
@@ -47,7 +47,8 @@
     "docker:prod:config": "docker compose -f docker-compose.coolify.yml --env-file .env.coolify config",
     "docker:prod:seed": "docker compose -f docker-compose.coolify.yml --profile tools run --rm seed",
     "verify:repo": "node scripts/verify-repo.mjs",
-    "db:prune-demo": "npm run db:prune-demo -w @phuochai/api --"
+    "db:prune-demo": "npm run db:prune-demo -w @phuochai/api --",
+    "verify:mcp": "node scripts/verify-mcp.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

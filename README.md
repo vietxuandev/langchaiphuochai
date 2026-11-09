@@ -315,11 +315,28 @@ Thông báo khi chưa duyệt: đăng nhập sẽ báo "Tài khoản đang chờ
 - **Form bài viết**: **editor trực quan (Tiptap)** cho nội dung + 4 tab thông tin (địa điểm, giá & diện tích,
   liên hệ, SEO) + **upload ảnh** + tags. Không cần biết HTML.
 - **Crawl bài mới** (ADMIN) `/quan-tri/crawl`: lấy bài mới đăng trên website cũ (phuochai.com) để duyệt
-  trước khi import - xem mục 8.1.
+  trước khi import - xem mục 8.2.
+- **Token AI agent** (ADMIN) `/quan-tri/agent-tokens`: cấp token cho MCP server để AI viết bài tự động
+  (chỉ tạo bản nháp) - xem mục 8.1.
 - **Danh mục** (ADMIN), **Người dùng** (ADMIN), **Tài khoản** (đổi mật khẩu, hồ sơ).
 - Dark mode, toast, skeleton, empty state, xác nhận trước khi xoá.
 
-### 8.1 Crawl bài mới từ website cũ (`/quan-tri/crawl`, chỉ ADMIN)
+### 8.1 MCP server cho AI agent (`/quan-tri/agent-tokens`, chỉ ADMIN)
+
+Cho phép Claude Code, Cursor, VS Code, n8n... kết nối vào website để **tạo bài tự động** qua MCP.
+
+- Endpoint: `POST /mcp` (Streamable HTTP, stateless). Xác thực bằng token `Bearer phca_...`
+  tạo trong trang quản trị (chỉ hiện một lần, lưu dạng hash, thu hồi tức thì).
+- Tool: `whoami`, `list_categories`, `list_wards`, `search_posts`, `get_post`, `create_post`.
+- Agent **chỉ tạo bản nháp**; nội dung Markdown/HTML được sanitize trước khi lưu; có rate limit,
+  quota bài/ngày, idempotency key và audit log (`mcp_audit_logs`).
+- Tài liệu + cấu hình client: [docs/MCP.md](docs/MCP.md). Kế hoạch các phase sau: [docs/MCP_PLAN.md](docs/MCP_PLAN.md).
+- Kiểm thử: `npm run verify:mcp` (tự tạo token, chạy 21 bước, dọn dữ liệu).
+
+Biến môi trường: `MCP_PUBLIC_URL`, `MCP_ENABLED`, `MCP_RATE_LIMIT_PER_MIN`,
+`MCP_DAILY_POST_LIMIT`, `MCP_TOKEN_PEPPER`, `MCP_ALLOWED_HOSTS`, `NEXT_PUBLIC_MCP_URL`.
+
+### 8.2 Crawl bài mới từ website cũ (`/quan-tri/crawl`, chỉ ADMIN)
 
 Công cụ để đồng bộ các bài mới đăng trên site cũ sau lần import ban đầu. Chạy **2 bước**:
 

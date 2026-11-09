@@ -86,6 +86,18 @@ export const ROLE_LABELS: Record<Role, string> = {
   [Role.USER]: 'Thành viên',
 };
 
+/**
+ * Quyền của token cấp cho AI agent qua MCP server.
+ * `posts:write` chỉ tạo/sửa bản nháp; xuất bản cần `posts:publish`.
+ */
+export const McpScope = {
+  POSTS_READ: 'posts:read',
+  POSTS_WRITE: 'posts:write',
+  POSTS_PUBLISH: 'posts:publish',
+  MEDIA_WRITE: 'media:write',
+} as const;
+export type McpScope = (typeof McpScope)[keyof typeof McpScope];
+
 export const USER_STATUS_LABELS: Record<UserStatus, string> = {
   [UserStatus.PENDING]: 'Chờ duyệt',
   [UserStatus.ACTIVE]: 'Đang hoạt động',
@@ -134,3 +146,17 @@ export function canPublish(role: Role | null | undefined): boolean {
 export function canManageSystem(role: Role | null | undefined): boolean {
   return role === Role.ADMIN;
 }
+
+export const MCP_SCOPE_LABELS: Record<McpScope, string> = {
+  [McpScope.POSTS_READ]: 'Đọc nội dung',
+  [McpScope.POSTS_WRITE]: 'Tạo/sửa bản nháp',
+  [McpScope.POSTS_PUBLISH]: 'Xuất bản / thu hồi',
+  [McpScope.MEDIA_WRITE]: 'Tải ảnh lên',
+};
+
+export const MCP_SCOPE_DESCRIPTIONS: Record<McpScope, string> = {
+  [McpScope.POSTS_READ]: 'Xem bài viết, danh mục, xã/phường để tạo nội dung đúng',
+  [McpScope.POSTS_WRITE]: 'Tạo và sửa bài ở trạng thái bản nháp (cần người duyệt trước khi đăng)',
+  [McpScope.POSTS_PUBLISH]: 'Chuyển bản nháp sang đã đăng và thu hồi bài',
+  [McpScope.MEDIA_WRITE]: 'Tải ảnh lên server và gắn vào bài viết',
+};

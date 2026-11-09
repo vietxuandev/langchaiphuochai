@@ -428,3 +428,43 @@ mutation MarkAdminNotificationRead($id: String!) {
 mutation MarkAllAdminNotificationsRead {
   markAllAdminNotificationsRead
 }
+
+# ---------------------------------------------------------------------------
+# Token MCP cho AI agent (chỉ ADMIN)
+# ---------------------------------------------------------------------------
+query AgentTokens {
+  agentTokens {
+    id
+    name
+    prefix
+    scopes
+    agentName
+    expiresAt
+    lastUsedAt
+    revokedAt
+    createdAt
+    userEmail
+    userName
+    status
+  }
+}
+
+mutation CreateAgentToken($input: CreateAgentTokenInput!) {
+  createAgentToken(input: $input) {
+    token
+    record {
+      id
+      name
+      prefix
+      scopes
+      agentName
+      expiresAt
+      createdAt
+      status
+    }
+  }
+}
+
+mutation RevokeAgentToken($id: String!) {
+  revokeAgentToken(id: $id)
+}

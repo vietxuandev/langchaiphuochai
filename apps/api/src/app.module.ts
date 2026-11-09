@@ -11,6 +11,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { CrawlerModule } from './crawler/crawler.module';
 import { GqlAuthGuard, RolesGuard } from './common/guards';
 import { NotificationsModule } from './notifications/notifications.module';
+import { McpModule } from './mcp/mcp.module';
 import { PostsModule } from './posts/posts.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { StatsModule } from './stats/stats.module';
@@ -78,6 +79,7 @@ const uploadRoot = process.env.UPLOAD_DIR ?? join(process.cwd(), '../../data/upl
     UsersModule,
     CategoriesModule,
     CrawlerModule,
+    McpModule,
     PostsModule,
     StatsModule,
     UploadsModule,

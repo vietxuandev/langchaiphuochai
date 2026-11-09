@@ -119,7 +119,7 @@ export class AuthService {
         type: NotificationType.SECURITY_LOGIN_FAILED,
         severity: NotificationSeverity.URGENT,
         title: 'Cảnh báo đăng nhập thất bại',
-        body: `${email} — ${detail} trong ${FAILED_LOGIN_WINDOW_MINUTES} phút.`,
+        body: `${email} - ${detail} trong ${FAILED_LOGIN_WINDOW_MINUTES} phút.`,
         entityType: 'security',
         entityId: this.hashEmail(email),
         actionUrl: '/quan-tri/nguoi-dung',

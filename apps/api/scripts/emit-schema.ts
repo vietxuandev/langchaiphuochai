@@ -11,6 +11,7 @@ import { lexicographicSortSchema, printSchema } from 'graphql';
 import { AuthResolver } from '../src/auth/auth.resolver';
 import { CategoriesResolver } from '../src/categories/categories.resolver';
 import { CrawlerResolver } from '../src/crawler/crawler.resolver';
+import { AgentTokensResolver } from '../src/mcp/agent-tokens.resolver';
 import { NotificationsResolver } from '../src/notifications/notifications.resolver';
 import { PostsResolver } from '../src/posts/posts.resolver';
 import { StatsResolver } from '../src/stats/stats.resolver';
@@ -26,6 +27,7 @@ async function main(): Promise<void> {
     UsersResolver,
     CategoriesResolver,
     CrawlerResolver,
+    AgentTokensResolver,
     NotificationsResolver,
     PostsResolver,
     StatsResolver,

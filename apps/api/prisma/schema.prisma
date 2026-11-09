@@ -47,15 +47,18 @@ model User {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  posts Post[]
+  posts         Post[]
   notifications Notification[]
+  apiTokens     ApiToken[]
 
   @@index([role])
   @@index([status])
   @@map("users")
 }
 
-/** Loại thông báo hiển thị trong khu vực quản trị. */
+/**
+ * Loại thông báo hiển thị trong khu vực quản trị.
+ */
 enum NotificationType {
   USER_PENDING
   POST_PENDING
@@ -73,11 +76,13 @@ enum NotificationSeverity {
   URGENT
 }
 
-/** Thông báo in-app, mỗi người nhận có một row riêng để dễ đọc/đánh dấu. */
+/**
+ * Thông báo in-app, mỗi người nhận có một row riêng để dễ đọc/đánh dấu.
+ */
 model Notification {
-  id         String               @id @default(cuid())
-  userId     String
-  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   type       NotificationType
   severity   NotificationSeverity @default(INFO)
@@ -99,7 +104,9 @@ model Notification {
   @@map("notifications")
 }
 
-/** Lưu vết đăng nhập để phát hiện brute-force; không lưu mật khẩu/IP thô. */
+/**
+ * Lưu vết đăng nhập để phát hiện brute-force; không lưu mật khẩu/IP thô.
+ */
 model LoginAttempt {
   id        String   @id @default(cuid())
   email     String
@@ -323,4 +330,62 @@ model ImportRun {
   finishedAt  DateTime?
 
   @@map("import_runs")
+}
+
+/// Token cấp cho AI agent kết nối MCP server. Chỉ lưu hash của secret.
+model ApiToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Tên gợi nhớ: "Claude Code - laptop", "n8n - đăng bài"
+  name       String
+  /// Phần hiển thị của token: phca_ab12cd34
+  prefix     String
+  /// sha256(pepper + secret) - không bao giờ lưu token gốc
+  secretHash String
+  scopes     String[]  @default([])
+  /// Tên agent/client để ghi vào bài viết (extras.agent)
+  agentName  String?
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@map("api_tokens")
+}
+
+/// Nhật ký mọi lần agent gọi tool qua MCP.
+model McpAuditLog {
+  id         String   @id @default(cuid())
+  tokenId    String?
+  userId     String?
+  tool       String
+  /// ok | error | denied
+  status     String
+  errorCode  String?
+  postId     String?
+  durationMs Int      @default(0)
+  /// Tham số đã rút gọn (tối đa 4KB)
+  args       Json?
+  ipHash     String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([tokenId, createdAt])
+  @@map("mcp_audit_logs")
+}
+
+/// Chống tạo trùng khi agent retry: mỗi (token, key) chỉ tạo 1 bài.
+model McpIdempotency {
+  id        String   @id @default(cuid())
+  tokenId   String
+  key       String
+  postId    String?
+  createdAt DateTime @default(now())
+
+  @@unique([tokenId, key])
+  @@index([createdAt])
+  @@map("mcp_idempotency")
 }

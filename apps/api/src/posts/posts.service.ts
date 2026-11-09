@@ -309,7 +309,7 @@ export class PostsService {
         type: pending ? NotificationType.POST_PENDING : NotificationType.POST_PUBLISHED,
         severity: pending ? NotificationSeverity.WARNING : NotificationSeverity.INFO,
         title: pending ? 'Bài viết mới chờ duyệt' : 'Bài viết đã được xuất bản',
-        body: `${post.title} — ${post.author?.name ?? viewer.name}`,
+        body: `${post.title} - ${post.author?.name ?? viewer.name}`,
         entityType: 'post',
         entityId: post.id,
         actionUrl: `/quan-tri/bai-viet/${post.id}`,
