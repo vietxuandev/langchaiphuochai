@@ -109,7 +109,7 @@ async function main() {
 
   const suffix = Date.now();
   const created = await gql(
-    'mutation($i: CreateAgentTokenInput!) { createAgentToken(input: $i) { token record { id } } }',
+    'mutation($i: CreateAgentTokenInput!) { createAgentToken(input: $i) { token record { id name prefix scopes agentName expiresAt lastUsedAt revokedAt createdAt userEmail userName status } } }',
     {
       i: {
         name: `verify-mcp-${suffix}`,
@@ -121,8 +121,16 @@ async function main() {
     adminToken,
   );
   const readWriteToken = created.data?.createAgentToken?.token;
-  const readWriteId = created.data?.createAgentToken?.record?.id;
+  const readWriteRecord = created.data?.createAgentToken?.record;
+  const readWriteId = readWriteRecord?.id;
   if (!readWriteToken) throw new Error(`Không tạo được token: ${JSON.stringify(created.errors ?? created)}`);
+
+  // Trả đủ field cho UI: status (non-null), userEmail, lastUsedAt/revokedAt (nullable)
+  if (readWriteRecord?.status === 'ACTIVE' && readWriteRecord?.userEmail) {
+    ok('createAgentToken trả đủ field (status, userEmail)');
+  } else {
+    fail('createAgentToken trả đủ field (status, userEmail)', JSON.stringify(readWriteRecord).slice(0, 200));
+  }
 
   const readOnly = await gql(
     'mutation($i: CreateAgentTokenInput!) { createAgentToken(input: $i) { token record { id } } }',

@@ -105,7 +105,7 @@ ls -lh /data/langchaiphuochai/seed/dataset.json
 
 ---
 
-## 4. Gán domain (chỉ cần cho `web`)
+## 4. Gán domain
 
 Trong resource vừa tạo, mở service **`web`**:
 
@@ -113,12 +113,37 @@ Trong resource vừa tạo, mở service **`web`**:
 - **Ports Exposes**: `3000` (Coolify tự đọc từ compose)
 
 Coolify (Traefik) tự xin chứng chỉ Let's Encrypt và route HTTPS vào container `web`.
-**Không** gán domain cho `api` và `db` - chúng chỉ chạy trong mạng nội bộ.
 
-Nếu muốn tách API ra subdomain (không khuyến nghị, cần thêm CORS):
+### 4.1 Domain cho MCP server (AI agent)
 
-- service `api`: domain `https://api.langchaiphuochai.com`, port `4000`
-- `NEXT_PUBLIC_GRAPHQL_URL=https://api.langchaiphuochai.com/graphql`
+MCP server chạy trong service **`api`** nên cần một domain riêng (traffic MCP không đi qua web):
+
+1. Mở service **`api`** → mục **Domains**, thêm: `https://mcp.langchaiphuochai.com`
+2. **Ports Exposes** của `api`: `4000` (Coolify tự đọc từ compose)
+3. Trỏ DNS bản ghi `A` (hoặc `CNAME`) của `mcp` về IP server, chờ Coolify xin cert xong.
+4. Trong biến môi trường đặt **cùng một URL https** cho cả hai biến (rồi Deploy lại):
+   - `MCP_PUBLIC_URL=https://mcp.langchaiphuochai.com`
+   - `NEXT_PUBLIC_MCP_URL=https://mcp.langchaiphuochai.com`
+
+Luôn dùng **https** ở ô Domains. Container chỉ nghe HTTP thường ở cổng 4000 bên trong mạng
+Docker; Traefik lo TLS (443) và chuyển tiếp vào. Đặt `http://` sẽ không có chứng chỉ và nhiều
+client MCP từ chối kết nối. `MCP_PUBLIC_URL` cũng phải là https vì nó xuất hiện trong metadata
+RFC 9728 và header `WWW-Authenticate`.
+
+Kiểm tra sau khi deploy:
+
+```bash
+curl -sI https://mcp.langchaiphuochai.com/.well-known/oauth-protected-resource | head -1   # 200
+curl -s https://mcp.langchaiphuochai.com/.well-known/oauth-protected-resource | head -c 200
+curl -sI http://mcp.langchaiphuochai.com | head -1                                          # 301/308 -> https
+```
+
+**Không** gán domain cho `db` - database chỉ chạy trong mạng nội bộ.
+
+Nếu muốn tách GraphQL API ra subdomain riêng (không khuyến nghị, cần thêm CORS):
+
+- service `api`: thêm domain `https://api.langchaiphuochai.com`
+- `NEXT_PUBLIC_GRAPHQL_URL=https://api.langchaiphuochai.com/graphql` (biến build, phải Deploy lại)
 - `CORS_ORIGINS=https://langchaiphuochai.com`
 
 ---

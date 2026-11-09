@@ -4,18 +4,27 @@ import type { McpScope } from '@phuochai/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { mcpConfig } from './mcp.config';
 
+/** Hình dạng token trả về GraphQL (khớp AgentTokenEntity). */
+export interface AgentTokenView {
+  id: string;
+  name: string;
+  prefix: string;
+  scopes: string[];
+  agentName: string | null;
+  expiresAt: Date | null;
+  lastUsedAt: Date | null;
+  revokedAt: Date | null;
+  createdAt: Date;
+  userEmail: string | null;
+  userName: string | null;
+  /** ACTIVE | EXPIRED | REVOKED */
+  status: string;
+}
+
 /** Token trả về cho admin **một lần duy nhất** khi tạo. */
 export interface CreatedAgentToken {
   token: string;
-  record: {
-    id: string;
-    name: string;
-    prefix: string;
-    scopes: string[];
-    agentName: string | null;
-    expiresAt: Date | null;
-    createdAt: Date;
-  };
+  record: AgentTokenView;
 }
 
 /** Ngữ cảnh xác thực gắn vào mỗi lần gọi tool. */
@@ -90,14 +99,15 @@ export class ApiTokensService {
         agentName: input.agentName?.trim() || null,
         expiresAt,
       },
-      select: { id: true, name: true, prefix: true, scopes: true, agentName: true, expiresAt: true, createdAt: true },
+      include: { user: { select: { email: true, name: true } } },
     });
 
-    return { token, record };
+    // Trả về đúng hình dạng AgentTokenEntity (status/userEmail được suy ra)
+    return { token, record: this.toEntity(record) };
   }
 
   /** Danh sách token (không trả hash). */
-  async list() {
+  async list(): Promise<AgentTokenView[]> {
     const rows = await this.prisma.apiToken.findMany({
       orderBy: { createdAt: 'desc' },
       take: 200,
@@ -171,7 +181,7 @@ export class ApiTokensService {
     revokedAt: Date | null;
     createdAt: Date;
     user?: { email: string; name: string } | null;
-  }) {
+  }): AgentTokenView {
     return {
       id: row.id,
       name: row.name,
