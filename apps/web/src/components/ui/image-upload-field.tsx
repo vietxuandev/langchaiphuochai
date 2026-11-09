@@ -5,6 +5,7 @@ import { Image as ImageIcon, Loader2, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { UPLOAD, buildImageUrl } from '@phuochai/shared';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { uploadImage, type UploadFolder } from '@/lib/uploads';
@@ -46,6 +47,9 @@ export function ImageUploadField({
   const [uploading, setUploading] = useState(false);
   const [previewFailed, setPreviewFailed] = useState(false);
   const [showManual, setShowManual] = useState(false);
+  /** Mặc định đóng watermark (logo + tên miền, góc phải dưới); avatar thì không áp dụng. */
+  const [watermark, setWatermark] = useState(true);
+  const canWatermark = folder !== UPLOAD.avatarsFolder;
   const hasImage = Boolean(value && value.trim()) && !previewFailed;
 
   // Đổi ảnh thì thử tải lại ảnh xem trước
@@ -60,9 +64,9 @@ export function ImageUploadField({
 
     setUploading(true);
     try {
-      const result = await uploadImage(file, folder);
+      const result = await uploadImage(file, folder, canWatermark ? { watermark } : {});
       onChange(result.path);
-      toast.success('Đã tải ảnh lên máy chủ');
+      toast.success(result.watermarked ? 'Đã tải ảnh lên (có watermark)' : 'Đã tải ảnh lên máy chủ');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Không tải được ảnh');
     } finally {
@@ -155,6 +159,13 @@ export function ImageUploadField({
               {showManual ? 'Ẩn nhập đường dẫn' : 'Nhập đường dẫn thủ công'}
             </Button>
           </div>
+
+          {canWatermark ? (
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox checked={watermark} onCheckedChange={(next) => setWatermark(next === true)} disabled={disabled || uploading} />
+              Đóng watermark (logo + tên miền, góc phải dưới)
+            </label>
+          ) : null}
 
           <p className="text-xs text-muted-foreground">
             {hint ??

@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { POST_STATUS_LABELS, POST_TYPE_LABELS, PROVINCE_NAME, PostStatus, PostType, UPLOAD, WARDS, buildImageUrl, createPostSchema, type PostInput, slugify } from '@phuochai/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -119,6 +120,8 @@ export function PostForm({ post, mode }: PostFormProps) {
   // Upload ảnh: file được gửi tới API mới và lưu trong thư mục upload/ của máy chủ
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  /** Mặc định đóng watermark cho ảnh tải lên từ form bài viết. */
+  const [watermark, setWatermark] = useState(true);
 
   const handleUpload = async (files: FileList | null): Promise<void> => {
     if (!files || files.length === 0) return;
@@ -126,7 +129,7 @@ export function PostForm({ post, mode }: PostFormProps) {
     let uploaded = 0;
     try {
       for (const file of Array.from(files)) {
-        const result = await uploadImage(file, UPLOAD.postsFolder);
+        const result = await uploadImage(file, UPLOAD.postsFolder, { watermark });
         append(
           {
             path: result.path,
@@ -504,6 +507,15 @@ export function PostForm({ post, mode }: PostFormProps) {
                 (tối đa {(UPLOAD.maxBytes / 1024 / 1024).toFixed(0)}MB mỗi ảnh, định dạng JPG, PNG, WEBP, GIF, AVIF).
                 Ảnh đầu tiên nên đặt vai trò “Ảnh đại diện”.
               </p>
+
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                <Checkbox
+                  checked={watermark}
+                  onCheckedChange={(next) => setWatermark(next === true)}
+                  disabled={uploading}
+                />
+                Đóng watermark (logo + tên miền, góc phải dưới)
+              </label>
 
               {fields.length === 0 ? (
                 <button

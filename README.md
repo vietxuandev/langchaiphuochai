@@ -314,6 +314,8 @@ Thông báo khi chưa duyệt: đăng nhập sẽ báo "Tài khoản đang chờ
 - **Bài viết**: bảng TanStack (tìm kiếm, lọc, sắp xếp, phân trang, xuất bản/thu hồi/xoá).
 - **Form bài viết**: **editor trực quan (Tiptap)** cho nội dung + 4 tab thông tin (địa điểm, giá & diện tích,
   liên hệ, SEO) + **upload ảnh** + tags. Không cần biết HTML.
+- **Watermark ảnh**: ảnh upload (bài viết, danh mục) được tự đóng badge logo + tên miền ở **góc phải bên dưới**
+  (mặc định bật, tắt bằng `WATERMARK_ENABLED=false` hoặc bỏ tick trong form). Avatar không bị đóng watermark.
 - **Crawl bài mới** (ADMIN) `/quan-tri/crawl`: lấy bài mới đăng trên website cũ (phuochai.com) để duyệt
   trước khi import - xem mục 8.2.
 - **Token AI agent** (ADMIN) `/quan-tri/agent-tokens`: cấp token cho MCP server để AI viết bài tự động

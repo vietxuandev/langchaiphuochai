@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, unlink, writeFile } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { UPLOAD } from '@phuochai/shared';
+import { applyWatermark } from './watermark';
 
 export interface UploadedFileLike {
   originalname: string;
@@ -18,6 +19,21 @@ export interface UploadResult {
   bytes: number;
   mimeType: string;
   originalName: string;
+  /** Ảnh đã được đóng watermark (logo + tên miền, góc phải dưới) hay chưa. */
+  watermarked: boolean;
+}
+
+export interface UploadOptions {
+  /** `false` để bỏ watermark cho lần upload này; mặc định lấy từ WATERMARK_ENABLED. */
+  watermark?: boolean;
+}
+
+/** Thư mục được đóng watermark (avatar người dùng thì không). */
+const WATERMARKED_FOLDERS = new Set<string>([UPLOAD.postsFolder, UPLOAD.categoriesFolder]);
+
+/** Mặc định có watermark; tắt toàn bộ bằng WATERMARK_ENABLED=false. */
+function watermarkEnabledByDefault(): boolean {
+  return process.env.WATERMARK_ENABLED !== 'false';
 }
 
 const EXTENSION_BY_MIME: Record<string, string> = {
@@ -58,7 +74,11 @@ export class UploadsService {
   }
 
   /** Lưu file người dùng tải lên và trả về đường dẫn public. */
-  async save(file: UploadedFileLike | undefined, folder = UPLOAD.postsFolder): Promise<UploadResult> {
+  async save(
+    file: UploadedFileLike | undefined,
+    folder = UPLOAD.postsFolder,
+    options: UploadOptions = {},
+  ): Promise<UploadResult> {
     if (!file) throw new BadRequestException('Thiếu file ảnh (trường "file")');
     if (!ALLOWED_FOLDERS.has(folder)) {
       throw new BadRequestException(`Thư mục không hợp lệ. Chỉ chấp nhận: ${[...ALLOWED_FOLDERS].join(', ')}`);
@@ -83,19 +103,33 @@ export class UploadsService {
     const absoluteDir = join(this.uploadDir, relativeDir);
     await mkdir(absoluteDir, { recursive: true });
 
+    // Đóng watermark (mặc định bật, trừ avatar hoặc khi người dùng tắt)
+    const wantsWatermark = options.watermark ?? watermarkEnabledByDefault();
+    let buffer = file.buffer;
+    let watermarked = false;
+
+    if (wantsWatermark && WATERMARKED_FOLDERS.has(folder)) {
+      const result = await applyWatermark(file.buffer, file.mimetype);
+      buffer = result.buffer;
+      watermarked = result.watermarked;
+    }
+
     const baseName = slugifyFileName(file.originalname.replace(/\.[^.]+$/, ''));
     const fileName = `${baseName}-${randomUUID().slice(0, 8)}.${extension}`;
-    await writeFile(join(absoluteDir, fileName), file.buffer);
+    await writeFile(join(absoluteDir, fileName), buffer);
 
     // Đường dẫn public luôn dùng dấu "/" bất kể hệ điều hành
     const publicPath = `${UPLOAD.publicPrefix}/${relativeDir.split(sep).join('/')}/${fileName}`;
-    this.logger.log(`Đã lưu ảnh ${publicPath} (${(file.size / 1024).toFixed(0)} KB)`);
+    this.logger.log(
+      `Đã lưu ảnh ${publicPath} (${(buffer.length / 1024).toFixed(0)} KB${watermarked ? ', có watermark' : ''})`,
+    );
 
     return {
       path: publicPath,
-      bytes: file.size,
+      bytes: buffer.length,
       mimeType: file.mimetype,
       originalName: file.originalname,
+      watermarked,
     };
   }
 

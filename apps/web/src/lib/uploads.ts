@@ -8,6 +8,8 @@ export interface UploadResult {
   bytes: number;
   mimeType: string;
   originalName: string;
+  /** Ảnh đã được đóng watermark (logo + tên miền, góc phải dưới). */
+  watermarked: boolean;
 }
 
 export type UploadFolder = 'posts' | 'categories' | 'avatars';
@@ -30,12 +32,19 @@ async function readErrorMessage(response: Response): Promise<string> {
  * Tải một ảnh lên server mới (POST /api/upload).
  * Ảnh được lưu vào thư mục `upload/<folder>/<năm>/<tháng>/` và trả về đường dẫn public.
  */
-export async function uploadImage(file: File, folder: UploadFolder = 'posts'): Promise<UploadResult> {
+export async function uploadImage(
+  file: File,
+  folder: UploadFolder = 'posts',
+  options: { watermark?: boolean } = {},
+): Promise<UploadResult> {
   const token = getToken();
   const form = new FormData();
   form.append('file', file);
 
-  const response = await fetch(`/api/upload?folder=${folder}`, {
+  // Mặc định server tự đóng watermark; chỉ gửi tham số khi người dùng tắt
+  const watermarkParam = options.watermark === false ? '&watermark=0' : '';
+
+  const response = await fetch(`/api/upload?folder=${folder}${watermarkParam}`, {
     method: 'POST',
     body: form,
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,

@@ -52,6 +52,7 @@ services:
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
       ADMIN_BASE_URL: ${ADMIN_BASE_URL:-https://langchaiphuochai.com}
       # MCP server cho AI agent
+      WATERMARK_ENABLED: ${WATERMARK_ENABLED:-true}
       MCP_ENABLED: ${MCP_ENABLED:-true}
       MCP_PUBLIC_URL: ${MCP_PUBLIC_URL:-https://mcp.langchaiphuochai.com}
       MCP_RATE_LIMIT_PER_MIN: ${MCP_RATE_LIMIT_PER_MIN:-60}

@@ -25,6 +25,7 @@ interface RequestWithUser {
  * API upload ảnh (REST, multipart/form-data).
  *
  *   POST   /api/upload?folder=posts      (field: "file") - yêu cầu đăng nhập
+ *   POST   /api/upload?folder=posts&watermark=0           - bỏ watermark lần này
  *   DELETE /api/upload?path=/upload/...  - yêu cầu vai trò EDITOR trở lên
  *
  * Ảnh được lưu trong thư mục `upload/` của server mới và phục vụ tại `/upload/...`.
@@ -44,9 +45,15 @@ export class UploadsController {
   async upload(
     @UploadedFile() file: Express.Multer.File | undefined,
     @Query('folder') folder = UPLOAD.postsFolder,
+    @Query('watermark') watermark: string | undefined,
     @Req() _request: RequestWithUser,
   ): Promise<UploadResult> {
     if (!file) throw new BadRequestException('Chưa chọn file ảnh');
+
+    // ?watermark=0|false|off để bỏ watermark cho lần upload này (mặc định: đóng watermark)
+    const watermarkOption =
+      watermark === undefined ? undefined : !['0', 'false', 'off'].includes(watermark.toLowerCase());
+
     return this.uploads.save(
       {
         originalname: file.originalname,
@@ -55,6 +62,7 @@ export class UploadsController {
         buffer: file.buffer,
       },
       folder,
+      { watermark: watermarkOption },
     );
   }
 

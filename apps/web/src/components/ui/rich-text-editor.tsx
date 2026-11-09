@@ -40,6 +40,7 @@ import {
 import { toast } from 'sonner';
 import { UPLOAD } from '@phuochai/shared';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -177,6 +178,9 @@ export function RichTextEditor({
     if (!htmlMode) setHtmlDraft(value);
   }, [value, htmlMode]);
 
+  /** Mặc định đóng watermark cho ảnh chèn vào nội dung. */
+  const [watermark, setWatermark] = useState(true);
+
   const insertImages = useCallback(
     async (files: FileList | null) => {
       if (!editor || !files?.length) return;
@@ -184,7 +188,7 @@ export function RichTextEditor({
       let uploaded = 0;
       try {
         for (const file of Array.from(files)) {
-          const result = await uploadImage(file, UPLOAD.postsFolder);
+          const result = await uploadImage(file, UPLOAD.postsFolder, { watermark });
           editor.chain().focus().setImage({ src: result.path, alt: file.name }).run();
           uploaded += 1;
         }
@@ -195,7 +199,7 @@ export function RichTextEditor({
         setUploading(false);
       }
     },
-    [editor],
+    [editor, watermark],
   );
 
   if (!editor) {
@@ -523,7 +527,15 @@ export function RichTextEditor({
       {/* --------------------------------- Chân trang ------------------------------ */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground">
         <span>
-          {characterCount?.characters?.() ?? 0} ký tự · {characterCount?.words?.() ?? 0} từ
+          <span className="inline-flex items-center gap-1.5">
+            <Checkbox
+              checked={watermark}
+              onCheckedChange={(next) => setWatermark(next === true)}
+              aria-label="Đóng watermark cho ảnh chèn vào nội dung"
+            />
+            Watermark ảnh chèn
+          </span>
+          <span>{characterCount?.characters?.() ?? 0} ký tự · {characterCount?.words?.() ?? 0} từ</span>
         </span>
         <span className="hidden sm:inline">
           Mẹo: bôi đen đoạn văn rồi chọn định dạng; kéo-thả ảnh hoặc bấm nút ảnh để tải lên.
