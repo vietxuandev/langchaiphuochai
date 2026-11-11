@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next';
-import Script from 'next/script';
 import { BRAND } from '@phuochai/shared';
 import { Providers } from './providers';
 import './globals.css';
@@ -30,6 +29,9 @@ export const metadata: Metadata = {
     url: siteUrl,
   },
   robots: { index: true, follow: true },
+  other: {
+    'google-adsense-account': 'ca-pub-7021732794763336',
+  },
 };
 
 export const viewport: Viewport = {
@@ -41,13 +43,15 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body className="min-h-screen bg-background font-sans text-foreground antialiased">
-        <Script
-          id="google-adsense"
+      <head>
+        {/* Đặt trực tiếp trong <head> để Google AdSense đọc được trong HTML gốc. */}
+        <script
+          async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7021732794763336"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
         />
+      </head>
+      <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>
