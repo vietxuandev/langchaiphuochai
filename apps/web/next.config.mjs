@@ -34,6 +34,17 @@ const nextConfig = {
       { source: '/upload/:path*', destination: `${apiInternalUrl}/upload/:path*` },
     ];
   },
+  /** Chuyển các URL trùng về URL chuẩn, tránh phân tách tín hiệu SEO. */
+  async redirects() {
+    return [
+      { source: '/trang/gioi-thieu', destination: '/gioi-thieu', permanent: true },
+      {
+        source: '/trang/cau-hoi-thuong-gap-faq-13',
+        destination: '/trang/cau-hoi-thuong-gap-faq',
+        permanent: true,
+      },
+    ];
+  },
   eslint: { ignoreDuringBuilds: true },
 };
 

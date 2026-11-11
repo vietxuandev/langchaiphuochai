@@ -21,6 +21,8 @@ const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? BRAND.siteUrl).replace(/\/
 const PAGE_SIZE = 100;
 const MAX_PAGES = 60;
 const CACHE_TTL_MS = 10 * 60 * 1000;
+/** Các trang PAGE có URL trùng hoặc đã được thay bằng redirect. */
+const DUPLICATE_PAGE_SLUGS = new Set(['gioi-thieu', 'cau-hoi-thuong-gap-faq-13']);
 
 type SitemapEntry = MetadataRoute.Sitemap[number];
 
@@ -68,6 +70,8 @@ async function buildEntries(): Promise<SitemapEntry[]> {
   }));
 
   const postEntries: SitemapEntry[] = posts
+    // Bỏ URL trùng: /gioi-thieu đã có route riêng, FAQ -13 đã redirect về bản gốc
+    .filter((post) => !(post.type === 'PAGE' && DUPLICATE_PAGE_SLUGS.has(post.slug)))
     // Bỏ bài trùng slug (nếu dữ liệu có) để sitemap không lặp URL
     .filter((post, index, all) => all.findIndex((item) => item.slug === post.slug) === index)
     .map((post) => ({
