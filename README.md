@@ -604,6 +604,26 @@ x-revalidate-secret: <REVALIDATE_SECRET>
 
 Route này gọi `revalidatePath()` và `revalidateTag('graphql')`. Không có secret thì API bỏ qua; ISR định kỳ vẫn hoạt động.
 
+### Chặn slug rác / cache 404
+
+`middleware.ts` kiểm tra slug trước khi vào route ISR:
+
+- Slug hợp lệ → request đi tiếp vào trang.
+- Slug không tồn tại → trả **404 no-store** ngay, không sinh cache ISR 404.
+- Api lỗi → fail-open để không chặn toàn bộ nội dung.
+
+Danh sách slug lấy từ:
+
+```text
+GET /api/public/slugs
+```
+
+- Chỉ gồm bài `PUBLISHED` và danh mục hiện có.
+- Cache nội bộ 60 giây.
+- Middleware gọi endpoint qua `WEB_SELF_URL` (mặc định `http://localhost:3000`) để không phụ thuộc Cloudflare/public domain.
+
+Sau khi publish bài mới, slug mới có thể xuất hiện sau tối đa khoảng 60 giây do cache slug-index; sau đó middleware cho phép và ISR sinh trang.
+
 ### Kiểm tra
 
 ```bash

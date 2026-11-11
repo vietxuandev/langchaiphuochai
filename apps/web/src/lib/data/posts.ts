@@ -61,6 +61,26 @@ export async function getPosts(filter: PostFilterInput) {
 
 /** Danh sách tỉnh/thành có dữ liệu (cho bộ lọc). */
 
+/** Toàn bộ slug đã publish, dùng cho middleware chặn slug rác. */
+export async function getAllPublishedSlugs(): Promise<Array<{ type: PostType; slug: string }>> {
+  const rows: Array<{ type: PostType; slug: string }> = [];
+
+  for (let page = 1; page <= 60; page += 1) {
+    const result = await getPosts({
+      status: 'PUBLISHED',
+      page,
+      pageSize: 100,
+      sortBy: 'PUBLISHED_AT',
+      sortOrder: 'DESC',
+    });
+
+    rows.push(...result.items.map((post) => ({ type: post.type, slug: post.slug })));
+    if (!result.hasNextPage) break;
+  }
+
+  return [...new Map(rows.map((row) => [`${row.type}:${row.slug}`, row])).values()];
+}
+
 /** Số bài theo xã/phường (chỉ các xã/phường đang có bài) - dùng cho bộ lọc. */
 export async function getPostWards(type?: PostType) {
   const data = await safeQuery<PostWardsQuery, { type?: PostType }>(
