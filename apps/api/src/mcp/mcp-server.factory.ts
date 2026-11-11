@@ -15,7 +15,9 @@ Quy trình viết bài:
 1. Gọi list_categories để chọn đúng categorySlug, list_wards để chọn đúng xã/phường.
 2. Gọi search_posts để chắc chắn bài chưa tồn tại.
 3. Gọi create_post với contentMarkdown. Nội dung sẽ được chuyển sang HTML và lưu ở trạng thái BẢN NHÁP.
-4. Người quản trị duyệt và xuất bản trong trang quản trị. Agent không tự xuất bản.
+4. Dùng update_post để sửa bài còn ở trạng thái nháp.
+5. Chỉ dùng set_post_status khi người quản trị yêu cầu rõ ràng việc xuất bản, thu hồi hoặc lưu trữ.
+6. Chỉ ADMIN được dùng delete_post; mặc định ưu tiên ARCHIVED thay vì xoá vĩnh viễn.
 
 Quy ước nội dung:
 - Viết tiếng Việt, giọng gần gũi, không bịa số liệu/giá nếu không có nguồn.
@@ -59,7 +61,7 @@ export class McpServerFactory {
    * nên tool biết token/người dùng nào đang thao tác.
    */
   create(auth: McpAuthContext): McpServer {
-    const server = new McpServer({ name: 'langchaiphuochai-mcp', version: '1.0.0' }, { instructions: INSTRUCTIONS });
+    const server = new McpServer({ name: 'langchaiphuochai-mcp', version: '1.1.0' }, { instructions: INSTRUCTIONS });
     const register = server.registerTool.bind(server) as unknown as RegisterTool;
 
     const run = async <T>(
@@ -242,6 +244,119 @@ export class McpServerFactory {
               bathrooms: typeof args.bathrooms === 'number' ? args.bathrooms : null,
               seoTitle: (args.seoTitle as string | undefined) ?? null,
               idempotencyKey: (args.idempotencyKey as string | undefined) ?? null,
+            }),
+          (result) => result.id,
+        ),
+    );
+
+    register(
+      'update_post',
+      {
+        title: 'Cập nhật bài nháp',
+        description:
+          'Cập nhật bài đang ở trạng thái DRAFT. Truyền id hoặc slug để chọn bài; chỉ các trường được gửi mới thay đổi. ' +
+          'Không dùng tool này để đổi trạng thái, dùng set_post_status.',
+        inputSchema: {
+          id: z.string().max(40).optional(),
+          slug: z.string().max(300).optional().describe('Slug hiện tại của bài'),
+          newSlug: z.string().max(300).optional().describe('Slug mới nếu muốn đổi URL'),
+          title: z.string().min(5).max(300).optional(),
+          summary: z.string().max(1000).optional(),
+          contentMarkdown: z.string().max(200_000).optional(),
+          contentHtml: z.string().max(200_000).optional(),
+          categorySlug: z.string().max(160).optional(),
+          tags: z.array(z.string().min(1).max(80)).max(20).optional(),
+          ward: z.string().max(120).optional(),
+          addressRaw: z.string().max(300).optional(),
+          priceRaw: z.string().max(120).optional(),
+          areaText: z.string().max(80).optional(),
+          bedrooms: z.number().int().min(0).max(50).optional(),
+          bathrooms: z.number().int().min(0).max(50).optional(),
+          seoTitle: z.string().max(300).optional(),
+        },
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+      },
+      (args) =>
+        run(
+          'update_post',
+          args,
+          'posts:write',
+          () =>
+            this.tools.updatePost(auth, {
+              id: (args.id as string | undefined) ?? null,
+              slug: (args.slug as string | undefined) ?? null,
+              newSlug: (args.newSlug as string | undefined) ?? null,
+              title: (args.title as string | undefined) ?? null,
+              summary: (args.summary as string | undefined) ?? null,
+              contentMarkdown: (args.contentMarkdown as string | undefined) ?? null,
+              contentHtml: (args.contentHtml as string | undefined) ?? null,
+              categorySlug: (args.categorySlug as string | undefined) ?? null,
+              tags: Array.isArray(args.tags) ? (args.tags as string[]) : null,
+              ward: (args.ward as string | undefined) ?? null,
+              addressRaw: (args.addressRaw as string | undefined) ?? null,
+              priceRaw: (args.priceRaw as string | undefined) ?? null,
+              areaText: (args.areaText as string | undefined) ?? null,
+              bedrooms: typeof args.bedrooms === 'number' ? args.bedrooms : null,
+              bathrooms: typeof args.bathrooms === 'number' ? args.bathrooms : null,
+              seoTitle: (args.seoTitle as string | undefined) ?? null,
+            }),
+          (result) => result.id,
+        ),
+    );
+
+    register(
+      'set_post_status',
+      {
+        title: 'Đổi trạng thái bài viết',
+        description:
+          'Xuất bản (PUBLISHED), thu hồi về nháp (DRAFT) hoặc lưu trữ (ARCHIVED). ' +
+          'Cần scope posts:publish; dùng khi người quản trị yêu cầu rõ ràng.',
+        inputSchema: {
+          id: z.string().max(40).optional(),
+          slug: z.string().max(300).optional(),
+          status: z.enum(POST_STATUS_VALUES).describe('PUBLISHED, DRAFT hoặc ARCHIVED'),
+        },
+        annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+      },
+      (args) =>
+        run(
+          'set_post_status',
+          args,
+          'posts:publish',
+          () =>
+            this.tools.setPostStatus(auth, {
+              id: (args.id as string | undefined) ?? null,
+              slug: (args.slug as string | undefined) ?? null,
+              status: args.status as PostStatus,
+            }),
+          (result) => result.id,
+        ),
+    );
+
+    register(
+      'delete_post',
+      {
+        title: 'Xoá bài viết',
+        description:
+          'Xoá VĨNH VIỄN một bài viết. Chỉ ADMIN. Bắt buộc truyền confirmSlug trùng đúng slug hiện tại để tránh xoá nhầm. ' +
+          'Không thể hoàn tác; nếu chỉ muốn ẩn bài, dùng set_post_status với ARCHIVED.',
+        inputSchema: {
+          id: z.string().max(40).optional(),
+          slug: z.string().max(300).optional(),
+          confirmSlug: z.string().min(1).max(300).describe('Nhập đúng slug của bài cần xoá'),
+        },
+        annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false },
+      },
+      (args) =>
+        run(
+          'delete_post',
+          args,
+          'posts:write',
+          () =>
+            this.tools.deletePost(auth, {
+              id: (args.id as string | undefined) ?? null,
+              slug: (args.slug as string | undefined) ?? null,
+              confirmSlug: String(args.confirmSlug ?? ''),
             }),
           (result) => result.id,
         ),

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PostStatus, PostType, PROVINCE_NAME, WARDS, canonicalWardName, normalizeVietnamese, searchWards, stripTagsBlock } from '@phuochai/shared';
+import { PostStatus, PostType, PROVINCE_NAME, Role, WARDS, canonicalWardName, normalizeVietnamese, searchWards, stripTagsBlock } from '@phuochai/shared';
 import type { PostInput } from '@phuochai/shared';
 import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
@@ -29,6 +29,9 @@ const LIMITS = {
   tagsMax: 20,
   searchLimit: 10,
 };
+
+/** Trạng thái agent được phép chuyển qua tool set_post_status. */
+const MCP_STATUS_VALUES = [PostStatus.DRAFT, PostStatus.PUBLISHED, PostStatus.ARCHIVED] as const;
 
 /** Thẻ HTML được giữ lại sau khi sanitize (chặn script/iframe lạ). */
 const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
@@ -93,7 +96,7 @@ export class McpToolsService {
         url: mcpConfig.siteUrl,
         province: PROVINCE_NAME,
         contentTypes: Object.values(PostType),
-        statuses: 'Agent chỉ tạo/sửa được bản nháp (DRAFT)',
+        statuses: 'Tạo/sửa bản nháp; có thể publish/unpublish/archive nếu token có posts:publish; xoá chỉ ADMIN',
       },
       limits: {
         requestsPerMinute: mcpConfig.rateLimitPerMin,
@@ -106,7 +109,9 @@ export class McpToolsService {
         '1. list_categories + list_wards để chọn đúng danh mục và xã/phường',
         '2. search_posts để kiểm tra bài đã tồn tại chưa',
         '3. create_post với contentMarkdown (không gửi HTML nếu không cần)',
-        '4. Báo người quản trị duyệt và xuất bản trong trang quản trị',
+        '4. update_post nếu cần sửa bài nháp',
+        '5. set_post_status chỉ khi được yêu cầu publish/unpublish/archive',
+        '6. delete_post chỉ ADMIN, cần confirmSlug chính xác',
       ],
     };
   }
@@ -371,6 +376,223 @@ export class McpToolsService {
       title: created.title,
       url: `${mcpConfig.siteUrl}${this.postPath(input.type, created.slug)}`,
       reused: false,
+    };
+  }
+
+  /**
+   * Cập nhật bài đang ở trạng thái DRAFT.
+   *
+   * Không cho sửa bài đã publish/archive để tránh agent vô tình thay đổi
+   * nội dung đang chạy; muốn đổi trạng thái dùng `set_post_status`.
+   */
+  async updatePost(
+    auth: McpAuthContext,
+    input: {
+      id?: string | null;
+      slug?: string | null;
+      newSlug?: string | null;
+      title?: string | null;
+      summary?: string | null;
+      contentMarkdown?: string | null;
+      contentHtml?: string | null;
+      categorySlug?: string | null;
+      tags?: string[] | null;
+      ward?: string | null;
+      addressRaw?: string | null;
+      priceRaw?: string | null;
+      areaText?: string | null;
+      bedrooms?: number | null;
+      bathrooms?: number | null;
+      seoTitle?: string | null;
+    },
+  ) {
+    const current = await this.findPostRef(input);
+    if (current.status !== PostStatus.DRAFT) {
+      throw new McpToolError(
+        'POST_NOT_DRAFT',
+        `Chỉ được sửa bài DRAFT. Bài hiện tại đang ở trạng thái ${current.status}.`,
+      );
+    }
+
+    const data: Partial<PostInput> = {};
+    let hasChanges = false;
+
+    if (input.title != null) {
+      const title = normalizeDashes(input.title.trim());
+      if (title.length < LIMITS.titleMin || title.length > LIMITS.titleMax) {
+        throw new McpToolError('INVALID_INPUT', `Tiêu đề phải từ ${LIMITS.titleMin} đến ${LIMITS.titleMax} ký tự`);
+      }
+      data.title = title;
+      // Đổi tiêu đề không tự đổi URL; chỉ đổi khi agent truyền newSlug.
+      if (!input.newSlug?.trim()) data.slug = current.slug;
+      hasChanges = true;
+    }
+
+    if (input.newSlug != null) {
+      const newSlug = input.newSlug.trim();
+      if (newSlug) {
+        data.slug = newSlug;
+        hasChanges = true;
+      }
+    }
+
+    if (input.summary != null) {
+      data.summary = normalizeDashes(input.summary.trim()).slice(0, LIMITS.summaryMax);
+      hasChanges = true;
+    }
+
+    const markdown = input.contentMarkdown?.trim() ?? '';
+    const rawHtml = input.contentHtml?.trim() ?? '';
+    if (markdown || rawHtml) {
+      if (markdown.length > LIMITS.markdownMax) {
+        throw new McpToolError('INVALID_INPUT', `Nội dung quá dài (tối đa ${LIMITS.markdownMax} ký tự)`);
+      }
+      data.contentHtml = markdown ? markdownToHtml(markdown) : cleanHtml(rawHtml);
+      hasChanges = true;
+    }
+
+    if (input.categorySlug != null) {
+      const category = await this.prisma.category.findUnique({
+        where: { slug: input.categorySlug.trim() },
+        select: { id: true },
+      });
+      if (!category) {
+        throw new McpToolError('INVALID_CATEGORY', `Danh mục "${input.categorySlug}" không tồn tại`);
+      }
+      data.categoryId = category.id;
+      hasChanges = true;
+    }
+
+    if (input.tags != null) {
+      const tags = [...new Set(input.tags.map((tag) => tag.trim()).filter(Boolean))];
+      if (tags.length > LIMITS.tagsMax) throw new McpToolError('INVALID_INPUT', `Tối đa ${LIMITS.tagsMax} tag`);
+      data.tags = tags;
+      hasChanges = true;
+    }
+
+    if (input.ward != null) {
+      const ward = this.normalizeWard(input.ward);
+      if (ward) {
+        data.ward = ward;
+        hasChanges = true;
+      }
+    }
+
+    if (input.addressRaw != null) {
+      data.addressRaw = input.addressRaw.trim() || undefined;
+      hasChanges = true;
+    }
+    if (input.priceRaw != null) {
+      data.priceRaw = input.priceRaw.trim() || undefined;
+      hasChanges = true;
+    }
+    if (input.areaText != null) {
+      data.areaText = input.areaText.trim() || undefined;
+      hasChanges = true;
+    }
+    if (input.seoTitle != null) {
+      data.seoTitle = input.seoTitle.trim() || undefined;
+      hasChanges = true;
+    }
+    if (input.bedrooms != null) {
+      data.bedrooms = input.bedrooms;
+      hasChanges = true;
+    }
+    if (input.bathrooms != null) {
+      data.bathrooms = input.bathrooms;
+      hasChanges = true;
+    }
+
+    if (!hasChanges) {
+      throw new McpToolError('INVALID_INPUT', 'Không có trường nào cần cập nhật');
+    }
+
+    const updated = await this.posts.update(
+      { ...data, id: current.id } as PostInput & { id: string },
+      this.viewer(auth),
+    );
+
+    return {
+      id: updated.id,
+      slug: updated.slug,
+      title: updated.title,
+      status: updated.status,
+      url: `${mcpConfig.siteUrl}${this.postPath(updated.type, updated.slug)}`,
+    };
+  }
+
+  /** Xuất bản, thu hồi về nháp hoặc lưu trữ bài viết. */
+  async setPostStatus(
+    auth: McpAuthContext,
+    input: { id?: string | null; slug?: string | null; status: PostStatus },
+  ) {
+    if (!MCP_STATUS_VALUES.includes(input.status)) {
+      throw new McpToolError('INVALID_INPUT', `Trạng thái không hợp lệ: ${input.status}`);
+    }
+
+    const current = await this.findPostRef(input);
+    const updated = await this.posts.setStatus(current.id, input.status, this.viewer(auth));
+
+    return {
+      id: updated.id,
+      slug: updated.slug,
+      title: updated.title,
+      status: updated.status,
+      url: `${mcpConfig.siteUrl}${this.postPath(updated.type, updated.slug)}`,
+    };
+  }
+
+  /** Xoá vĩnh viễn bài viết; chỉ ADMIN và phải xác nhận đúng slug. */
+  async deletePost(
+    auth: McpAuthContext,
+    input: { id?: string | null; slug?: string | null; confirmSlug: string },
+  ) {
+    if (auth.user.role !== Role.ADMIN) {
+      throw new McpToolError('FORBIDDEN', 'Chỉ ADMIN mới được xoá bài viết');
+    }
+
+    const current = await this.findPostRef(input);
+    if (input.confirmSlug.trim() !== current.slug) {
+      throw new McpToolError(
+        'CONFIRM_MISMATCH',
+        `Slug xác nhận không khớp. Bài cần xoá có slug "${current.slug}".`,
+      );
+    }
+
+    await this.posts.remove(current.id, this.viewer(auth));
+
+    return {
+      id: current.id,
+      slug: current.slug,
+      title: current.title,
+      status: current.status,
+      deleted: true,
+    };
+  }
+
+  /** Tìm bài theo id hoặc slug, dùng chung cho các tool thao tác. */
+  private async findPostRef(input: { id?: string | null; slug?: string | null }) {
+    const id = input.id?.trim();
+    const slug = input.slug?.trim();
+    if (!id && !slug) {
+      throw new McpToolError('INVALID_INPUT', 'Cần truyền id hoặc slug của bài viết');
+    }
+
+    const post = await this.prisma.post.findFirst({
+      where: id ? { id } : { slug },
+      select: { id: true, slug: true, title: true, status: true, type: true, authorId: true },
+    });
+    if (!post) throw new McpToolError('NOT_FOUND', `Không tìm thấy bài viết${slug ? ` "${slug}"` : ''}`);
+    return post;
+  }
+
+  /** Viewer dùng cho các kiểm tra quyền của PostsService. */
+  private viewer(auth: McpAuthContext): Viewer {
+    return {
+      id: auth.user.id,
+      role: auth.user.role as Viewer['role'],
+      email: auth.user.email,
+      name: auth.user.name,
     };
   }
 

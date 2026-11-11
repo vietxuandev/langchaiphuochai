@@ -1,12 +1,12 @@
 # MCP server cho AI agent
 
-> Phase 1: personal access token + 6 tool tạo nội dung. Xem kế hoạch tổng thể ở [MCP_PLAN.md](./MCP_PLAN.md).
+> Phase 1 + quản lý bài: personal access token + 9 tool (đọc, tạo, sửa nháp, đổi trạng thái, xoá). Xem kế hoạch tổng thể ở [MCP_PLAN.md](./MCP_PLAN.md).
 
 ## 1. Tổng quan
 
 - Endpoint: `POST https://mcp.langchaiphuochai.com/mcp` (Streamable HTTP, stateless, trả JSON).
 - Xác thực: `Authorization: Bearer phca_<id>_<secret>` (token tạo trong trang quản trị).
-- Agent **chỉ tạo/sửa bản nháp (DRAFT)**. Việc xuất bản do người duyệt trong `/quan-tri/bai-viet`.
+- Agent mặc định **tạo/sửa bản nháp (DRAFT)**. Có thể publish/unpublish/archive nếu token có scope `posts:publish`; xoá chỉ ADMIN và cần xác nhận slug.
 - Mỗi lần gọi tool đều được ghi vào bảng `mcp_audit_logs` (token, tool, kết quả, thời gian, postId).
 
 ## 2. Tạo token
@@ -172,6 +172,45 @@ Xử lý phía server:
 - `ward` được chuẩn hoá theo 168 xã/phường TP.HCM; `city` luôn là "Thành phố Hồ Chí Minh".
 - `extras.agent` lưu token/agent để truy vết trong admin.
 
+### `update_post`
+
+Cập nhật bài đang ở trạng thái `DRAFT`. Truyền `id` hoặc `slug` hiện tại; chỉ các trường được gửi mới thay đổi.
+
+| Tham số | Kiểu | Ghi chú |
+|---|---|---|
+| `id` hoặc `slug` | string | Chọn bài cần sửa |
+| `newSlug` | ≤ 300 | Đổi URL nếu cần |
+| `title`, `summary`, `contentMarkdown`, `contentHtml` | | Nội dung mới |
+| `categorySlug` | slug có trong `list_categories` | |
+| `tags` | tối đa 20 tag | |
+| `ward`, `addressRaw`, `priceRaw`, `areaText`, `bedrooms`, `bathrooms`, `seoTitle` | | |
+
+Kết quả: `{ id, slug, title, status, url }`.
+
+Lưu ý: không sửa được bài `PUBLISHED`/`ARCHIVED`; dùng `set_post_status` để đổi trạng thái trước nếu thật sự cần. Đổi `title` không tự đổi URL; muốn đổi URL phải truyền `newSlug`.
+
+### `set_post_status`
+
+| Tham số | Kiểu | Ghi chú |
+|---|---|---|
+| `id` hoặc `slug` | string | Chọn bài |
+| `status` | `PUBLISHED` \| `DRAFT` \| `ARCHIVED` | Trạng thái mới |
+
+Cần scope `posts:publish`. `ARCHIVED` là cách ẩn bài an toàn, có thể khôi phục; không xoá dữ liệu.
+
+Kết quả: `{ id, slug, title, status, url }`.
+
+### `delete_post`
+
+| Tham số | Kiểu | Ghi chú |
+|---|---|---|
+| `id` hoặc `slug` | string | Chọn bài |
+| `confirmSlug` | string | Phải trùng đúng slug hiện tại |
+
+Chỉ ADMIN, cần scope `posts:write`. Đây là xoá vĩnh viễn, không hoàn tác. Nếu chỉ muốn ẩn bài, dùng `set_post_status` với `ARCHIVED`.
+
+Kết quả: `{ id, slug, title, status, deleted: true }`.
+
 ## 5. Mã lỗi
 
 Lỗi xác thực trả ở tầng HTTP:
@@ -193,6 +232,8 @@ Lỗi nghiệp vụ trả trong kết quả tool (`isError: true`, JSON có `err
 | `INVALID_WARD` | Xã/phường không thuộc danh mục (kèm gợi ý) |
 | `QUOTA_EXCEEDED` | Vượt `MCP_DAILY_POST_LIMIT` bài/ngày |
 | `NOT_FOUND` | Không tìm thấy bài |
+| `POST_NOT_DRAFT` | Chỉ được sửa bài DRAFT |
+| `CONFIRM_MISMATCH` | `confirmSlug` không khớp slug của bài cần xoá |
 
 ## 6. Giới hạn và an toàn
 

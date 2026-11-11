@@ -11,8 +11,9 @@ import { McpToolsService } from './mcp-tools.service';
 /**
  * MCP server + quản lý token cho AI agent.
  *
- * Phase 1: personal access token, 6 tool (whoami, list_categories, list_wards,
- * search_posts, get_post, create_post), audit log, rate limit, idempotency.
+ * Phase 1 + quản lý bài: personal access token, 9 tool (whoami, list_categories,
+ * list_wards, search_posts, get_post, create_post, update_post, set_post_status,
+ * delete_post), audit log, rate limit, idempotency.
  */
 @Module({
   imports: [PostsModule],
