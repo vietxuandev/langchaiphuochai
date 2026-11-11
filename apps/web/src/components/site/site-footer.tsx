@@ -70,6 +70,15 @@ export function SiteFooter({ categories }: SiteFooterProps) {
             <Link href="/trang/bang-gia-goi-dich-vu" className="hover:text-white">
               Bảng giá dịch vụ
             </Link>
+            <Link href="/trang/chinh-sach-bao-mat" className="hover:text-white">
+              Chính sách bảo mật
+            </Link>
+            <Link href="/trang/dieu-khoan-su-dung" className="hover:text-white">
+              Điều khoản
+            </Link>
+            <Link href="/trang/lien-he" className="hover:text-white">
+              Liên hệ
+            </Link>
             <Link href="/dang-nhap" className="hover:text-white">
               Đăng nhập
             </Link>
