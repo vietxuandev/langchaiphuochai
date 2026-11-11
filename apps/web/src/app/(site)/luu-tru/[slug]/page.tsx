@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 /** Chi tiết nơi lưu trú. */
 export default async function AccommodationDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const post = await getPostBySlugOrNotFound(slug, true);
+  const post = await getPostBySlugOrNotFound(slug);
   const related = await getRelatedPosts(slug, 4);
 
   if (post.type !== 'ACCOMMODATION' && post.type !== 'PAGE') {

@@ -1,5 +1,7 @@
 import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client';
 import { registerApolloClient } from '@apollo/client-integration-nextjs';
+import { unstable_cache } from 'next/cache';
+import { print } from 'graphql';
 
 /**
  * Apollo Client dùng trong React Server Component.
@@ -28,9 +30,19 @@ export async function safeQuery<TData, TVariables extends Record<string, unknown
   fallback: TData,
 ): Promise<TData> {
   try {
-    const client = getClient();
-    const result = await client.query<TData, TVariables>({ query, variables });
-    return (result.data ?? fallback) as TData;
+    // Cache dữ liệu RSC ngắn hạn để giảm tải API khi nhiều người xem cùng trang.
+    // HTML vẫn có thể được cache riêng ở tầng route/ISR khi bật.
+    const cached = unstable_cache(
+      async () => {
+        const client = getClient();
+        const result = await client.query<TData, TVariables>({ query, variables });
+        return (result.data ?? fallback) as TData;
+      },
+      ['graphql', print(query), JSON.stringify(variables)],
+      { revalidate: 60, tags: ['graphql'] },
+    );
+
+    return await cached();
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
       console.warn('[RSC] Không truy vấn được GraphQL:', (error as Error).message);

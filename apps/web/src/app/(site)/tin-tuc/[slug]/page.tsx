@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 /** Chi tiết bài viết tin tức / cẩm nang. */
 export default async function NewsDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const post = await getPostBySlugOrNotFound(slug, true);
+  const post = await getPostBySlugOrNotFound(slug);
   const related = await getRelatedPosts(slug, 4);
   return (
     <>

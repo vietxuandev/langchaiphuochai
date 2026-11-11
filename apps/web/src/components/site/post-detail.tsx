@@ -25,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Gallery } from '@/components/site/gallery';
 import { ShareButtons } from '@/components/site/share-buttons';
+import { ViewTracker } from '@/components/site/view-tracker';
 import { PostCard, postHref } from '@/components/site/post-card';
 import type { PostFullFragment, PostCardFragment } from '@/generated/graphql';
 
@@ -100,6 +101,7 @@ export function PostDetail({ post, related }: PostDetailProps) {
 
   return (
     <article className="container py-6">
+      {post.type !== PostType.PAGE ? <ViewTracker slug={post.slug} /> : null}
       <nav className="mb-4 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <Link href="/" className="hover:text-primary">
           Trang chủ
