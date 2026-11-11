@@ -11,6 +11,8 @@ import { getCategoriesBySection, getNavCategories } from '@/lib/data/categories'
 import { getPublicStats, getPosts } from '@/lib/data/home';
 
 /** Trang chủ: hero + thống kê + các khối nội dung nổi bật. */
+export const revalidate = 300;
+
 export default async function HomePage() {
   const [stats, categories] = await Promise.all([getPublicStats(), getNavCategories()]);
   const [accommodations, latestNews, realEstates] = await Promise.all([

@@ -556,3 +556,60 @@ Cách lấy nhanh:
 4. Điền env và deploy lại `api`.
 
 Nếu thiếu token/chat id, hệ thống bỏ qua Telegram và chỉ giữ thông báo in-app. Link trong Telegram dùng `ADMIN_BASE_URL` + `actionUrl` và chỉ chấp nhận path `/quan-tri/...`.
+
+---
+
+## 15. Rendering, ISR & revalidate
+
+### Mô hình
+
+| Nhóm | Cách render |
+| --- | --- |
+| Trang chủ, giới thiệu, trang nội dung | ISR (300s / 3600s) |
+| Danh mục, chi tiết bài | ISR on-demand (`generateStaticParams` rỗng) |
+| `/luu-tru`, `/tin-tuc`, `/bat-dong-san` | SSR (do bộ lọc `searchParams`) |
+| `/tim-kiem` | SSR, `noindex` |
+| `/quan-tri/**` | Dynamic shell + CSR dữ liệu |
+| `/api/views` | Dynamic, đếm view sau khi tải trang |
+| `/sitemap.xml` | Dynamic, cache 10 phút |
+
+### Build cần API
+
+Web build static/ISR cần đọc dữ liệu thật, nên phải có:
+
+```env
+API_BUILD_URL=https://langchaiphuochai.com
+```
+
+- Local Docker: mặc định `http://host.docker.internal:4000`.
+- Nếu API không truy cập được, `apps/web/scripts/check-build-api.mjs` sẽ **dừng build** thay vì cache trang rỗng.
+- Lúc runtime, web vẫn gọi API nội bộ qua `API_INTERNAL_URL`.
+
+### On-demand revalidate
+
+API gọi web sau khi publish/sửa/xoá:
+
+```env
+WEB_INTERNAL_URL=http://web:3000
+REVALIDATE_SECRET=chuoi-bi-mat
+```
+
+Web nhận tại:
+
+```text
+POST /api/revalidate
+x-revalidate-secret: <REVALIDATE_SECRET>
+{ "paths": ["/", "/tin-tuc", "/tin-tuc/bai-viet"] }
+```
+
+Route này gọi `revalidatePath()` và `revalidateTag('graphql')`. Không có secret thì API bỏ qua; ISR định kỳ vẫn hoạt động.
+
+### Kiểm tra
+
+```bash
+curl -sI https://langchaiphuochai.com/danh-muc/homestay | grep -i 'x-nextjs-cache\|cache-control'
+curl -s -X POST https://langchaiphuochai.com/api/revalidate \
+  -H 'Content-Type: application/json' \
+  -H 'x-revalidate-secret: <secret>' \
+  -d '{"paths":["/"]}'
+```

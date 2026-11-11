@@ -10,6 +10,14 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+export const revalidate = 300;
+export const dynamicParams = true;
+
+/** Sinh trang theo request đầu tiên rồi cache/ISR, tránh build phụ thuộc toàn bộ dữ liệu. */
+export function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPostBySlugOrNotFound(slug);

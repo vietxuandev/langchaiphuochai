@@ -5,8 +5,9 @@ import { ZaloFloatButton } from '@/components/site/zalo-float-button';
 import { getNavCategories } from '@/lib/data/categories';
 import { siteJsonLd } from '@/lib/seo/structured-data';
 
-// Dữ liệu luôn lấy mới từ API (trang danh bạ cần nội dung cập nhật liên tục).
-export const dynamic = 'force-dynamic';
+// Khung công khai được cache/ISR; dữ liệu menu/footer lấy trong lúc build
+// qua API_BUILD_URL và được làm mới theo chu kỳ bên dưới.
+export const revalidate = 300;
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const categories = await getNavCategories();

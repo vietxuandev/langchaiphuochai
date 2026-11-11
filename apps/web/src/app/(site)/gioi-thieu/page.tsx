@@ -5,6 +5,8 @@ import { PostDetail } from '@/components/site/post-detail';
 import { getPostBySlug, getRelatedPosts } from '@/lib/data/posts';
 import { postJsonLd } from '@/lib/seo/structured-data';
 
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: 'Giới thiệu',
   description: 'Giới thiệu về danh bạ lưu trú và thông tin du lịch Phước Hải.',

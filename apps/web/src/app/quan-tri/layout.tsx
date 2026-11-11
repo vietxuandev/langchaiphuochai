@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { AdminShell } from '@/components/admin/admin-shell';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: { default: 'Quản trị', template: '%s | Quản trị Phước Hải' },
   robots: { index: false, follow: false },

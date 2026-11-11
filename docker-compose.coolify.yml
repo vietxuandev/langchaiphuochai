@@ -51,6 +51,9 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
       ADMIN_BASE_URL: ${ADMIN_BASE_URL:-https://langchaiphuochai.com}
+      # Gọi web để revalidate ISR sau khi publish/sửa/xoá
+      WEB_INTERNAL_URL: http://web:${WEB_PORT:-3000}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:-}
       # MCP server cho AI agent
       WATERMARK_ENABLED: ${WATERMARK_ENABLED:-true}
       MCP_ENABLED: ${MCP_ENABLED:-true}
@@ -87,6 +90,9 @@ services:
         # Next nhúng các biến này vào bản build nên phải truyền lúc build.
         # Suy ra từ API_PORT: đổi cổng API thì web tự trỏ theo (phải build lại web).
         API_INTERNAL_URL: http://api:${API_PORT:-4000}
+        # API dùng để pre-render static/ISR. Mặc định dùng domain public đang chạy;
+        # có thể trỏ tới API riêng nếu có.
+        API_BUILD_URL: ${API_BUILD_URL:-https://langchaiphuochai.com}
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://langchaiphuochai.com}
         NEXT_PUBLIC_MCP_URL: ${NEXT_PUBLIC_MCP_URL:-https://mcp.langchaiphuochai.com}
         NEXT_PUBLIC_GRAPHQL_URL: /graphql
@@ -101,6 +107,7 @@ services:
       API_INTERNAL_URL: http://api:${API_PORT:-4000}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://langchaiphuochai.com}
       NEXT_PUBLIC_GRAPHQL_URL: /graphql
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:-}
     expose:
       - '${WEB_PORT:-3000}'
     depends_on:

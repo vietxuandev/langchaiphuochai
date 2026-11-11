@@ -201,6 +201,7 @@ export class PostsService {
     const post = this.toEntity(created);
     if (status === PostStatus.PUBLISHED) {
       await this.notifyPost(post, viewer, 'published');
+      this.revalidateWeb(this.publicPaths(post.type, post.slug));
     } else if (status === PostStatus.DRAFT) {
       await this.notifyPost(post, viewer, 'pending');
     }
@@ -253,6 +254,12 @@ export class PostsService {
     if (status === PostStatus.PUBLISHED && current.status !== PostStatus.PUBLISHED) {
       await this.notifyPost(post, viewer, 'published');
     }
+    if (post.status === PostStatus.PUBLISHED || current.status === PostStatus.PUBLISHED) {
+      this.revalidateWeb([
+        ...this.publicPaths(current.type as PostType, current.slug),
+        ...this.publicPaths(post.type, post.slug),
+      ]);
+    }
 
     return post;
   }
@@ -262,6 +269,9 @@ export class PostsService {
     if (!current) throw new NotFoundException('Không tìm thấy bài viết');
     this.assertCanEdit(current.authorId, viewer);
     await this.prisma.post.delete({ where: { id } });
+    if (current.status === PostStatus.PUBLISHED) {
+      this.revalidateWeb(this.publicPaths(current.type as PostType, current.slug));
+    }
     return true;
   }
 
@@ -287,6 +297,9 @@ export class PostsService {
     if (status === PostStatus.PUBLISHED && current.status !== PostStatus.PUBLISHED) {
       await this.notifyPost(post, viewer, 'published');
     }
+    if (current.status !== status && (current.status === PostStatus.PUBLISHED || status === PostStatus.PUBLISHED)) {
+      this.revalidateWeb(this.publicPaths(post.type, post.slug));
+    }
 
     return post;
   }
@@ -296,6 +309,40 @@ export class PostsService {
   /* ------------------------------------------------------------------ */
 
   /** Gửi thông báo cho admin khi bài mới chờ duyệt hoặc vừa được xuất bản. */
+  /** Đường dẫn công khai cần làm mới khi bài thay đổi. */
+  private publicPaths(type: PostType, slug: string): string[] {
+    const listing =
+      type === PostType.ACCOMMODATION
+        ? '/luu-tru'
+        : type === PostType.NEWS
+          ? '/tin-tuc'
+          : type === PostType.REAL_ESTATE
+            ? '/bat-dong-san'
+            : '/trang';
+    const detail = type === PostType.PAGE && slug === 'gioi-thieu' ? '/gioi-thieu' : `${listing}/${slug}`;
+    return ['/', listing, detail, '/sitemap.xml'];
+  }
+
+  /**
+   * Gọi web làm mới ISR sau khi publish/sửa/xoá.
+   * Không chặn thao tác chính nếu web chưa sẵn sàng.
+   */
+  private revalidateWeb(paths: string[]): void {
+    const base = process.env.WEB_INTERNAL_URL?.replace(/\/+$/, '');
+    const secret = process.env.REVALIDATE_SECRET;
+    if (!base || !secret) return;
+
+    void fetch(`${base}/api/revalidate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-revalidate-secret': secret,
+      },
+      body: JSON.stringify({ paths: [...new Set(paths)] }),
+      signal: AbortSignal.timeout(3_000),
+    }).catch(() => undefined);
+  }
+
   private async notifyPost(
     post: PostEntity,
     viewer: Viewer,

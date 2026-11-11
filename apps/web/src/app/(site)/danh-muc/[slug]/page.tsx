@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { PostType } from '@phuochai/shared';
 import { JsonLd } from '@/components/seo/json-ld';
@@ -11,6 +12,14 @@ import { categoryJsonLd } from '@/lib/seo/structured-data';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+export const revalidate = 300;
+export const dynamicParams = true;
+
+/** Sinh trang theo request đầu tiên rồi cache/ISR. */
+export function generateStaticParams() {
+  return [];
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -75,13 +84,15 @@ export default async function CategoryPage({ params }: PageProps) {
       </PageHeader>
 
       <div className="mt-8">
-        <PostListing
-          type={category.section as PostType}
-          categories={options}
-          initialFilters={initialFilters}
-          initialFiltersFromServer={initialFilters}
-          initialData={{ posts: initialPosts }}
-        />
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-muted" aria-hidden />}>
+          <PostListing
+            type={category.section as PostType}
+            categories={options}
+            initialFilters={initialFilters}
+            initialFiltersFromServer={initialFilters}
+            initialData={{ posts: initialPosts }}
+          />
+        </Suspense>
       </div>
     </div>
   );

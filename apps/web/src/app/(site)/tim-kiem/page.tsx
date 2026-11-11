@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { ListingPage } from '@/components/site/listing-page';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Tìm kiếm',
   description: 'Tìm kiếm nơi lưu trú, bài viết và bất động sản tại Phước Hải theo tên, nội dung hoặc thẻ.',

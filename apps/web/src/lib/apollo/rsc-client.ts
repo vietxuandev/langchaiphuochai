@@ -4,6 +4,13 @@ import { unstable_cache } from 'next/cache';
 import { print } from 'graphql';
 
 /**
+ * Lúc `next build`, ưu tiên API_BUILD_URL (API thật hoặc domain public đang chạy).
+ * Lúc runtime, API_BUILD_URL không được set nên dùng API_INTERNAL_URL nội bộ Docker.
+ */
+const apiBaseUrl =
+  process.env.API_BUILD_URL || process.env.API_INTERNAL_URL || 'http://localhost:4000';
+
+/**
  * Apollo Client dùng trong React Server Component.
  * Gọi API qua mạng nội bộ (API_INTERNAL_URL) - trong Docker là `http://api:4000`.
  */
@@ -12,7 +19,7 @@ export const { getClient } = registerApolloClient(
     new ApolloClient({
       cache: new InMemoryCache(),
       link: new HttpLink({
-        uri: `${process.env.API_INTERNAL_URL ?? 'http://localhost:4000'}/graphql`,
+        uri: `${apiBaseUrl}/graphql`,
       }),
       defaultOptions: {
         query: { fetchPolicy: 'no-cache', errorPolicy: 'all' },

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { PageHeader } from '@/components/site/page-header';
 import { PostListing } from '@/components/site/post-listing';
 import { PostType, canonicalWardName } from '@phuochai/shared';
@@ -70,15 +71,17 @@ export async function ListingPage({
       <PageHeader eyebrow={eyebrow} title={title} description={description} />
 
       <div className="mt-8">
-        <PostListing
-          type={type}
-          categories={sectionCategories}
-          initialFilters={initialFilters}
-          initialFiltersFromServer={initialFilters}
-          initialData={{ posts: initialPosts }}
-          keyword={keyword}
-          pageSize={pageSize}
-        />
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-muted" aria-hidden />}>
+          <PostListing
+            type={type}
+            categories={sectionCategories}
+            initialFilters={initialFilters}
+            initialFiltersFromServer={initialFilters}
+            initialData={{ posts: initialPosts }}
+            keyword={keyword}
+            pageSize={pageSize}
+          />
+        </Suspense>
       </div>
     </div>
   );

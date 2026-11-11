@@ -20,10 +20,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 #  - NEXT_PUBLIC_*: nhúng vào JS chạy ở trình duyệt  -> phải có lúc BUILD
 #  - API_INTERNAL_URL: dùng cho rewrites trong next.config.mjs -> cũng phải có lúc BUILD
 ARG API_INTERNAL_URL=http://api:4000
+ARG API_BUILD_URL=
 ARG NEXT_PUBLIC_SITE_URL=https://langchaiphuochai.com
 ARG NEXT_PUBLIC_GRAPHQL_URL=/graphql
 ARG NEXT_PUBLIC_MCP_URL=https://mcp.langchaiphuochai.com
 ENV API_INTERNAL_URL=$API_INTERNAL_URL \
+    API_BUILD_URL=$API_BUILD_URL \
     NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_PUBLIC_GRAPHQL_URL=$NEXT_PUBLIC_GRAPHQL_URL \
     NEXT_PUBLIC_MCP_URL=$NEXT_PUBLIC_MCP_URL
@@ -45,7 +47,10 @@ COPY apps/api/schema.graphql apps/api/schema.graphql
 
 # NEXT_STANDALONE=1 -> bật output: 'standalone' trong next.config.mjs
 ENV NEXT_STANDALONE=1
-RUN npm run build:shared && npm run codegen -w @phuochai/web && npm run build -w @phuochai/web
+RUN node apps/web/scripts/check-build-api.mjs \
+ && npm run build:shared \
+ && npm run codegen -w @phuochai/web \
+ && npm run build -w @phuochai/web
 
 # ---------- Runtime stage ----------
 FROM node:22-alpine AS runner

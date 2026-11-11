@@ -101,6 +101,8 @@ ls -lh /data/langchaiphuochai/seed/dataset.json
 | `ADMIN_BASE_URL` | | `https://langchaiphuochai.com` | Base URL để tạo link trong tin nhắn Telegram |
 | `WATERMARK_ENABLED` | | `true` | Tự đóng logo + tên miền vào góc phải dưới ảnh upload (avatar không áp dụng) |
 | `WATERMARK_IMAGE` | | `apps/api/assets/watermark.png` | Dùng file watermark khác nếu muốn |
+| `API_BUILD_URL` | | `https://langchaiphuochai.com` | API dùng lúc build web để pre-render static/ISR |
+| `REVALIDATE_SECRET` | | chuỗi ngẫu nhiên | Bí mật gọi `/api/revalidate` từ API sau khi publish/sửa/xoá |
 
 > `JWT_SECRET` và `DB_PASSWORD` dùng cú pháp `${VAR:?...}` nên nếu thiếu, Coolify sẽ báo lỗi ngay
 > thay vì chạy với giá trị mặc định không an toàn.
