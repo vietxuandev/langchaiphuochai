@@ -2,18 +2,21 @@
 
 import Link from 'next/link';
 import {
+  Archive,
   ArrowRight,
   BarChart3,
-  Building2,
+  Bell,
+  CheckCircle2,
   Eye,
   FileText,
   FolderTree,
-  Newspaper,
+  Pencil,
   Plus,
   TrendingUp,
+  UserPlus,
   Users,
 } from 'lucide-react';
-import { POST_STATUS_LABELS, formatCompact, formatDateTime } from '@phuochai/shared';
+import { POST_STATUS_LABELS, PostStatus, Role, formatCompact, formatDateTime } from '@phuochai/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,8 +24,15 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatCard } from '@/components/ui/stat-card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { PostsByMonthChart, StatusDonutChart } from '@/components/admin/dashboard-charts';
+import { postHref } from '@/components/site/post-card';
 import { useAuth } from '@/lib/auth/auth-context';
-import { useAdminPostsQuery, useDashboardStatsQuery } from '@/generated/graphql';
+import {
+  useAdminNotificationsQuery,
+  useAdminPostsQuery,
+  useDashboardStatsQuery,
+  usePendingUserCountQuery,
+} from '@/generated/graphql';
 
 /** Dashboard quản trị: thẻ thống kê + phân bố theo loại + bài viết gần đây. */
 export function DashboardOverview() {
@@ -32,10 +42,21 @@ export function DashboardOverview() {
     variables: { filter: { page: 1, pageSize: 8, sortBy: 'CREATED_AT', sortOrder: 'DESC' } },
     fetchPolicy: 'cache-and-network',
   });
+  const isAdmin = hasRole(Role.ADMIN);
+  const visible = hasRole(Role.EDITOR);
+  const { data: pendingData } = usePendingUserCountQuery({
+    skip: !isAdmin,
+    fetchPolicy: 'cache-and-network',
+  });
+  const { data: notificationData } = useAdminNotificationsQuery({
+    variables: { page: 1, pageSize: 1 },
+    skip: !visible,
+    fetchPolicy: 'cache-and-network',
+  });
 
   const stats = data?.dashboardStats;
-  const visible = hasRole('EDITOR');
-  const onlyMine = !visible;
+  const pendingCount = pendingData?.pendingUserCount ?? 0;
+  const unreadCount = notificationData?.adminNotifications.unreadCount ?? 0;
 
   if (!visible) {
     // Thành viên chỉ thấy bài viết của mình
@@ -45,7 +66,7 @@ export function DashboardOverview() {
   if (loading && !stats) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, index) => (
+        {Array.from({ length: 8 }).map((_, index) => (
           <Skeleton key={index} className="h-28 rounded-xl" />
         ))}
       </div>
@@ -78,23 +99,80 @@ export function DashboardOverview() {
           hint={`${stats?.publishedPosts ?? 0} đã đăng · ${stats?.draftPosts ?? 0} bản nháp`}
         />
         <StatCard
-          title="Nơi lưu trú"
-          value={stats?.postsByType.find((item) => item.value === 'ACCOMMODATION')?.count ?? 0}
-          icon={Building2}
-          hint="Khách sạn, homestay, villa…"
+          title="Đã xuất bản"
+          value={stats?.publishedPosts ?? 0}
+          icon={CheckCircle2}
+          hint="Bài đang hiển thị công khai"
         />
         <StatCard
-          title="Tin tức & cẩm nang"
-          value={stats?.postsByType.find((item) => item.value === 'NEWS')?.count ?? 0}
-          icon={Newspaper}
-          hint="Bài viết hướng dẫn du lịch"
+          title="Bản nháp"
+          value={stats?.draftPosts ?? 0}
+          icon={FileText}
+          hint="Cần hoàn thiện hoặc chờ duyệt"
+        />
+        <StatCard
+          title="Lưu trữ"
+          value={stats?.archivedPosts ?? 0}
+          icon={Archive}
+          hint="Bài đã ẩn khỏi website"
         />
         <StatCard
           title="Lượt xem"
           value={formatCompact(stats?.totalViews ?? 0)}
           icon={Eye}
-          hint={`${stats?.totalUsers ?? 0} người dùng · ${stats?.totalCategories ?? 0} danh mục`}
+          hint="Tổng lượt xem nội dung"
         />
+        <StatCard
+          title="Người dùng"
+          value={stats?.totalUsers ?? 0}
+          icon={Users}
+          hint={`${stats?.totalCategories ?? 0} danh mục`}
+        />
+        {isAdmin ? (
+          <StatCard
+            title="Chờ duyệt"
+            value={pendingCount}
+            icon={UserPlus}
+            hint="Tài khoản đăng ký mới"
+          />
+        ) : (
+          <StatCard
+            title="Danh mục"
+            value={stats?.totalCategories ?? 0}
+            icon={FolderTree}
+            hint="Danh mục đang quản lý"
+          />
+        )}
+        <StatCard
+          title="Thông báo"
+          value={unreadCount}
+          icon={Bell}
+          hint="Thông báo chưa đọc"
+        />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="border-border/70">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-display text-base">
+              <BarChart3 className="h-4 w-4 text-sea-600" /> Bài viết theo tháng
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PostsByMonthChart data={stats?.postsByMonth ?? []} />
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-display text-base">
+              <TrendingUp className="h-4 w-4 text-coral-500" /> Trạng thái xuất bản
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <StatusDonutChart data={stats?.postsByStatus ?? []} />
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
@@ -135,6 +213,7 @@ export function DashboardOverview() {
                     <TableHead className="hidden sm:table-cell">Loại</TableHead>
                     <TableHead className="hidden md:table-cell">Trạng thái</TableHead>
                     <TableHead className="hidden lg:table-cell">Ngày tạo</TableHead>
+                    <TableHead className="w-20" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -155,6 +234,27 @@ export function DashboardOverview() {
                       </TableCell>
                       <TableCell className="hidden text-xs text-muted-foreground lg:table-cell">
                         {formatDateTime(post.createdAt)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-1">
+                          {post.status === 'PUBLISHED' ? (
+                            <Button variant="ghost" size="icon" asChild title="Xem trên website">
+                              <a
+                                href={postHref(post)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Xem trên website"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          ) : null}
+                          <Button variant="ghost" size="icon" asChild title="Chỉnh sửa">
+                            <Link href={`/quan-tri/bai-viet/${post.id}`} aria-label="Chỉnh sửa">
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -189,22 +289,6 @@ export function DashboardOverview() {
             </CardContent>
           </Card>
 
-          <Card className="border-border/70">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-display text-base">
-                <TrendingUp className="h-4 w-4 text-coral-500" /> Trạng thái xuất bản
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-3 gap-3 text-center">
-              {stats?.postsByStatus.map((item) => (
-                <div key={item.value} className="rounded-xl bg-muted/60 p-3">
-                  <p className="font-display text-lg font-bold">{item.count}</p>
-                  <p className="text-xs text-muted-foreground">{item.label}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
           <div className="grid grid-cols-2 gap-3">
             <Button variant="outline" asChild>
               <Link href="/quan-tri/danh-muc">
@@ -229,6 +313,13 @@ function MemberOverview() {
     variables: { filter: { onlyMine: true, page: 1, pageSize: 6, sortBy: 'CREATED_AT', sortOrder: 'DESC' } },
     fetchPolicy: 'cache-and-network',
   });
+  const { data: draftData } = useAdminPostsQuery({
+    variables: { filter: { onlyMine: true, status: PostStatus.DRAFT, page: 1, pageSize: 1 } },
+    fetchPolicy: 'cache-and-network',
+  });
+  const totalMine = data?.posts.total ?? 0;
+  const draftMine = draftData?.posts.total ?? 0;
+  const publishedMine = Math.max(0, totalMine - draftMine);
 
   return (
     <div className="space-y-6">
@@ -244,6 +335,12 @@ function MemberOverview() {
             <Plus className="mr-2 h-4 w-4" /> Tạo bản nháp
           </Link>
         </Button>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard title="Bài viết của tôi" value={totalMine} icon={FileText} hint="Tất cả bài đã tạo" />
+        <StatCard title="Bản nháp" value={draftMine} icon={FileText} hint="Chưa gửi duyệt" />
+        <StatCard title="Đã xuất bản" value={publishedMine} icon={CheckCircle2} hint="Đang hiển thị công khai" />
       </div>
 
       {loading && !data ? (
@@ -268,6 +365,7 @@ function MemberOverview() {
                   <TableHead>Tiêu đề</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead className="hidden sm:table-cell">Ngày tạo</TableHead>
+                  <TableHead className="w-20" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -285,6 +383,27 @@ function MemberOverview() {
                     </TableCell>
                     <TableCell className="hidden text-xs text-muted-foreground sm:table-cell">
                       {formatDateTime(post.createdAt)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-1">
+                        {post.status === 'PUBLISHED' ? (
+                          <Button variant="ghost" size="icon" asChild title="Xem trên website">
+                            <a
+                              href={postHref(post)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label="Xem trên website"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        ) : null}
+                        <Button variant="ghost" size="icon" asChild title="Chỉnh sửa">
+                          <Link href={`/quan-tri/bai-viet/${post.id}`} aria-label="Chỉnh sửa">
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

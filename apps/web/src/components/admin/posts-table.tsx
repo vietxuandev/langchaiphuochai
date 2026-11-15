@@ -39,6 +39,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { postHref } from '@/components/site/post-card';
 import { useAuth } from '@/lib/auth/auth-context';
 import {
   useAdminPostsQuery,
@@ -157,60 +158,77 @@ export function PostsTable() {
           const post = row.original;
           const canEdit = canPublish || post.author?.id === user?.id;
           return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Thao tác">
-                  <MoreHorizontal className="h-4 w-4" />
+            <div className="flex items-center justify-end gap-1">
+              {post.status === 'PUBLISHED' ? (
+                <Button variant="ghost" size="icon" asChild title="Xem trên website">
+                  <a href={postHref(post)} target="_blank" rel="noopener noreferrer" aria-label="Xem trên website">
+                    <Eye className="h-4 w-4" />
+                  </a>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href={`/quan-tri/bai-viet/${post.id}`}>
-                    <Pencil className="mr-2 h-4 w-4" /> {canEdit ? 'Chỉnh sửa' : 'Xem chi tiết'}
+              ) : null}
+              {canEdit ? (
+                <Button variant="ghost" size="icon" asChild title="Chỉnh sửa bài viết">
+                  <Link href={`/quan-tri/bai-viet/${post.id}`} aria-label="Chỉnh sửa bài viết">
+                    <Pencil className="h-4 w-4" />
                   </Link>
-                </DropdownMenuItem>
-                {post.status === 'PUBLISHED' ? (
+                </Button>
+              ) : null}
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Thao tác">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <a href={`/luu-tru/${post.slug}`} target="_blank" rel="noreferrer">
-                      <Eye className="mr-2 h-4 w-4" /> Xem trên website
-                    </a>
+                    <Link href={`/quan-tri/bai-viet/${post.id}`}>
+                      <Pencil className="mr-2 h-4 w-4" /> {canEdit ? 'Chỉnh sửa' : 'Xem chi tiết'}
+                    </Link>
                   </DropdownMenuItem>
-                ) : null}
-                {canPublish ? (
-                  post.status === 'PUBLISHED' ? (
-                    <DropdownMenuItem
-                      onSelect={async () => {
-                        await unpublishPost({ variables: { id: post.id } });
-                        toast.success('Đã chuyển về bản nháp');
-                        void refetch();
-                      }}
-                    >
-                      <Upload className="mr-2 h-4 w-4 rotate-180" /> Chuyển về bản nháp
+                  {post.status === 'PUBLISHED' ? (
+                    <DropdownMenuItem asChild>
+                      <a href={postHref(post)} target="_blank" rel="noopener noreferrer">
+                        <Eye className="mr-2 h-4 w-4" /> Xem trên website
+                      </a>
                     </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem
-                      onSelect={async () => {
-                        await publishPost({ variables: { id: post.id } });
-                        toast.success('Đã xuất bản bài viết');
-                        void refetch();
-                      }}
-                    >
-                      <Upload className="mr-2 h-4 w-4" /> Xuất bản
-                    </DropdownMenuItem>
-                  )
-                ) : null}
-                {canEdit || canManageSystem ? (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive" onSelect={() => setDeleting(post)}>
-                      <Trash2 className="mr-2 h-4 w-4" /> Xoá bài viết
-                    </DropdownMenuItem>
-                  </>
-                ) : null}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  ) : null}
+                  {canPublish ? (
+                    post.status === 'PUBLISHED' ? (
+                      <DropdownMenuItem
+                        onSelect={async () => {
+                          await unpublishPost({ variables: { id: post.id } });
+                          toast.success('Đã chuyển về bản nháp');
+                          void refetch();
+                        }}
+                      >
+                        <Upload className="mr-2 h-4 w-4 rotate-180" /> Chuyển về bản nháp
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem
+                        onSelect={async () => {
+                          await publishPost({ variables: { id: post.id } });
+                          toast.success('Đã xuất bản bài viết');
+                          void refetch();
+                        }}
+                      >
+                        <Upload className="mr-2 h-4 w-4" /> Xuất bản
+                      </DropdownMenuItem>
+                    )
+                  ) : null}
+                  {canEdit || canManageSystem ? (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-destructive" onSelect={() => setDeleting(post)}>
+                        <Trash2 className="mr-2 h-4 w-4" /> Xoá bài viết
+                      </DropdownMenuItem>
+                    </>
+                  ) : null}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           );
         },
       },

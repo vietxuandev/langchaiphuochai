@@ -25,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Gallery } from '@/components/site/gallery';
 import { ShareButtons } from '@/components/site/share-buttons';
+import { PostAdminActions } from '@/components/site/post-admin-actions';
 import { ViewTracker } from '@/components/site/view-tracker';
 import { PostCard, postHref } from '@/components/site/post-card';
 import type { PostFullFragment, PostCardFragment } from '@/generated/graphql';
@@ -130,6 +131,8 @@ export function PostDetail({ post, related }: PostDetailProps) {
           </>
         ) : null}
       </nav>
+
+      <PostAdminActions postId={post.id} authorId={post.authorId ?? post.author?.id} />
 
       <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
         <div className="min-w-0 space-y-6">
