@@ -41,9 +41,9 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
     'tr', 'th', 'td', 'hr', 'code', 'pre', 'span', 'div',
   ],
   allowedAttributes: {
-    a: ['href', 'title', 'target', 'rel'],
+    a: ['href', 'title', 'target', 'rel', 'id'],
     img: ['src', 'alt', 'title', 'width', 'height'],
-    '*': ['class'],
+    '*': ['class', 'id'],
   },
   allowedSchemes: ['http', 'https', 'mailto', 'tel'],
   allowedSchemesByTag: { img: ['http', 'https', ''] },
