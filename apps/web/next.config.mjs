@@ -31,6 +31,7 @@ const nextConfig = {
     return [
       { source: '/graphql', destination: `${apiInternalUrl}/graphql` },
       { source: '/api/upload', destination: `${apiInternalUrl}/api/upload` },
+      { source: '/api/media', destination: `${apiInternalUrl}/api/media` },
       { source: '/upload/:path*', destination: `${apiInternalUrl}/upload/:path*` },
     ];
   },

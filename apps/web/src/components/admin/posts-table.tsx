@@ -183,18 +183,6 @@ export function PostsTable() {
                 <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href={`/quan-tri/bai-viet/${post.id}`}>
-                      <Pencil className="mr-2 h-4 w-4" /> {canEdit ? 'Chỉnh sửa' : 'Xem chi tiết'}
-                    </Link>
-                  </DropdownMenuItem>
-                  {post.status === 'PUBLISHED' ? (
-                    <DropdownMenuItem asChild>
-                      <a href={postHref(post)} target="_blank" rel="noopener noreferrer">
-                        <Eye className="mr-2 h-4 w-4" /> Xem trên website
-                      </a>
-                    </DropdownMenuItem>
-                  ) : null}
                   {canPublish ? (
                     post.status === 'PUBLISHED' ? (
                       <DropdownMenuItem

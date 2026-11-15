@@ -11,6 +11,7 @@ import {
   DownloadCloud,
   KeyRound,
   FolderTree,
+  Images,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -43,6 +44,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: '/quan-tri', label: 'Tổng quan', icon: LayoutDashboard, minRole: Role.USER, exact: true },
   { href: '/quan-tri/bai-viet', label: 'Bài viết', icon: FileText, minRole: Role.USER },
+  { href: '/quan-tri/media', label: 'Thư viện ảnh', icon: Images, minRole: Role.EDITOR },
   { href: '/quan-tri/danh-muc', label: 'Danh mục', icon: FolderTree, minRole: Role.ADMIN },
   { href: '/quan-tri/nguoi-dung', label: 'Người dùng', icon: Users, minRole: Role.ADMIN },
   { href: '/quan-tri/thong-bao', label: 'Thông báo', icon: Bell, minRole: Role.EDITOR },
