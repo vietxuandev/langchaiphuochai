@@ -1,5 +1,12 @@
 'use client';
 
+import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart';
 import { cn } from '@/lib/utils';
 
 interface MonthlyPoint {
@@ -13,15 +20,27 @@ interface StatusPoint {
   count: number;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  DRAFT: '#f59e0b',
-  PUBLISHED: '#14807f',
-  ARCHIVED: '#94a3b8',
-};
+const MONTHLY_CONFIG = {
+  count: {
+    label: 'Bài viết',
+    color: 'hsl(var(--primary))',
+  },
+} satisfies ChartConfig;
 
-function statusColor(value: string, index: number): string {
-  return STATUS_COLORS[value] ?? ['#14807f', '#f59e0b', '#94a3b8'][index % 3];
-}
+const STATUS_CONFIG = {
+  DRAFT: {
+    label: 'Bản nháp',
+    color: 'hsl(var(--accent))',
+  },
+  PUBLISHED: {
+    label: 'Đã đăng',
+    color: 'hsl(var(--primary))',
+  },
+  ARCHIVED: {
+    label: 'Lưu trữ',
+    color: 'hsl(var(--muted-foreground))',
+  },
+} satisfies ChartConfig;
 
 function monthLabel(value: string): string {
   const [year, month] = value.split('-');
@@ -41,77 +60,85 @@ function lastSixMonths(data: MonthlyPoint[]): MonthlyPoint[] {
   return points;
 }
 
-/** Biểu đồ cột bài viết theo tháng cho dashboard. */
+/** Biểu đồ cột bài viết theo tháng, dùng ChartContainer của shadcn/ui. */
 export function PostsByMonthChart({ data }: { data: MonthlyPoint[] }) {
   if (data.length === 0) {
     return <p className="py-10 text-center text-sm text-muted-foreground">Chưa có dữ liệu theo tháng.</p>;
   }
 
   const points = lastSixMonths(data);
-  const max = Math.max(1, ...points.map((item) => item.count));
 
   return (
-    <div>
-      <div className="flex h-48 items-end gap-2 sm:gap-4" role="img" aria-label="Biểu đồ bài viết 6 tháng gần nhất">
-        {points.map((item) => {
-          const height = Math.round((item.count / max) * 100);
-          return (
-            <div key={item.month} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
-              <span className="text-[11px] font-medium tabular-nums text-muted-foreground">{item.count}</span>
-              <div className="flex h-32 w-full max-w-20 items-end rounded-md bg-muted/60">
-                <div
-                  className="w-full rounded-t-md bg-primary transition-all hover:bg-sea-700"
-                  style={{ height: item.count === 0 ? 0 : `${Math.max(4, height)}%` }}
-                  title={`${monthLabel(item.month)}: ${item.count} bài`}
-                />
-              </div>
-              <span className="truncate text-[10px] text-muted-foreground sm:text-xs">{monthLabel(item.month)}</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <ChartContainer config={MONTHLY_CONFIG} className="h-48 w-full">
+      <BarChart accessibilityLayer data={points} margin={{ top: 16, right: 8, left: 0, bottom: 0 }}>
+        <CartesianGrid vertical={false} />
+        <XAxis
+          dataKey="month"
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          tickFormatter={monthLabel}
+        />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          width={36}
+          allowDecimals={false}
+        />
+        <ChartTooltip
+          cursor={false}
+          content={<ChartTooltipContent labelFormatter={(value) => monthLabel(String(value))} />}
+        />
+        <Bar dataKey="count" fill="var(--color-count)" radius={[6, 6, 0, 0]} maxBarSize={56} />
+      </BarChart>
+    </ChartContainer>
   );
 }
 
-/** Biểu đồ vòng tròn phân bố trạng thái bài viết. */
+/** Biểu đồ vòng tròn phân bố trạng thái bài viết, dùng ChartContainer của shadcn/ui. */
 export function StatusDonutChart({ data, className }: { data: StatusPoint[]; className?: string }) {
   const total = data.reduce((sum, item) => sum + item.count, 0);
   if (total === 0) {
     return <p className="py-8 text-center text-sm text-muted-foreground">Chưa có dữ liệu trạng thái.</p>;
   }
 
-  let cursor = 0;
-  const stops = data.map((item, index) => {
-    const start = cursor;
-    const end = start + (item.count / total) * 100;
-    cursor = end;
-    return `${statusColor(item.value, index)} ${start}% ${end}%`;
-  });
-
   return (
     <div className={cn('flex flex-col items-center gap-5 sm:flex-row', className)}>
-      <div
-        className="relative grid size-32 shrink-0 place-items-center rounded-full"
-        style={{ background: `conic-gradient(${stops.join(', ')})` }}
-        role="img"
-        aria-label="Biểu đồ phân bố trạng thái bài viết"
-      >
-        <div className="grid size-20 place-items-center rounded-full bg-card text-center">
-          <div>
-            <p className="font-display text-lg font-bold">{total}</p>
-            <p className="text-[10px] text-muted-foreground">bài viết</p>
-          </div>
+      <div className="relative h-40 w-40 shrink-0">
+        <ChartContainer config={STATUS_CONFIG} className="h-full w-full">
+          <PieChart>
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent nameKey="value" hideLabel />}
+            />
+            <Pie
+              data={data}
+              dataKey="count"
+              nameKey="value"
+              innerRadius={52}
+              outerRadius={72}
+              strokeWidth={4}
+            >
+              {data.map((entry) => (
+                <Cell key={entry.value} fill={`var(--color-${entry.value})`} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ChartContainer>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          <span className="font-display text-lg font-bold">{total}</span>
+          <span className="text-[10px] text-muted-foreground">bài viết</span>
         </div>
       </div>
 
       <ul className="w-full space-y-2">
-        {data.map((item, index) => (
+        {data.map((item) => (
           <li key={item.value} className="flex items-center justify-between gap-3 text-sm">
             <span className="flex min-w-0 items-center gap-2 text-muted-foreground">
               <span
                 className="size-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: statusColor(item.value, index) }}
+                style={{ backgroundColor: STATUS_CONFIG[item.value as keyof typeof STATUS_CONFIG]?.color }}
               />
               <span className="truncate">{item.label}</span>
             </span>
