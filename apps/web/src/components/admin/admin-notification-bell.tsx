@@ -136,12 +136,13 @@ export function AdminNotificationBell() {
             {items.map((item) => {
               const Icon = notificationIcon(item.type);
               return (
-                <button
+                <Button
                   key={item.id}
                   type="button"
+                  variant="ghost"
                   onClick={() => void handleOpen(item)}
                   className={cn(
-                    'flex w-full gap-3 border-b px-4 py-3 text-left transition last:border-b-0 hover:bg-muted/60',
+                    'h-auto w-full items-start justify-start gap-3 whitespace-normal rounded-none border-b px-4 py-3 text-left font-normal last:border-b-0 hover:bg-muted/60',
                     !item.readAt && 'bg-muted/40',
                   )}
                 >
@@ -165,7 +166,7 @@ export function AdminNotificationBell() {
                       {formatRelativeTime(item.createdAt)}
                     </span>
                   </span>
-                </button>
+                </Button>
               );
             })}
           </div>

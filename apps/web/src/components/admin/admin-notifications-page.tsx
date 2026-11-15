@@ -132,12 +132,13 @@ export function AdminNotificationsPage() {
             {items.map((item) => {
               const Icon = notificationIcon(item.type);
               return (
-                <button
+                <Button
                   key={item.id}
                   type="button"
+                  variant="ghost"
                   onClick={() => void handleOpen(item)}
                   className={cn(
-                    'flex w-full gap-4 px-4 py-4 text-left transition hover:bg-muted/50 sm:px-6',
+                    'h-auto w-full items-start justify-start gap-4 whitespace-normal rounded-none px-4 py-4 text-left font-normal hover:bg-muted/50 sm:px-6',
                     !item.readAt && 'bg-muted/30',
                   )}
                 >
@@ -162,7 +163,7 @@ export function AdminNotificationsPage() {
                       {formatRelativeTime(item.createdAt)}
                     </span>
                   </span>
-                </button>
+                </Button>
               );
             })}
           </div>

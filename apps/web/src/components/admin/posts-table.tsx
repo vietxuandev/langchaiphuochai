@@ -93,13 +93,15 @@ export function PostsTable() {
       {
         accessorKey: 'title',
         header: ({ column }) => (
-          <button
+          <Button
             type="button"
-            className="inline-flex items-center gap-1 hover:text-foreground"
+            variant="ghost"
+            size="sm"
+            className="-ml-2 h-8 gap-1 px-2 font-normal"
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           >
             Tiêu đề <ArrowUpDown className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         ),
         cell: ({ row }) => (
           <div className="max-w-[420px]">

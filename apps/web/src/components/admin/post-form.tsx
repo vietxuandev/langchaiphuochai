@@ -518,14 +518,15 @@ export function PostForm({ post, mode }: PostFormProps) {
               </label>
 
               {fields.length === 0 ? (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full flex-col items-center gap-2 rounded-xl border border-dashed border-border p-8 text-sm text-muted-foreground transition hover:border-primary hover:text-primary"
+                  className="h-auto w-full flex-col gap-2 border-dashed p-8 text-sm font-normal text-muted-foreground hover:border-primary hover:text-primary"
                 >
                   <Upload className="h-5 w-5" />
                   Bấm để chọn ảnh từ máy của bạn
-                </button>
+                </Button>
               ) : null}
 
               {fields.map((field, index) => (

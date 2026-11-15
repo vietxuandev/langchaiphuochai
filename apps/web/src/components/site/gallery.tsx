@@ -78,19 +78,21 @@ export function Gallery({ images, title }: { images: GalleryImage[]; title: stri
       {images.length > 1 ? (
         <div className="flex gap-2 overflow-x-auto pb-1">
           {images.map((image, index) => (
-            <button
+            <Button
               key={image.id}
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setActive(index)}
               className={cn(
-                'relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition',
+                'relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 p-0 transition',
                 index === active ? 'border-primary' : 'border-transparent opacity-70 hover:opacity-100',
               )}
               aria-label={`Xem ảnh ${index + 1}`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={buildImageUrl(image)} alt={image.alt ?? ''} className="h-full w-full object-cover" />
-            </button>
+            </Button>
           ))}
         </div>
       ) : null}

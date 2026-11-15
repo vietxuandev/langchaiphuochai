@@ -88,15 +88,24 @@ export function FilterPanel({ type, categories, filters, total, onChange }: Filt
       <div>
         <Label className="text-xs uppercase tracking-wide text-muted-foreground">Danh mục</Label>
         <div className="mt-2 flex flex-wrap gap-2">
-          <button type="button" onClick={() => onChange({ ...filters, categorySlug: undefined })}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-auto p-0 font-normal"
+            onClick={() => onChange({ ...filters, categorySlug: undefined })}
+          >
             <Badge variant={!filters.categorySlug ? 'default' : 'outline'} className="cursor-pointer">
               Tất cả
             </Badge>
-          </button>
+          </Button>
           {categories.map((category) => (
-            <button
+            <Button
               key={category.id}
               type="button"
+              variant="ghost"
+              size="sm"
+              className="h-auto p-0 font-normal"
               onClick={() => onChange({ ...filters, categorySlug: category.slug })}
             >
               <Badge
@@ -105,7 +114,7 @@ export function FilterPanel({ type, categories, filters, total, onChange }: Filt
               >
                 {category.name} ({category.postCount})
               </Badge>
-            </button>
+            </Button>
           ))}
         </div>
       </div>

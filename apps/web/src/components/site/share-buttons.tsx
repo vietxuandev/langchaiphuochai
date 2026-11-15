@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Check, Link2, Share2 } from 'lucide-react';
 import { BRAND } from '@phuochai/shared';
+import { Button } from '@/components/ui/button';
 
 interface ShareButtonsProps {
   /** Đường dẫn tương đối của bài viết, ví dụ "/luu-tru/oyster-homestay". */
@@ -42,10 +43,16 @@ export function ShareButtons({ path, className }: ShareButtonsProps) {
       >
         Facebook
       </a>
-      <button type="button" className="inline-flex items-center gap-1 hover:text-primary" onClick={() => void copy()}>
+      <Button
+        type="button"
+        variant="link"
+        size="sm"
+        className="h-auto gap-1 p-0 text-xs font-normal hover:text-primary"
+        onClick={() => void copy()}
+      >
         {copied ? <Check className="h-3 w-3 text-sea-600" /> : <Link2 className="h-3 w-3" />}
         {copied ? 'Đã sao chép' : 'Sao chép liên kết'}
-      </button>
+      </Button>
     </p>
   );
 }
