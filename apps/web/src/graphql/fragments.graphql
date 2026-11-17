@@ -65,8 +65,6 @@ fragment PostFull on Post {
   author {
     id
     name
-    email
-    role
     avatarUrl
   }
   images {

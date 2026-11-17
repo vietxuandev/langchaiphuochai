@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from '@nes
 import { createHash, randomUUID } from 'node:crypto';
 import { PostStatus, PostType, UPLOAD, stripTagsBlock, stripTagsText } from '@phuochai/shared';
 import type { Prisma } from '@prisma/client';
+import { sanitizePostHtml } from '../common/post-html';
 import { PrismaService } from '../prisma/prisma.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { CrawlCandidateStatus } from './crawl-status.enum';
@@ -233,6 +234,9 @@ export class CrawlerService {
           postBySourceKey,
           categorySlugs,
         });
+        // HTML lấy từ web khác: luôn lọc trước khi lưu (trang công khai render nguyên HTML)
+        const normalizedHtml = normalizeDashes(stripTagsBlock(contentHtml));
+        const safeContentHtml = normalizedHtml ? sanitizePostHtml(normalizedHtml) : normalizedHtml;
         const category = item.category?.slug ?? null;
         const categoryRow =
           category && categorySlugs.has(category)
@@ -251,7 +255,7 @@ export class CrawlerService {
             title: normalizeDashes(item.title.trim() || baseSlug) ?? baseSlug,
             seoTitle: normalizeDashes(item.seoTitle ?? item.seo?.title ?? null),
             summary: normalizeDashes(item.summary ?? item.seo?.description ?? null),
-            contentHtml: normalizeDashes(stripTagsBlock(contentHtml)),
+            contentHtml: safeContentHtml,
             contentText: normalizeDashes(stripTagsText(item.contentText ?? null)),
             htmlHash: item.htmlHash ?? null,
             code: item.code?.trim() || null,

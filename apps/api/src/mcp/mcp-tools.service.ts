@@ -96,7 +96,10 @@ export class McpToolsService {
         url: mcpConfig.siteUrl,
         province: PROVINCE_NAME,
         contentTypes: Object.values(PostType),
-        statuses: 'Tạo/sửa bản nháp; có thể publish/unpublish/archive nếu token có posts:publish; xoá chỉ ADMIN',
+        statuses: mcpConfig.allowPublish
+          ? 'Tạo/sửa bản nháp; có thể publish/unpublish/archive nếu token có posts:publish; xoá chỉ ADMIN'
+          : 'Tạo/sửa bản nháp; server đang tắt publish (MCP_ALLOW_PUBLISH=false), vẫn unpublish/archive được nếu token có posts:publish; xoá chỉ ADMIN',
+        publishEnabled: mcpConfig.allowPublish,
       },
       limits: {
         requestsPerMinute: mcpConfig.rateLimitPerMin,
@@ -528,6 +531,15 @@ export class McpToolsService {
   ) {
     if (!MCP_STATUS_VALUES.includes(input.status)) {
       throw new McpToolError('INVALID_INPUT', `Trạng thái không hợp lệ: ${input.status}`);
+    }
+    // Công tắc phía server: kể cả token có scope posts:publish cũng không xuất bản được
+    // khi MCP_ALLOW_PUBLISH khác "true". Thu hồi về nháp/lưu trữ vẫn được phép.
+    if (input.status === PostStatus.PUBLISHED && !mcpConfig.allowPublish) {
+      throw new McpToolError(
+        'PUBLISH_DISABLED',
+        'Máy chủ đang tắt xuất bản qua MCP (MCP_ALLOW_PUBLISH=false). Bài vẫn giữ trạng thái hiện tại; ' +
+          'hãy để biên tập viên xuất bản trong trang quản trị.',
+      );
     }
 
     const current = await this.findPostRef(input);

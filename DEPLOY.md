@@ -267,6 +267,20 @@ git add . && git commit -m "..." && git push
 Vào Coolify → resource → **Deploy**. Migration mới tự chạy khi `api` khởi động lại.
 Riêng thay đổi về **biến build** (`NEXT_PUBLIC_*`) thì cần bấm deploy lại (image web phải build lại).
 
+### 8.1 Làm sạch HTML bài viết đã lưu (chống XSS)
+
+API lọc `contentHtml` mỗi khi ghi (GraphQL, MCP, crawler). Với bài **đã có sẵn** trong DB, chạy script
+một lần trong container `api`. Mặc định chỉ báo cáo, thêm `--apply` mới ghi:
+
+```bash
+sudo docker exec -it $(sudo docker ps -qf "name=api") npx tsx apps/api/scripts/sanitize-post-html.ts
+sudo docker exec -it $(sudo docker ps -qf "name=api") npx tsx apps/api/scripts/sanitize-post-html.ts --apply
+```
+
+Báo cáo liệt kê từng bài và những gì bị bỏ (`img@onerror`, `script`, `a@href:javascript`...). Bài nào bị
+liệt kê mà không phải do bạn chủ động chèn thì nên xem lại tài khoản tác giả. Trang công khai tự làm mới
+trong khoảng 5 phút sau khi `--apply`.
+
 ---
 
 ## 9. Sao lưu
@@ -298,6 +312,8 @@ mất thư mục này là mất toàn bộ ảnh.**
 | Build web **OOM / killed** | Server thiếu RAM: thêm swap 2GB hoặc build trên máy khác rồi push image. |
 | Build lỗi **exit code 2** ở bước `npm run build:shared` | Thiếu `packages/shared/src/data/hcm-wards.json` trong git. Nguyên nhân: `.gitignore` ghi `data/` (thiếu `/` đầu) nên git bỏ qua **mọi** thư mục tên `data`, kể cả `packages/shared/src/data/` và `apps/web/src/lib/data/`. Kiểm tra: `git ls-files packages/shared/src/data/hcm-wards.json`. Sửa `.gitignore` thành `/data/` rồi `git add -A && git commit && git push`. Chạy `npm run verify:repo` trước khi deploy. |
 | Đổi domain nhưng vẫn trỏ domain cũ | `NEXT_PUBLIC_SITE_URL` là **biến build** - sửa env rồi **Deploy lại** (không chỉ restart). |
+| Đăng nhập báo **"Đăng nhập sai quá nhiều lần"** | Một email sai ≥10 lần (hoặc một IP sai ≥30 lần) trong 15 phút thì bị khoá tạm, kể cả khi nhập đúng mật khẩu. Chờ 15 phút; cần mở ngay thì xoá lần sai gần đây: `DELETE FROM login_attempts WHERE email = '<email>' AND success = false;` |
+| Agent MCP báo **`PUBLISH_DISABLED`** | Server đang tắt xuất bản qua MCP. Muốn agent tự publish: đặt `MCP_ALLOW_PUBLISH=true` trong Coolify rồi restart `api` (token vẫn cần scope `posts:publish`). |
 | `Cannot find module '@phuochai/shared'` | Build sai context: **Base Directory** phải là `/` (repo root) và compose file `docker-compose.coolify.yml`. |
 
 Xem log nhanh trên server:

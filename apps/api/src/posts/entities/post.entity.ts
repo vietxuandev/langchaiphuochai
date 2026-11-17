@@ -3,7 +3,23 @@ import { PostStatus, PostType } from '@phuochai/shared';
 import { CategoryEntity } from '../../categories/entities/category.entity';
 import { PostSortField, SortDirection } from '../../graphql/enums';
 import { GraphQLJSON } from '../../common/scalars/json.scalar';
-import { UserEntity } from '../../users/entities/user.entity';
+
+/**
+ * Tác giả hiển thị kèm bài viết. Query `posts`/`post` là công khai nên chỉ trả thông tin
+ * được phép công bố - KHÔNG có email, số điện thoại, vai trò hay lần đăng nhập cuối.
+ * Thông tin đầy đủ của tài khoản xem qua query `user`/`users` (chỉ ADMIN).
+ */
+@ObjectType('PostAuthor')
+export class PostAuthorEntity {
+  @Field()
+  id!: string;
+
+  @Field()
+  name!: string;
+
+  @Field(() => String, { nullable: true })
+  avatarUrl?: string | null;
+}
 
 @ObjectType('PostImage')
 export class PostImageEntity {
@@ -187,8 +203,8 @@ export class PostEntity {
   @Field(() => String, { nullable: true })
   authorId?: string | null;
 
-  @Field(() => UserEntity, { nullable: true })
-  author?: UserEntity | null;
+  @Field(() => PostAuthorEntity, { nullable: true })
+  author?: PostAuthorEntity | null;
 
   @Field(() => [PostImageEntity])
   images!: PostImageEntity[];

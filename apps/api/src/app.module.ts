@@ -9,6 +9,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CrawlerModule } from './crawler/crawler.module';
+import { aliasLimitRule } from './common/graphql-limits';
 import { GqlAuthGuard, RolesGuard } from './common/guards';
 import { NotificationsModule } from './notifications/notifications.module';
 import { McpModule } from './mcp/mcp.module';
@@ -36,6 +37,8 @@ const uploadRoot = process.env.UPLOAD_DIR ?? join(process.cwd(), '../../data/upl
       introspection: true,
       playground: false,
       plugins: [ApolloServerPluginLandingPageLocalDefault({ footer: false })],
+      // Chặn gộp nhiều lần login/register (hoặc nhân query nặng) trong một request bằng alias.
+      validationRules: [aliasLimitRule({ maxAliases: 20, singleUseMutations: ['login', 'register'] })],
       context: ({ req }: { req: unknown }) => ({ req }),
       formatError: (error) => {
         const original = error.extensions?.originalError as
@@ -53,6 +56,7 @@ const uploadRoot = process.env.UPLOAD_DIR ?? join(process.cwd(), '../../data/upl
           403: 'FORBIDDEN',
           404: 'NOT_FOUND',
           409: 'CONFLICT',
+          429: 'TOO_MANY_REQUESTS',
         };
         const code = codeByStatus[statusCode] ?? error.extensions?.code ?? 'INTERNAL_SERVER_ERROR';
 

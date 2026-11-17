@@ -95,6 +95,7 @@ MCP không set được ảnh hero; phải thêm trong admin sau.
 | `INVALID_CATEGORY` | Gọi `list_categories` lấy slug đúng |
 | `INVALID_WARD` | Gọi `list_wards` |
 | `POST_NOT_DRAFT` | Dùng `set_post_status` đưa về DRAFT trước, hoặc tạo bản mới |
+| `PUBLISH_DISABLED` | Server tắt publish qua MCP (`MCP_ALLOW_PUBLISH=false`): để bài ở DRAFT và báo người dùng xuất bản trong trang quản trị |
 | `CONFIRM_MISMATCH` | Truyền đúng slug hiện tại |
 | TOC link không nhảy | Thiếu `id` trên heading hoặc id không khớp `href` |
 | Ảnh không hiển thị | Đường dẫn phải bắt đầu `/upload/...` |

@@ -196,7 +196,7 @@ Lưu ý: không sửa được bài `PUBLISHED`/`ARCHIVED`; dùng `set_post_stat
 | `id` hoặc `slug` | string | Chọn bài |
 | `status` | `PUBLISHED` \| `DRAFT` \| `ARCHIVED` | Trạng thái mới |
 
-Cần scope `posts:publish`. `ARCHIVED` là cách ẩn bài an toàn, có thể khôi phục; không xoá dữ liệu.
+Cần scope `posts:publish`. Riêng `PUBLISHED` còn cần server bật `MCP_ALLOW_PUBLISH=true` (mặc định `false`); nếu tắt, tool trả lỗi `PUBLISH_DISABLED` và bài giữ nguyên trạng thái. `ARCHIVED` là cách ẩn bài an toàn, có thể khôi phục; không xoá dữ liệu.
 
 Kết quả: `{ id, slug, title, status, url }`.
 

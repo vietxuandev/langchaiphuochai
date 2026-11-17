@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/lib/auth/auth-context';
+import { safeRedirectPath } from '@/lib/safe-redirect';
 
 /** Form đăng nhập: react-hook-form + zod (dùng chung schema với backend). */
 export function LoginForm() {
@@ -36,8 +37,7 @@ export function LoginForm() {
     try {
       const user = await login(values.email, values.password);
       toast.success(`Xin chào ${user.name}!`);
-      const redirect = searchParams.get('tiep-theo');
-      router.push(redirect && redirect.startsWith('/') ? redirect : '/quan-tri');
+      router.push(safeRedirectPath(searchParams.get('tiep-theo'), window.location.origin));
       router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Đăng nhập thất bại');

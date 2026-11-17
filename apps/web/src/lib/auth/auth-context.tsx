@@ -65,7 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (email: string, password: string) => {
       const result = await loginMutation({ variables: { input: { email, password } } });
       const payload = result.data?.login;
-      if (!payload) throw new Error('Đăng nhập thất bại');
+      // Hiện đúng lý do từ API (sai mật khẩu, đang bị khoá tạm vì sai nhiều lần...)
+      if (!payload) throw new Error(result.errors?.[0]?.message ?? 'Đăng nhập thất bại');
       setToken(payload.accessToken);
       const me = payload.user as AuthUser;
       setUser(me);
@@ -81,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         variables: { input: { name, email, password, confirmPassword: password } },
       });
       const payload = result.data?.register;
-      if (!payload) throw new Error('Đăng ký thất bại');
+      if (!payload) throw new Error(result.errors?.[0]?.message ?? 'Đăng ký thất bại');
       // Tài khoản mới ở trạng thái chờ duyệt -> không lưu token, không đăng nhập
       return { requiresApproval: payload.requiresApproval, message: payload.message };
     },

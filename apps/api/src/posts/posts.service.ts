@@ -8,18 +8,19 @@ import {
   NotificationType,
 } from '@phuochai/shared';
 import type { PostInput } from '@phuochai/shared';
+import { htmlToText, sanitizePostHtml } from '../common/post-html';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CategoriesService } from '../categories/categories.service';
 import type { PostEntity, PostFilterInput, PostImageEntity, TagEntity } from './entities/post.entity';
-import type { UserEntity } from '../users/entities/user.entity';
 
 /** Dữ liệu kèm theo mỗi lần truy vấn bài viết. */
 const POST_INCLUDE = {
   category: true,
   images: { orderBy: { sortOrder: 'asc' } },
   tags: true,
-  author: true,
+  // Chỉ lấy field công khai của tác giả (không nạp passwordHash, email, phone... vào bộ nhớ)
+  author: { select: { id: true, name: true, avatarUrl: true } },
 } satisfies Prisma.PostInclude;
 
 type PostWithRelations = Prisma.PostGetPayload<{ include: typeof POST_INCLUDE }>;
@@ -253,6 +254,13 @@ export class PostsService {
     const post = this.toEntity(updated);
     if (status === PostStatus.PUBLISHED && current.status !== PostStatus.PUBLISHED) {
       await this.notifyPost(post, viewer, 'published');
+    } else if (
+      current.status === PostStatus.PUBLISHED &&
+      post.status === PostStatus.PUBLISHED &&
+      !canPublish(viewer.role as Role)
+    ) {
+      // Thành viên sửa bài đang hiển thị: bài vẫn PUBLISHED (giữ hành vi cũ) nhưng báo admin xem lại.
+      await this.notifyPost(post, viewer, 'edited');
     }
     if (post.status === PostStatus.PUBLISHED || current.status === PostStatus.PUBLISHED) {
       this.revalidateWeb([
@@ -346,21 +354,42 @@ export class PostsService {
   private async notifyPost(
     post: PostEntity,
     viewer: Viewer,
-    kind: 'pending' | 'published',
+    kind: 'pending' | 'published' | 'edited',
   ): Promise<void> {
-    const pending = kind === 'pending';
+    const copy = {
+      pending: {
+        type: NotificationType.POST_PENDING,
+        severity: NotificationSeverity.WARNING,
+        title: 'Bài viết mới chờ duyệt',
+      },
+      published: {
+        type: NotificationType.POST_PUBLISHED,
+        severity: NotificationSeverity.INFO,
+        title: 'Bài viết đã được xuất bản',
+      },
+      edited: {
+        type: NotificationType.POST_PENDING,
+        severity: NotificationSeverity.WARNING,
+        title: 'Bài đang hiển thị vừa được thành viên sửa',
+      },
+    }[kind];
+    // Sửa nhiều lần liên tiếp chỉ báo tối đa 1 lần/giờ cho mỗi bài
+    const dedupeKey =
+      kind === 'edited'
+        ? `post:${post.id}:edited:${new Date().toISOString().slice(0, 13)}`
+        : `post:${post.id}:${kind}`;
 
     try {
       await this.notifications.notifyAdmins({
         roles: [Role.ADMIN],
-        type: pending ? NotificationType.POST_PENDING : NotificationType.POST_PUBLISHED,
-        severity: pending ? NotificationSeverity.WARNING : NotificationSeverity.INFO,
-        title: pending ? 'Bài viết mới chờ duyệt' : 'Bài viết đã được xuất bản',
+        type: copy.type,
+        severity: copy.severity,
+        title: copy.title,
         body: `${post.title} - ${post.author?.name ?? viewer.name}`,
         entityType: 'post',
         entityId: post.id,
         actionUrl: `/quan-tri/bai-viet/${post.id}`,
-        dedupeKey: `post:${post.id}:${kind}`,
+        dedupeKey,
         excludeUserIds: [viewer.id],
       });
     } catch (error) {
@@ -494,12 +523,17 @@ export class PostsService {
 
   private buildScalarData(input: Partial<PostInput>): Record<string, unknown> {
     const date = this.parseDate(input.publishedAt);
+    // Lọc HTML ngay tại service: GraphQL và MCP đều đi qua đây trước khi trang công khai
+    // render bằng dangerouslySetInnerHTML. `null` = xoá nội dung, `undefined` = giữ nguyên.
+    const contentHtml =
+      typeof input.contentHtml === 'string' ? sanitizePostHtml(input.contentHtml) : input.contentHtml;
     return {
       title: input.title,
       seoTitle: input.seoTitle,
       summary: input.summary,
-      contentHtml: input.contentHtml,
-      contentText: input.contentHtml ? this.htmlToText(input.contentHtml) : undefined,
+      contentHtml,
+      contentText:
+        typeof contentHtml === 'string' ? htmlToText(contentHtml) : contentHtml === null ? null : undefined,
       addressRaw: input.addressRaw,
       ward: input.ward,
       city: input.city,
@@ -528,16 +562,6 @@ export class PostsService {
       tagsText: input.tags ?? undefined,
       ...(date ? { publishedAt: date } : {}),
     };
-  }
-
-  private htmlToText(html: string): string {
-    return html
-      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
   }
 
   private parseDate(value?: string | null): Date | null {
@@ -656,22 +680,7 @@ export class PostsService {
         : null,
       authorId: post.authorId,
       author: post.author
-        ? {
-            id: post.author.id,
-            email: post.author.email,
-            name: post.author.name,
-            role: post.author.role as unknown as UserEntity['role'],
-            avatarUrl: post.author.avatarUrl,
-            bio: post.author.bio,
-            phone: post.author.phone,
-            isActive: post.author.isActive,
-            status: post.author.status as unknown as UserEntity['status'],
-            approvedAt: post.author.approvedAt,
-            reviewNote: post.author.reviewNote,
-            lastLoginAt: post.author.lastLoginAt,
-            createdAt: post.author.createdAt,
-            updatedAt: post.author.updatedAt,
-          }
+        ? { id: post.author.id, name: post.author.name, avatarUrl: post.author.avatarUrl }
         : null,
       images,
       heroImage: hero,

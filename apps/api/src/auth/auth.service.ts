@@ -9,6 +9,7 @@ import {
   type RegisterInput,
 } from '@phuochai/shared';
 import { Role, UserStatus } from '@prisma/client';
+import { SlidingWindowRateLimiter, tooManyRequests } from '../common/rate-limiter';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 
@@ -23,13 +24,21 @@ export interface LoginContext {
   userAgent?: string;
 }
 
+/** Ngưỡng gửi cảnh báo cho admin (trong cửa sổ FAILED_LOGIN_WINDOW_MINUTES). */
 const FAILED_LOGIN_EMAIL_THRESHOLD = 5;
 const FAILED_LOGIN_IP_THRESHOLD = 10;
 const FAILED_LOGIN_WINDOW_MINUTES = 15;
+/** Ngưỡng khoá tạm: sai quá số lần này thì từ chối đăng nhập cho tới khi hết cửa sổ. */
+const LOCKOUT_EMAIL_THRESHOLD = 10;
+const LOCKOUT_IP_THRESHOLD = 30;
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  /** Số request đăng nhập mỗi IP (kể cả đúng mật khẩu) - chặn spam trước khi chạm DB/bcrypt. */
+  private readonly loginLimiter = new SlidingWindowRateLimiter(30, 5 * 60_000);
+  /** Số lần đăng ký mỗi IP - mỗi lần đăng ký tạo thông báo + tin Telegram cho admin. */
+  private readonly registerLimiter = new SlidingWindowRateLimiter(5, 60 * 60_000);
 
   constructor(
     private readonly users: UsersService,
@@ -44,6 +53,23 @@ export class AuthService {
 
   async login(input: LoginInput, meta?: LoginContext) {
     const ipHash = this.hashIp(meta?.ip);
+    this.assertWithinRate(this.loginLimiter, ipHash, 'đăng nhập');
+
+    // Kiểm tra khoá TRƯỚC khi so mật khẩu: đang bị khoá thì mật khẩu đúng cũng bị từ chối,
+    // nên kẻ dò mật khẩu không biết được lần thử nào trúng. Lần thử khi đang khoá vẫn được ghi
+    // nhận để khoá kéo dài chừng nào còn bị dò.
+    const { byEmail, byIp } = await this.users.countRecentFailedLogins(
+      input.email,
+      ipHash,
+      FAILED_LOGIN_WINDOW_MINUTES,
+    );
+    if (byEmail >= LOCKOUT_EMAIL_THRESHOLD || byIp >= LOCKOUT_IP_THRESHOLD) {
+      await this.recordFailedLogin(input.email, ipHash, meta);
+      throw tooManyRequests(
+        `Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau ${FAILED_LOGIN_WINDOW_MINUTES} phút.`,
+      );
+    }
+
     const user = await this.users.findByEmail(input.email);
 
     if (!user) {
@@ -130,6 +156,15 @@ export class AuthService {
     }
   }
 
+  /** Ném lỗi 429 nếu khoá (IP đã băm) vượt hạn mức; không có IP thì bỏ qua. */
+  private assertWithinRate(limiter: SlidingWindowRateLimiter, key: string | undefined, action: string): void {
+    if (!key) return;
+    const result = limiter.hit(key);
+    if (result.allowed) return;
+    const minutes = Math.max(1, Math.ceil(result.retryAfterSeconds / 60));
+    throw tooManyRequests(`Bạn ${action} quá nhiều lần. Vui lòng thử lại sau ${minutes} phút.`);
+  }
+
   private hashIp(ip?: string): string | undefined {
     if (!ip) return undefined;
     return createHash('sha256').update(`${ip}:${process.env.JWT_SECRET ?? 'dev'}`).digest('hex');
@@ -143,7 +178,9 @@ export class AuthService {
    * Tự đăng ký: tài khoản vào trạng thái chờ duyệt, **không** trả token.
    * Quản trị viên duyệt (và cấp vai trò) thì mới đăng nhập được.
    */
-  async register(input: RegisterInput) {
+  async register(input: RegisterInput, meta?: LoginContext) {
+    this.assertWithinRate(this.registerLimiter, this.hashIp(meta?.ip), 'đăng ký');
+
     const user = await this.users.register({
       name: input.name,
       email: input.email,

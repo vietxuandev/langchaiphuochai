@@ -387,7 +387,7 @@ type Post {
   areaM2: Float
   areaText: String
   attributes: JSON
-  author: User
+  author: PostAuthor
   authorId: String
   bathrooms: Int
   bedrooms: Int
@@ -440,6 +440,12 @@ type Post {
   ward: String
   warnings: [String!]!
   widthM: Float
+}
+
+type PostAuthor {
+  avatarUrl: String
+  id: String!
+  name: String!
 }
 
 input PostFilterInput {

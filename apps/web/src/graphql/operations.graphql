@@ -128,8 +128,6 @@ query AdminPosts($filter: PostFilterInput) {
       author {
         id
         name
-        email
-        role
       }
     }
     total

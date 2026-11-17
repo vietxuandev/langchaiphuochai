@@ -310,7 +310,8 @@ export class McpServerFactory {
         title: 'Đổi trạng thái bài viết',
         description:
           'Xuất bản (PUBLISHED), thu hồi về nháp (DRAFT) hoặc lưu trữ (ARCHIVED). ' +
-          'Cần scope posts:publish; dùng khi người quản trị yêu cầu rõ ràng.',
+          'Cần scope posts:publish; dùng khi người quản trị yêu cầu rõ ràng. ' +
+          'PUBLISHED chỉ hoạt động khi server bật MCP_ALLOW_PUBLISH=true (xem whoami.site.publishEnabled).',
         inputSchema: {
           id: z.string().max(40).optional(),
           slug: z.string().max(300).optional(),
