@@ -16,14 +16,20 @@ interface SlugIndex {
 
 let cache: { at: number; data: SlugIndex } | null = null;
 const TTL_MS = 60_000;
+/**
+ * Gặp slug không có trong index: tải lại index (bỏ qua cache) tối đa mỗi 10 giây.
+ * Bài vừa xuất bản chỉ 404 tối đa ~10 giây thay vì 1-2 phút, còn slug rác không làm tải API.
+ */
+const FRESH_INTERVAL_MS = 10_000;
+let lastFreshAt = 0;
 
-async function loadIndex(origin: string): Promise<SlugIndex | null> {
-  if (cache && Date.now() - cache.at < TTL_MS) return cache.data;
+async function loadIndex(origin: string, fresh = false): Promise<SlugIndex | null> {
+  if (!fresh && cache && Date.now() - cache.at < TTL_MS) return cache.data;
 
   try {
-    const response = await fetch(new URL('/api/public/slugs', origin), {
-      next: { revalidate: 60 },
-    });
+    const url = new URL('/api/public/slugs', origin);
+    if (fresh) url.searchParams.set('fresh', '1');
+    const response = await fetch(url, fresh ? { cache: 'no-store' } : { next: { revalidate: 60 } });
     if (!response.ok) return null;
 
     const data = (await response.json()) as SlugIndex;
@@ -85,14 +91,22 @@ export async function middleware(request: NextRequest) {
     (process.env.PORT ? `http://localhost:${process.env.PORT}` : request.nextUrl.origin);
   const index = await loadIndex(selfOrigin);
   if (!index) return NextResponse.next();
+  if (hasSlug(index, allowedTypes, slug)) return NextResponse.next();
 
-  const valid =
-    allowedTypes[0] === 'CATEGORY'
-      ? index.categories.includes(slug)
-      : allowedTypes.some((type) => index.types[type]?.includes(slug));
+  // Không có trong index: có thể index cũ hơn bài vừa xuất bản -> tải lại một lần rồi mới 404.
+  if (Date.now() - lastFreshAt >= FRESH_INTERVAL_MS) {
+    lastFreshAt = Date.now();
+    const freshIndex = await loadIndex(selfOrigin, true);
+    if (freshIndex && hasSlug(freshIndex, allowedTypes, slug)) return NextResponse.next();
+  }
 
-  if (!valid) return notFoundResponse();
-  return NextResponse.next();
+  return notFoundResponse();
+}
+
+function hasSlug(index: SlugIndex, allowedTypes: string[], slug: string): boolean {
+  return allowedTypes[0] === 'CATEGORY'
+    ? index.categories.includes(slug)
+    : allowedTypes.some((type) => index.types[type]?.includes(slug));
 }
 
 export const config = {

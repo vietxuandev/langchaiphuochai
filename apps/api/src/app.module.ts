@@ -5,6 +5,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ApolloDriver, type ApolloDriverConfig } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
@@ -23,6 +24,28 @@ import { UsersModule } from './users/users.module';
 /** Thư mục chứa ảnh của server mới (upload + ảnh import), phục vụ tại /upload/*. */
 const uploadRoot = process.env.UPLOAD_DIR ?? join(process.cwd(), '../../data/upload');
 
+const isProduction = process.env.NODE_ENV === 'production';
+
+/**
+ * Introspection + Apollo Sandbox: mặc định chỉ bật khi không phải production
+ * (frontend sinh type từ file `schema.graphql`, không cần introspection lúc chạy).
+ * Đặt GRAPHQL_INTROSPECTION=true để bật tạm trên production khi cần debug.
+ */
+const graphqlIntrospection = process.env.GRAPHQL_INTROSPECTION
+  ? process.env.GRAPHQL_INTROSPECTION === 'true'
+  : !isProduction;
+
+/** Mã lỗi do client gửi sai (cú pháp, field không tồn tại...) - không phải lỗi máy chủ. */
+const CLIENT_ERROR_CODES = new Set([
+  'GRAPHQL_PARSE_FAILED',
+  'GRAPHQL_VALIDATION_FAILED',
+  'BAD_USER_INPUT',
+  'BAD_REQUEST',
+  'PERSISTED_QUERY_NOT_FOUND',
+  'PERSISTED_QUERY_NOT_SUPPORTED',
+  'OPERATION_RESOLUTION_FAILURE',
+]);
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -31,12 +54,17 @@ const uploadRoot = process.env.UPLOAD_DIR ?? join(process.cwd(), '../../data/upl
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
-      // Sinh schema code-first ra file để frontend dùng graphql-codegen.
-      autoSchemaFile: process.env.SCHEMA_PATH ?? join(process.cwd(), 'schema.graphql'),
+      // Dev: sinh schema code-first ra file để frontend dùng graphql-codegen.
+      // Production: dựng schema trong bộ nhớ (app chạy bằng user không phải root, không ghi file).
+      autoSchemaFile: process.env.SCHEMA_PATH ?? (isProduction ? true : join(process.cwd(), 'schema.graphql')),
       sortSchema: true,
-      introspection: true,
+      introspection: graphqlIntrospection,
       playground: false,
-      plugins: [ApolloServerPluginLandingPageLocalDefault({ footer: false })],
+      plugins: [
+        graphqlIntrospection
+          ? ApolloServerPluginLandingPageLocalDefault({ footer: false })
+          : ApolloServerPluginLandingPageDisabled(),
+      ],
       // Chặn gộp nhiều lần login/register (hoặc nhân query nặng) trong một request bằng alias.
       validationRules: [aliasLimitRule({ maxAliases: 20, singleUseMutations: ['login', 'register'] })],
       context: ({ req }: { req: unknown }) => ({ req }),
@@ -49,7 +77,8 @@ const uploadRoot = process.env.UPLOAD_DIR ?? join(process.cwd(), '../../data/upl
           : (original?.message ?? error.message);
 
         // Ánh xạ mã HTTP của Nest sang mã lỗi GraphQL để frontend xử lý thống nhất.
-        const statusCode = original?.statusCode ?? 500;
+        const rawCode = typeof error.extensions?.code === 'string' ? error.extensions.code : undefined;
+        const statusCode = original?.statusCode ?? (rawCode && CLIENT_ERROR_CODES.has(rawCode) ? 400 : 500);
         const codeByStatus: Record<number, string> = {
           400: 'BAD_REQUEST',
           401: 'UNAUTHENTICATED',
@@ -58,15 +87,20 @@ const uploadRoot = process.env.UPLOAD_DIR ?? join(process.cwd(), '../../data/upl
           409: 'CONFLICT',
           429: 'TOO_MANY_REQUESTS',
         };
-        const code = codeByStatus[statusCode] ?? error.extensions?.code ?? 'INTERNAL_SERVER_ERROR';
+        const code =
+          (original?.statusCode ? codeByStatus[original.statusCode] : undefined) ?? rawCode ?? 'INTERNAL_SERVER_ERROR';
+
+        // Lỗi nội bộ (lỗi Prisma, bug...) trên production: không lộ chi tiết truy vấn/đường dẫn file
+        // cho client. Nest đã ghi log lỗi gốc ở server.
+        const hideDetails = isProduction && code === 'INTERNAL_SERVER_ERROR' && statusCode >= 500;
 
         return {
-          message,
+          message: hideDetails ? 'Lỗi máy chủ, vui lòng thử lại sau' : message,
           path: error.path,
           extensions: {
             code,
             statusCode,
-            ...(process.env.NODE_ENV === 'production' ? {} : { details: error.extensions?.details }),
+            ...(isProduction ? {} : { details: error.extensions?.details }),
           },
         };
       },

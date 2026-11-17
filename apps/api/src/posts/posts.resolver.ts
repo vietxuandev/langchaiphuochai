@@ -1,5 +1,8 @@
-import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Logger } from '@nestjs/common';
+import { Args, Context, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { PostStatus, PostType } from '@phuochai/shared';
+import type { RequestLike } from '../common/client-ip';
+import { hasInternalSecret, isTrustedInternalRequest } from '../common/internal-request';
 import type { PostInput } from '@phuochai/shared';
 import { createPostSchema, postFilterSchema, updatePostSchema } from '@phuochai/shared';
 import { CurrentUser, OptionalAuth, Public, Roles } from '../common/decorators';
@@ -17,10 +20,16 @@ const postFilterWithDefaults = postFilterSchema.default({});
 
 @Resolver(() => PostEntity)
 export class PostsResolver {
+  private readonly logger = new Logger(PostsResolver.name);
+
   constructor(
     private readonly postsService: PostsService,
     private readonly users: UsersService,
-  ) {}
+  ) {
+    if (!hasInternalSecret()) {
+      this.logger.warn('REVALIDATE_SECRET chưa đặt: ai cũng tăng được lượt xem qua post(countView: true)');
+    }
+  }
 
   /** Chuyển entity người dùng thành "người xem" cho tầng service. */
   private async toViewer(user: UserEntity | null): Promise<Viewer | null> {
@@ -43,14 +52,19 @@ export class PostsResolver {
   }
 
   @OptionalAuth()
-  @Query(() => PostEntity, { description: 'Chi tiết bài viết theo slug (tự tăng lượt xem)' })
+  @Query(() => PostEntity, {
+    description: 'Chi tiết bài viết theo slug. countView chỉ được tính khi server web gọi kèm secret nội bộ',
+  })
   async post(
     @Args('slug', { type: () => String }) slug: string,
     @CurrentUser() user: UserEntity | null = null,
     @Args('countView', { type: () => Boolean, nullable: true, defaultValue: false }) countView = false,
+    @Context() context: { req: RequestLike },
   ): Promise<PostEntity> {
     const post = await this.postsService.findBySlug(slug, await this.toViewer(user));
-    if (countView) await this.postsService.incrementViews(post.id);
+    // Chỉ route /api/views của web (đã giới hạn theo IP) được tăng lượt xem - chặn bơm lượt xem
+    // bằng cách gọi thẳng GraphQL (khối "Được xem nhiều nhất" ở trang chủ sắp theo lượt xem).
+    if (countView && isTrustedInternalRequest(context.req)) await this.postsService.incrementViews(post.id);
     return post;
   }
 
@@ -152,12 +166,5 @@ export class PostsResolver {
     @CurrentUser() user: UserEntity,
   ): Promise<PostEntity> {
     return this.postsService.setStatus(id, PostStatus.ARCHIVED, (await this.toViewer(user))!);
-  }
-
-  @Public()
-  @Mutation(() => Boolean, { description: 'Tăng lượt xem bài viết' })
-  async incrementPostViews(@Args('id', { type: () => String }) id: string): Promise<boolean> {
-    await this.postsService.incrementViews(id);
-    return true;
   }
 }

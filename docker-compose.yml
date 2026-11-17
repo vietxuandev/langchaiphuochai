@@ -32,7 +32,6 @@ services:
       JWT_EXPIRES_IN: 7d
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,https://langchaiphuochai.com}
       UPLOAD_DIR: /app/data/upload
-      SCHEMA_PATH: /app/apps/api/schema.graphql
       # Thông báo quản trị qua Telegram (để trống thì chỉ dùng in-app)
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
@@ -74,7 +73,8 @@ services:
     ports:
       - '3000:3000'
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
   # Import dữ liệu crawl: docker compose run --rm seed
   seed:
@@ -91,7 +91,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: sh -c "npx prisma migrate deploy --schema apps/api/prisma/schema.prisma && npx tsx apps/api/prisma/seed.ts"
+    command: sh -c "npx prisma migrate deploy --schema apps/api/prisma/schema.prisma && node apps/api/dist/prisma/seed.js"
 
 volumes:
   pgdata:

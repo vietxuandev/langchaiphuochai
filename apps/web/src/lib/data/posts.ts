@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { safeQuery } from '@/lib/apollo/rsc-client';
+import { safeQuery, type SafeQueryOptions } from '@/lib/apollo/rsc-client';
 import {
   PostDetailDocument,
   PostWardsDocument,
@@ -41,7 +41,7 @@ export async function getRelatedPosts(slug: string, limit = 4) {
 }
 
 /** Danh sách bài viết (dùng cho SSR các trang danh sách và trang chủ). */
-export async function getPosts(filter: PostFilterInput) {
+export async function getPosts(filter: PostFilterInput, options?: SafeQueryOptions) {
   const data = await safeQuery<PostsQuery, { filter: PostFilterInput }>(
     PostsDocument,
     { filter },
@@ -55,24 +55,33 @@ export async function getPosts(filter: PostFilterInput) {
         hasNextPage: false,
       },
     } as unknown as PostsQuery,
+    options,
   );
   return data.posts;
 }
 
 /** Danh sách tỉnh/thành có dữ liệu (cho bộ lọc). */
 
-/** Toàn bộ slug đã publish, dùng cho middleware chặn slug rác. */
-export async function getAllPublishedSlugs(): Promise<Array<{ type: PostType; slug: string }>> {
+/**
+ * Toàn bộ slug đã publish, dùng cho middleware chặn slug rác.
+ * `fresh: true` = bỏ qua cache dữ liệu (dùng khi gặp slug chưa có trong index, có thể là bài vừa đăng).
+ */
+export async function getAllPublishedSlugs(
+  options: { fresh?: boolean } = {},
+): Promise<Array<{ type: PostType; slug: string }>> {
   const rows: Array<{ type: PostType; slug: string }> = [];
 
   for (let page = 1; page <= 60; page += 1) {
-    const result = await getPosts({
-      status: 'PUBLISHED',
-      page,
-      pageSize: 100,
-      sortBy: 'PUBLISHED_AT',
-      sortOrder: 'DESC',
-    });
+    const result = await getPosts(
+      {
+        status: 'PUBLISHED',
+        page,
+        pageSize: 100,
+        sortBy: 'PUBLISHED_AT',
+        sortOrder: 'DESC',
+      },
+      { cache: !options.fresh },
+    );
 
     rows.push(...result.items.map((post) => ({ type: post.type, slug: post.slug })));
     if (!result.hasNextPage) break;

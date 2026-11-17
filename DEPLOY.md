@@ -102,7 +102,8 @@ ls -lh /data/langchaiphuochai/seed/dataset.json
 | `WATERMARK_ENABLED` | | `true` | Tự đóng logo + tên miền vào góc phải dưới ảnh upload (avatar không áp dụng) |
 | `WATERMARK_IMAGE` | | `apps/api/assets/watermark.png` | Dùng file watermark khác nếu muốn |
 | `API_BUILD_URL` | | `https://langchaiphuochai.com` | API dùng lúc build web để pre-render static/ISR |
-| `REVALIDATE_SECRET` | | chuỗi ngẫu nhiên | Bí mật gọi `/api/revalidate` từ API sau khi publish/sửa/xoá |
+| `REVALIDATE_SECRET` | ✅ | `openssl rand -hex 32` | Bí mật dùng chung giữa web và API: API gọi `/api/revalidate` sau khi publish/sửa/xoá, và API **chỉ đếm lượt xem** do web gửi kèm secret này. Để trống thì lượt xem ai cũng bơm được (API ghi cảnh báo khi khởi động) |
+| `GRAPHQL_INTROSPECTION` | | `true` | Bật tạm introspection + Apollo Sandbox trên production để debug. Mặc định tắt |
 
 > `JWT_SECRET` và `DB_PASSWORD` dùng cú pháp `${VAR:?...}` nên nếu thiếu, Coolify sẽ báo lỗi ngay
 > thay vì chạy với giá trị mặc định không an toàn.
@@ -176,7 +177,7 @@ Sau khi deploy lần đầu, database còn trống. Có 2 cách:
 2. Chạy:
 
 ```bash
-DATASET_PATH=/app/data/seed/dataset.json UPLOAD_DIR=/app/data/upload npx tsx apps/api/prisma/seed.ts
+DATASET_PATH=/app/data/seed/dataset.json UPLOAD_DIR=/app/data/upload node apps/api/dist/prisma/seed.js
 ```
 
 **Cách B - SSH vào server (khi không muốn dùng UI)**
@@ -208,7 +209,7 @@ Container `api` đã có sẵn `DATABASE_URL` và `UPLOAD_DIR`, chỉ cần truy
 ```bash
 sudo docker ps --format '{{.Names}}' | grep -i api          # lấy tên container
 sudo docker exec -it <tên-container-api> sh -c \
-  "DATASET_PATH=/app/data/seed/dataset.json npx tsx apps/api/prisma/seed.ts"
+  "DATASET_PATH=/app/data/seed/dataset.json node apps/api/dist/prisma/seed.js"
 ```
 
 Kiểm tra trước khi seed: `sudo ls /data/langchaiphuochai/seed/dataset.json`
@@ -273,8 +274,8 @@ API lọc `contentHtml` mỗi khi ghi (GraphQL, MCP, crawler). Với bài **đã
 một lần trong container `api`. Mặc định chỉ báo cáo, thêm `--apply` mới ghi:
 
 ```bash
-sudo docker exec -it $(sudo docker ps -qf "name=api") npx tsx apps/api/scripts/sanitize-post-html.ts
-sudo docker exec -it $(sudo docker ps -qf "name=api") npx tsx apps/api/scripts/sanitize-post-html.ts --apply
+sudo docker exec -it $(sudo docker ps -qf "name=api") node apps/api/dist/scripts/sanitize-post-html.js
+sudo docker exec -it $(sudo docker ps -qf "name=api") node apps/api/dist/scripts/sanitize-post-html.js --apply
 ```
 
 Báo cáo liệt kê từng bài và những gì bị bỏ (`img@onerror`, `script`, `a@href:javascript`...). Bài nào bị
@@ -352,10 +353,10 @@ Hai lỗi đã phát hiện và sửa nhờ chạy thử:
 
 ### Kích thước image
 
-| Image | Trước | Sau khi bật `standalone` |
+| Image | Trước | Sau tối ưu |
 | --- | --- | --- |
-| `web` | 1.81 GB | **354 MB** (phần app chỉ 91 MB, còn lại là base `node:22-alpine`) |
-| `api` | 1.6 GB | 1.6 GB (giữ `prisma` CLI + `tsx` để migrate/seed) |
+| `web` | 1.81 GB | **354 MB** nhờ `standalone` (phần app chỉ 91 MB, còn lại là base `node:22-alpine`) |
+| `api` | 1.65 GB | **~800 MB** nhờ stage `deps` chỉ cài dependency production của API (vẫn giữ `prisma` CLI để migrate lúc khởi động; seed/script chạy bằng file đã build, không cần `tsx`) |
 
 Cách hoạt động: `NEXT_STANDALONE=1` bật `output: 'standalone'` trong `next.config.mjs`; Next trace đúng
 file được import khi chạy nên `node_modules` chỉ còn ~85 MB (56 package) thay vì ~1 GB của cả monorepo.
@@ -463,3 +464,13 @@ là healthcheck tự theo, không phải sửa Dockerfile.
 - **Migration tự động**: `api` chạy `prisma migrate deploy` trước khi start - deploy lại nhiều lần
   vẫn an toàn.
 - **Ảnh do API phục vụ** tại `/upload/*` và được web proxy - không cần cấu hình Nginx riêng.
+- **API chạy bằng user `node` (uid 1000)**, không phải root. `apps/api/docker-entrypoint.sh` khởi động
+  bằng root chỉ để chuyển quyền `/app/data` (ảnh do bản cũ chạy root ghi ra) rồi hạ quyền bằng
+  `su-exec`. Lần deploy đầu sau khi cập nhật, log `api` sẽ có dòng "Chuyển quyền /app/data..." và
+  thư mục `DATA_DIR` trên host đổi chủ sở hữu sang uid 1000 - các lần sau bỏ qua.
+- **Image API chỉ chứa dependency production** của API (stage `deps`): không còn Nest CLI, TypeScript,
+  `tsx`, `embedded-postgres` hay dependency của web. Script một lần chạy bằng file đã build:
+  `node apps/api/dist/prisma/seed.js`, `node apps/api/dist/scripts/sanitize-post-html.js`.
+- **Schema GraphQL trên production dựng trong bộ nhớ** (không ghi `schema.graphql`); file
+  `apps/api/schema.graphql` trong repo vẫn là nguồn cho codegen của web, sinh bằng
+  `npm run schema:emit -w @phuochai/api`.

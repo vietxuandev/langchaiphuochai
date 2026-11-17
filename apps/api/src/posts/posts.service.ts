@@ -178,7 +178,7 @@ export class PostsService {
 
     const created = await this.prisma.post.create({
       data: {
-        ...this.buildScalarData(input),
+        ...this.buildScalarData(input, viewer),
         status,
         slug,
         type: input.type as PostType,
@@ -221,7 +221,7 @@ export class PostsService {
     const updated = await this.prisma.post.update({
       where: { id: current.id },
       data: {
-        ...this.buildScalarData(input),
+        ...this.buildScalarData(input, viewer),
         status,
         slug,
         type: input.type as PostType | undefined,
@@ -521,7 +521,7 @@ export class PostsService {
     }
   }
 
-  private buildScalarData(input: Partial<PostInput>): Record<string, unknown> {
+  private buildScalarData(input: Partial<PostInput>, viewer: Viewer): Record<string, unknown> {
     const date = this.parseDate(input.publishedAt);
     // Lọc HTML ngay tại service: GraphQL và MCP đều đi qua đây trước khi trang công khai
     // render bằng dangerouslySetInnerHTML. `null` = xoá nội dung, `undefined` = giữ nguyên.
@@ -530,6 +530,7 @@ export class PostsService {
     return {
       title: input.title,
       seoTitle: input.seoTitle,
+      seoDescription: input.seoDescription,
       summary: input.summary,
       contentHtml,
       contentText:
@@ -557,7 +558,8 @@ export class PostsService {
       contactPhone: input.contactPhone,
       contactEmail: input.contactEmail,
       contactZalo: input.contactZalo,
-      verified: input.verified,
+      // Badge "Đã xác thực" hiện công khai trên bài: chỉ biên tập viên/admin được bật/tắt
+      verified: canPublish(viewer.role as Role) ? input.verified : undefined,
       hasManager: input.hasManager,
       tagsText: input.tags ?? undefined,
       ...(date ? { publishedAt: date } : {}),
@@ -632,6 +634,7 @@ export class PostsService {
       slug: post.slug,
       title: post.title,
       seoTitle: post.seoTitle,
+      seoDescription: post.seoDescription,
       summary: post.summary,
       contentHtml: post.contentHtml,
       contentText: post.contentText,

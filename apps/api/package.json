@@ -43,6 +43,7 @@
     "marked": "^15.0.12",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "prisma": "^6.5.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "sanitize-html": "^2.18.1",
@@ -59,7 +60,6 @@
     "@types/passport-jwt": "^4.0.1",
     "@types/sanitize-html": "^2.16.2",
     "embedded-postgres": "^17.10.0-beta.17",
-    "prisma": "^6.5.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   },

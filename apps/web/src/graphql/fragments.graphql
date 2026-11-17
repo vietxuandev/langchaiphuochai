@@ -41,6 +41,7 @@ fragment PostFull on Post {
   ...PostCard
   sourceKey
   seoTitle
+  seoDescription
   contentHtml
   contentText
   pricePerM2Raw

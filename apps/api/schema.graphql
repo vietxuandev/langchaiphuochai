@@ -293,9 +293,6 @@ type Mutation {
   """Xoá bài viết"""
   deletePost(id: String!): Boolean!
 
-  """Tăng lượt xem bài viết"""
-  incrementPostViews(id: String!): Boolean!
-
   """Đăng nhập bằng email và mật khẩu"""
   login(input: LoginInput!): AuthPayload!
 
@@ -423,6 +420,9 @@ type Post {
   publishedAt: DateTime
   roadWidth: String
   seo: JSON
+
+  """Mô tả SEO (meta description); trống thì dùng summary"""
+  seoDescription: String
   seoTitle: String
   slug: String!
   sourceKey: String
@@ -627,7 +627,9 @@ type Query {
   """Kiểm tra API công khai"""
   ping(echo: String): String!
 
-  """Chi tiết bài viết theo slug (tự tăng lượt xem)"""
+  """
+  Chi tiết bài viết theo slug. countView chỉ được tính khi server web gọi kèm secret nội bộ
+  """
   post(countView: Boolean = false, slug: String!): Post!
 
   """Chi tiết bài viết theo id"""

@@ -17,6 +17,8 @@ export interface JwtPayload {
   sub: string;
   email: string;
   role: Role;
+  /** Phiên bản token của tài khoản (User.tokenVersion). Token cũ không có field này = phiên bản 0. */
+  ver?: number;
 }
 
 export interface LoginContext {
@@ -46,8 +48,8 @@ export class AuthService {
     private readonly jwt: JwtService,
   ) {}
 
-  private async sign(user: { id: string; email: string; role: Role }): Promise<string> {
-    const payload: JwtPayload = { sub: user.id, email: user.email, role: user.role };
+  private async sign(user: { id: string; email: string; role: Role; tokenVersion: number }): Promise<string> {
+    const payload: JwtPayload = { sub: user.id, email: user.email, role: user.role, ver: user.tokenVersion };
     return this.jwt.signAsync(payload);
   }
 

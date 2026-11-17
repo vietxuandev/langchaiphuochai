@@ -11,16 +11,31 @@ const standalone = process.env.NEXT_STANDALONE === '1';
 /** Gốc workspace (monorepo) để Next trace cả package dùng chung `@phuochai/shared`. */
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
+/**
+ * Header bảo mật cho mọi trang.
+ * CSP chỉ gồm các chỉ thị không ảnh hưởng script/iframe của Google AdSense:
+ * chống nhúng trang vào iframe site khác (clickjacking), chèn thẻ <base>, form gửi ra ngoài và plugin.
+ */
+const securityHeaders = [
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+  { key: 'Strict-Transport-Security', value: 'max-age=31536000' },
+  {
+    key: 'Content-Security-Policy',
+    value: "frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'",
+  },
+];
+
 const nextConfig = {
   reactStrictMode: true,
   ...(standalone ? { output: 'standalone', outputFileTracingRoot: workspaceRoot } : {}),
   poweredByHeader: false,
-  images: {
-    remotePatterns: [
-      { protocol: 'http', hostname: 'localhost' },
-      { protocol: 'http', hostname: '127.0.0.1' },
-      { protocol: 'https', hostname: '**' },
-    ],
+  // Không khai báo remotePatterns: next/image chỉ dùng cho ảnh trong repo. Trước đây
+  // `https://**` biến /_next/image thành proxy resize ảnh cho mọi URL trên internet.
+  async headers() {
+    return [{ source: '/:path*', headers: securityHeaders }];
   },
   /**
    * Proxy GraphQL, API upload và ảnh về API NestJS.

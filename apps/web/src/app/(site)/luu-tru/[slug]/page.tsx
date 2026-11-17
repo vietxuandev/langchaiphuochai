@@ -23,11 +23,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const post = await getPostBySlugOrNotFound(slug);
   return {
     title: post.seoTitle ?? post.title,
-    description: post.summary ?? undefined,
+    description: post.seoDescription ?? post.summary ?? undefined,
     alternates: { canonical: `/luu-tru/${post.slug}` },
     openGraph: {
       title: post.seoTitle ?? post.title,
-      description: post.summary ?? undefined,
+      description: post.seoDescription ?? post.summary ?? undefined,
       images: post.heroImage ? [buildImageUrl(post.heroImage)] : undefined,
     },
   };

@@ -1,11 +1,20 @@
 import 'reflect-metadata';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { json } from 'express';
+import { json, type NextFunction, type Request, type Response } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { cors: false });
+
+  // Header bảo mật cơ bản cho mọi response của API (cả /upload/* và domain mcp. trỏ thẳng vào API).
+  app.getHttpAdapter().getInstance().disable('x-powered-by');
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+  });
 
   // Nội dung bài viết (Markdown/HTML) gửi qua MCP có thể dài hơn 100KB mặc định.
   // Đăng ký trước parser mặc định của Nest nên giới hạn 4MB được áp dụng.

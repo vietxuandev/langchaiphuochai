@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const post = await getPostBySlugOrNotFound(slug);
   return {
     title: post.seoTitle ?? post.title,
-    description: post.summary ?? undefined,
+    description: post.seoDescription ?? post.summary ?? undefined,
     alternates: { canonical: `/trang/${post.slug}` },
   };
 }

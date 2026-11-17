@@ -81,6 +81,9 @@ export class PostEntity {
   @Field(() => String, { nullable: true })
   seoTitle?: string | null;
 
+  @Field(() => String, { nullable: true, description: 'Mô tả SEO (meta description); trống thì dùng summary' })
+  seoDescription?: string | null;
+
   @Field(() => String, { nullable: true })
   summary?: string | null;
 

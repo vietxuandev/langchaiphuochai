@@ -1,12 +1,13 @@
-import { getClient, safeQuery } from '@/lib/apollo/rsc-client';
+import { getClient, safeQuery, type SafeQueryOptions } from '@/lib/apollo/rsc-client';
 import { CategoriesDocument, type CategoriesQuery } from '@/generated/graphql';
 
-/** Lấy danh mục cho menu/footer; trả về mảng rỗng nếu API chưa sẵn sàng. */
-export async function getNavCategories() {
+/** Lấy danh mục cho menu/footer (lúc build mà API chưa sẵn sàng thì trả mảng rỗng). */
+export async function getNavCategories(options?: SafeQueryOptions) {
   const data = await safeQuery<CategoriesQuery, Record<string, never>>(
     CategoriesDocument,
     {},
     { categories: [] } as unknown as CategoriesQuery,
+    options,
   );
   return data.categories ?? [];
 }

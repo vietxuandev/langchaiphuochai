@@ -25,7 +25,7 @@ import { useChangePasswordMutation, useUpdateProfileMutation } from '@/generated
 
 /** Trang tài khoản: cập nhật hồ sơ và đổi mật khẩu. */
 export function AccountSettings() {
-  const { user, refresh } = useAuth();
+  const { user, refresh, login } = useAuth();
   const [updateProfile, { loading: savingProfile }] = useUpdateProfileMutation();
   const [changePassword, { loading: savingPassword }] = useChangePasswordMutation();
 
@@ -70,9 +70,15 @@ export function AccountSettings() {
 
   const onChangePassword = passwordForm.handleSubmit(async (values) => {
     try {
-      await changePassword({ variables: { input: values } });
+      const result = await changePassword({ variables: { input: values } });
+      // Mutation dùng errorPolicy "all": lỗi (ví dụ sai mật khẩu hiện tại) nằm trong result.errors
+      if (!result.data?.changePassword) {
+        throw new Error(result.errors?.[0]?.message ?? 'Không đổi được mật khẩu');
+      }
+      // Đổi mật khẩu làm mọi phiên cũ hết hiệu lực (kể cả phiên này) -> đăng nhập lại bằng mật khẩu mới
+      if (user?.email) await login(user.email, values.newPassword);
       passwordForm.reset({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      toast.success('Đã đổi mật khẩu');
+      toast.success('Đã đổi mật khẩu. Các thiết bị khác đã được đăng xuất.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Không đổi được mật khẩu');
     }

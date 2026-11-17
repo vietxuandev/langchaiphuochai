@@ -336,11 +336,6 @@ async function main() {
       token: editorToken,
       check: (result) => (result.publishPost.status === 'PUBLISHED' ? true : 'chưa xuất bản'),
     });
-    await step('incrementPostViews', {
-      query: 'mutation($id: String!) { incrementPostViews(id: $id) }',
-      variables: { id },
-      check: (result) => (result.incrementPostViews === true ? true : 'không tăng được lượt xem'),
-    });
     await step('archivePost', {
       query: 'mutation($id: String!) { archivePost(id: $id) { id status } }',
       variables: { id },

@@ -27,33 +27,66 @@ export const { getClient } = registerApolloClient(
     }),
 );
 
+export interface SafeQueryOptions {
+  /** `false` = luôn gọi API, bỏ qua cache dữ liệu 60 giây (khi cần dữ liệu mới nhất). */
+  cache?: boolean;
+}
+
+type GraphQLErrorLike = { message: string; extensions?: Record<string, unknown> };
+
+/** Lỗi chỉ gồm NOT_FOUND là kết quả hợp lệ (trang 404), không phải sự cố của API. */
+function isNotFoundOnly(errors: ReadonlyArray<GraphQLErrorLike>): boolean {
+  return errors.length > 0 && errors.every((error) => error.extensions?.code === 'NOT_FOUND');
+}
+
+/** Đang chạy `next build` (API có thể chưa sẵn sàng). */
+function isBuildPhase(): boolean {
+  return process.env.NEXT_PHASE === 'phase-production-build';
+}
+
 /**
- * Truy vấn an toàn cho RSC: nếu API lỗi/chưa chạy thì trả về giá trị mặc định
- * thay vì làm sập trang (ví dụ trong lúc `next build`).
+ * Truy vấn GraphQL cho React Server Component.
+ *
+ * - API trả NOT_FOUND -> dùng `fallback` (trang hiển thị 404 như bình thường).
+ * - API lỗi / không kết nối được khi đang chạy thật -> NÉM lỗi. Nhờ vậy Next giữ nguyên bản
+ *   ISR đang cache thay vì lưu đè bằng trang rỗng/404 (trước đây chỉ cần API restart vài giây
+ *   lúc deploy là bài có thật có thể bị cache thành 404 trong 5 phút).
+ * - Lúc `next build` -> dùng `fallback` để build không hỏng khi API chưa chạy.
  */
 export async function safeQuery<TData, TVariables extends Record<string, unknown>>(
   query: Parameters<ReturnType<typeof getClient>['query']>[0]['query'],
   variables: TVariables,
   fallback: TData,
+  options: SafeQueryOptions = {},
 ): Promise<TData> {
+  const run = async (): Promise<TData> => {
+    const client = getClient();
+    const result = await client.query<TData, TVariables>({ query, variables });
+    const errors = (result.errors ?? []) as ReadonlyArray<GraphQLErrorLike>;
+    if (errors.length > 0) {
+      if (isNotFoundOnly(errors)) return fallback;
+      // Ném lỗi bên trong hàm cache: unstable_cache không lưu kết quả lỗi
+      throw new Error(`GraphQL lỗi: ${errors.map((error) => error.message).join('; ')}`);
+    }
+    if (!result.data) throw new Error('GraphQL không trả về dữ liệu');
+    return result.data as TData;
+  };
+
   try {
+    if (options.cache === false) return await run();
+
     // Cache dữ liệu RSC ngắn hạn để giảm tải API khi nhiều người xem cùng trang.
     // HTML vẫn có thể được cache riêng ở tầng route/ISR khi bật.
-    const cached = unstable_cache(
-      async () => {
-        const client = getClient();
-        const result = await client.query<TData, TVariables>({ query, variables });
-        return (result.data ?? fallback) as TData;
-      },
-      ['graphql', print(query), JSON.stringify(variables)],
-      { revalidate: 60, tags: ['graphql'] },
-    );
-
+    const cached = unstable_cache(run, ['graphql', print(query), JSON.stringify(variables)], {
+      revalidate: 60,
+      tags: ['graphql'],
+    });
     return await cached();
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn('[RSC] Không truy vấn được GraphQL:', (error as Error).message);
+    if (isBuildPhase()) {
+      console.warn('[RSC] Build: không truy vấn được GraphQL, dùng dữ liệu mặc định:', (error as Error).message);
+      return fallback;
     }
-    return fallback;
+    throw error;
   }
 }

@@ -249,7 +249,8 @@ export class UsersService {
     if (!valid) return false;
     await this.prisma.user.update({
       where: { id },
-      data: { passwordHash: await bcrypt.hash(newPassword, 10) },
+      // Tăng tokenVersion: mọi phiên đăng nhập cũ (mọi thiết bị) hết hiệu lực ngay
+      data: { passwordHash: await bcrypt.hash(newPassword, 10), tokenVersion: { increment: 1 } },
     });
     return true;
   }

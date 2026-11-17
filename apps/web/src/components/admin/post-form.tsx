@@ -64,7 +64,7 @@ export function PostForm({ post, mode }: PostFormProps) {
       summary: post.summary ?? '',
       contentHtml: post.contentHtml ?? '',
       seoTitle: post.seoTitle ?? '',
-      seoDescription: post.seo?.toString() ? (post.summary ?? '') : '',
+      seoDescription: post.seoDescription ?? '',
       categoryId: post.category?.id ?? '',
       tags: post.tags.map((tag) => tag.name),
       addressRaw: post.addressRaw ?? '',
@@ -431,13 +431,16 @@ export function PostForm({ post, mode }: PostFormProps) {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-6">
-                    <label className="flex items-center gap-2 text-sm">
-                      <Switch
-                        checked={!!watch('verified')}
-                        onCheckedChange={(checked) => setValue('verified', checked, { shouldDirty: true })}
-                      />
-                      Đã xác thực thông tin
-                    </label>
+                    {/* Badge "Đã xác thực" hiện công khai: chỉ biên tập viên/admin được bật (API cũng chặn) */}
+                    {canPublish ? (
+                      <label className="flex items-center gap-2 text-sm">
+                        <Switch
+                          checked={!!watch('verified')}
+                          onCheckedChange={(checked) => setValue('verified', checked, { shouldDirty: true })}
+                        />
+                        Đã xác thực thông tin
+                      </label>
+                    ) : null}
                     <label className="flex items-center gap-2 text-sm">
                       <Switch
                         checked={!!watch('hasManager')}

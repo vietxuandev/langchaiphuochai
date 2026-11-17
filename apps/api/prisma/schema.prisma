@@ -44,6 +44,8 @@ model User {
   /// Ghi chú của quản trị viên khi từ chối.
   reviewNote   String?
   lastLoginAt  DateTime?
+  /// Tăng lên mỗi lần đổi mật khẩu: JWT mang phiên bản cũ hết hiệu lực (đăng xuất mọi thiết bị).
+  tokenVersion Int        @default(0)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
@@ -192,21 +194,23 @@ enum PostStatus {
 }
 
 model Post {
-  id          String     @id @default(cuid())
+  id             String     @id @default(cuid())
   /// Khoá gốc khi import từ site cũ, ví dụ "accommodation:67"
-  sourceKey   String?    @unique
-  type        PostType
-  status      PostStatus @default(DRAFT)
-  slug        String     @unique
-  title       String
-  seoTitle    String?
-  summary     String?
-  contentHtml String?
-  contentText String?
+  sourceKey      String?    @unique
+  type           PostType
+  status         PostStatus @default(DRAFT)
+  slug           String     @unique
+  title          String
+  seoTitle       String?
+  /// Mô tả SEO (meta description); để trống thì trang dùng `summary`.
+  seoDescription String?
+  summary        String?
+  contentHtml    String?
+  contentText    String?
   /// SHA-1 HTML nguồn - dùng để phát hiện bài đã thay đổi khi crawl lại
-  htmlHash    String?
-  code        String?
-  views       Int        @default(0)
+  htmlHash       String?
+  code           String?
+  views          Int        @default(0)
 
   // Địa điểm
   /// Địa chỉ chi tiết (số nhà, đường, khu phố) - KHÔNG gồm xã/phường và tỉnh/thành.

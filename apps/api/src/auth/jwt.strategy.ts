@@ -26,6 +26,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (!user || !user.isActive || user.status !== 'ACTIVE') {
       throw new UnauthorizedException('Phiên đăng nhập không còn hiệu lực');
     }
+    // Đã đổi mật khẩu sau khi token được cấp -> token cũ (kể cả bị lộ) hết hiệu lực
+    if ((payload.ver ?? 0) !== user.tokenVersion) {
+      throw new UnauthorizedException('Phiên đăng nhập đã hết hiệu lực, vui lòng đăng nhập lại');
+    }
     return UsersService.toPublic(user);
   }
 }
