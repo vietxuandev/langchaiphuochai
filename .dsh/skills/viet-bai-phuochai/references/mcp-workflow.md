@@ -53,9 +53,12 @@ whoami
 - Dùng `id="menu1"`, `menu2`... và `href="#menu1"`.
 - Không dùng `name=`.
 - Nếu dùng `contentMarkdown`, heading Markdown không có `id`; vì vậy bài có TOC phải dùng `contentHtml`.
+- Nếu TOC dùng `<div>` thì có thể giữ số `1.`, `2.` trong text.
+- Nếu TOC dùng `<ol>` thì không viết số trong link text, tránh lỗi `1. 1. Giới thiệu chung`.
 - Kiểm tra sau khi lưu:
   - số `<h2 id="menu...">` phải bằng số `href="#menu..."`.
   - TOC phải nằm trước intro.
+  - Không có chuỗi lặp số kiểu `>1. 1.`.
 
 ## Ảnh
 

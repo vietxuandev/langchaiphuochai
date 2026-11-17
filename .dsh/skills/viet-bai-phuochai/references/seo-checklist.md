@@ -41,6 +41,7 @@ Kế hoạch 4 ngày nghỉ 24/11 tại Phước Hải: ăn gì, chơi đâu, �
 - [ ] Mỗi mục TOC có `href="#menuN"`.
 - [ ] Mỗi heading tương ứng có `id="menuN"`.
 - [ ] Số link TOC bằng số heading được liên kết.
+- [ ] Không bị lặp số thứ tự kiểu `1. 1. Giới thiệu chung`: dùng `<div>` nếu giữ số trong text, hoặc bỏ số khỏi link khi dùng `<ol>`.
 - [ ] Có 8-12 H2.
 - [ ] Có H3 cho ý phụ, không lạm dụng.
 - [ ] Không có H1 trong content.

@@ -51,10 +51,8 @@ Dùng đúng mẫu trong `references/toc-template.html`. Tóm tắt:
 ```html
 <div id="main-toc">
   <strong>Mục lục</strong>
-  <ol>
-    <li><a href="#menu1">Tên mục 1</a></li>
-    <li><a href="#menu2">Tên mục 2</a></li>
-  </ol>
+  <div><a href="#menu1">1. Tên mục 1</a></div>
+  <div><a href="#menu2">2. Tên mục 2</a></div>
 </div>
 
 <h2 id="menu1">1. Tên mục 1</h2>
@@ -64,6 +62,8 @@ Quy tắc:
 
 - Mỗi mục TOC phải có đúng một heading `id="menuN"`.
 - Số thứ tự trong TOC và H2 phải khớp.
+- Dùng `<div>` cho từng mục nếu muốn giữ số `1.`, `2.` trong text.
+- Nếu dùng `<ol>` thì **không** viết số trong link text, vì trình duyệt đã tự đánh số; tránh lỗi “1. 1. Giới thiệu chung”.
 - Không dùng `name=`; sanitizer MCP hiện chỉ cho `id`.
 - Không dựa vào component client để tạo anchor; anchor phải nằm trong HTML lưu vào bài.
 - Nếu có “Kết luận” ngoài TOC, vẫn có thể gán `id="menuN"` tiếp theo.

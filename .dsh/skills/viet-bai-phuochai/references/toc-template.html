@@ -3,22 +3,21 @@ Mẫu TOC + heading cho bài viết Phước Hải.
 
 Quy tắc:
 - TOC nằm trên cùng, trước intro.
-- Số <li> phải bằng số <h2 id="menuN">.
+- Số mục TOC phải bằng số <h2 id="menuN">.
 - Không dùng <h1> trong content.
 - id phải là menu1, menu2, ...; không dùng name=.
-- Có thể thay <ol> bằng danh sách <div> nếu muốn, nhưng phải giữ id và link.
+- Dùng <div> cho từng mục nếu giữ số 1., 2. trong text.
+- Nếu dùng <ol>, KHÔNG viết số trong link text vì trình duyệt đã tự đánh số.
 -->
 
 <div id="main-toc">
   <strong>Mục lục</strong>
-  <ol>
-    <li><a href="#menu1">1. Vì sao nên đến Phước Hải?</a></li>
-    <li><a href="#menu2">2. Lịch trình gợi ý</a></li>
-    <li><a href="#menu3">3. Ăn gì ở Phước Hải?</a></li>
-    <li><a href="#menu4">4. Ở đâu tại Phước Hải?</a></li>
-    <li><a href="#menu5">5. Lưu ý trước khi đi</a></li>
-    <li><a href="#menu6">6. Câu hỏi thường gặp</a></li>
-  </ol>
+  <div><a href="#menu1">1. Vì sao nên đến Phước Hải?</a></div>
+  <div><a href="#menu2">2. Lịch trình gợi ý</a></div>
+  <div><a href="#menu3">3. Ăn gì ở Phước Hải?</a></div>
+  <div><a href="#menu4">4. Ở đâu tại Phước Hải?</a></div>
+  <div><a href="#menu5">5. Lưu ý trước khi đi</a></div>
+  <div><a href="#menu6">6. Câu hỏi thường gặp</a></div>
 </div>
 
 <p>Đoạn mở đầu 1: nêu bối cảnh, đối tượng độc giả và lý do bài viết hữu ích.</p>
