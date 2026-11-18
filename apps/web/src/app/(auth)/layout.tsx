@@ -16,13 +16,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             Quản lý nơi lưu trú, bài viết và bất động sản của bạn
           </h2>
           <p className="mt-4 text-sm leading-relaxed text-white/85">
-            Hệ thống phân quyền 3 cấp: quản trị viên, người đăng bài và thành viên. Đăng nhập để cập nhật thông tin
-            địa điểm, đăng tin và theo dõi hiệu quả nội dung.
+            Dành cho chủ cơ sở và cộng tác viên: cập nhật thông tin, hình ảnh, giá phòng cho địa điểm của bạn, đăng
+            tin bất động sản hoặc viết cẩm nang du lịch Phước Hải. Tài khoản mới được quản trị viên duyệt trước khi
+            sử dụng.
           </p>
           <ul className="mt-6 space-y-2 text-sm text-white/90">
-            <li>• Bảng điều khiển thống kê trực quan</li>
-            <li>• Quản lý bài viết với bảng dữ liệu và bộ lọc</li>
-            <li>• Phân quyền chi tiết theo vai trò</li>
+            <li>• Cập nhật giá, hình ảnh và liên hệ của địa điểm bất cứ lúc nào</li>
+            <li>• Soạn bài bằng trình soạn thảo trực quan, chèn ảnh dễ dàng</li>
+            <li>• Bài mới được biên tập viên duyệt trước khi hiển thị</li>
           </ul>
         </div>
         <p className="relative text-xs text-white/70">

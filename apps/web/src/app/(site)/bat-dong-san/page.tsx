@@ -18,7 +18,7 @@ export default async function RealEstateListPage({ searchParams }: PageProps) {
       type={PostType.REAL_ESTATE}
       eyebrow="Bất động sản"
       title="Nhà đất & bất động sản nghỉ dưỡng Phước Hải"
-      description="Thông tin mức giá, diện tích, hướng, pháp lý của từng sản phẩm - dữ liệu đã được chuẩn hoá để tra cứu nhanh."
+      description="Nhà đất, villa và đất nền ven biển Phước Hải với giá, diện tích, hướng và pháp lý rõ ràng."
       searchParams={params}
     />
   );

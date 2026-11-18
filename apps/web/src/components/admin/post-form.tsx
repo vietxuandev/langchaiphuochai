@@ -21,6 +21,7 @@ import { WardCombobox } from '@/components/ui/ward-combobox';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/lib/auth/auth-context';
+import { useUnsavedChangesWarning } from '@/lib/hooks/use-unsaved-changes-warning';
 import { uploadImage } from '@/lib/uploads';
 import {
   useAdminCategoriesQuery,
@@ -166,12 +167,17 @@ export function PostForm({ post, mode }: PostFormProps) {
     // `values` đã được zod transform (chuỗi rỗng -> undefined, số dạng chuỗi -> number).
     const input = values as unknown as PostInput;
     try {
+      // Mutation dùng errorPolicy "all": lỗi từ API nằm trong result.errors, không ném ra.
+      // Phải kiểm tra, nếu không form báo "đã lưu" trong khi thực tế không lưu được gì.
       if (mode === 'create') {
         const result = await createPost({ variables: { input } });
+        const createdId = result.data?.createPost?.id;
+        if (!createdId) throw new Error(result.errors?.[0]?.message ?? 'Không tạo được bài viết');
         toast.success('Đã tạo bài viết');
-        router.push(`/quan-tri/bai-viet/${result.data?.createPost.id}`);
+        router.push(`/quan-tri/bai-viet/${createdId}`);
       } else if (post) {
-        await updatePost({ variables: { input: { ...input, id: post.id } } });
+        const result = await updatePost({ variables: { input: { ...input, id: post.id } } });
+        if (!result.data?.updatePost) throw new Error(result.errors?.[0]?.message ?? 'Không lưu được bài viết');
         toast.success('Đã lưu thay đổi');
       }
       router.refresh();
@@ -187,6 +193,9 @@ export function PostForm({ post, mode }: PostFormProps) {
 
   const isOwner = !post || post.author?.id === user?.id;
   const readOnly = !canPublish && !isOwner;
+
+  // Hỏi lại trước khi rời trang nếu còn thay đổi chưa lưu (đóng tab, bấm menu, nút quay lại...)
+  useUnsavedChangesWarning(isDirty && !isSubmitting && !readOnly);
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
@@ -229,7 +238,7 @@ export function PostForm({ post, mode }: PostFormProps) {
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         {/* Cột chính */}
         <div className="space-y-5">
           <Card className="border-border/70">

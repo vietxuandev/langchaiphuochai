@@ -126,7 +126,7 @@ export function DashboardOverview() {
           title="Người dùng"
           value={stats?.totalUsers ?? 0}
           icon={Users}
-          hint={`${stats?.totalCategories ?? 0} danh mục`}
+          hint="Tài khoản trong hệ thống"
         />
         {isAdmin ? (
           <StatCard

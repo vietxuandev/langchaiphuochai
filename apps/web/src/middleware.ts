@@ -43,25 +43,17 @@ async function loadIndex(origin: string, fresh = false): Promise<SlugIndex | nul
   }
 }
 
-function notFoundResponse() {
-  const html = `<!doctype html>
-<html lang="vi">
-<head><meta charset="utf-8"><meta name="robots" content="noindex"><title>404 - Không tìm thấy trang</title></head>
-<body style="font-family:system-ui,sans-serif;max-width:640px;margin:80px auto;padding:0 20px;line-height:1.6">
-<h1>404 - Không tìm thấy trang</h1>
-<p>Đường dẫn này không tồn tại hoặc nội dung đã được di chuyển.</p>
-<p><a href="/">Về trang chủ</a></p>
-</body>
-</html>`;
+/** Đường dẫn không có route nào: rewrite về đây để Next trả trang 404 (app/not-found.tsx). */
+const NOT_FOUND_PATH = '/khong-tim-thay';
 
-  return new NextResponse(html, {
-    status: 404,
-    headers: {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'no-store',
-      'X-Robots-Tag': 'noindex',
-    },
-  });
+/**
+ * Rewrite (không redirect) sang trang 404 theo thương hiệu: URL trên trình duyệt giữ nguyên,
+ * route ISR [slug] không bị gọi nên không sinh cache cho slug rác.
+ */
+function notFoundResponse(request: NextRequest) {
+  const response = NextResponse.rewrite(new URL(NOT_FOUND_PATH, request.url));
+  response.headers.set('X-Robots-Tag', 'noindex');
+  return response;
 }
 
 /**
@@ -82,7 +74,7 @@ export async function middleware(request: NextRequest) {
   try {
     slug = decodeURIComponent(rawSlug);
   } catch {
-    return notFoundResponse();
+    return notFoundResponse(request);
   }
 
   // Gọi route slug-index qua localhost để không phụ thuộc Cloudflare/public domain.
@@ -100,7 +92,7 @@ export async function middleware(request: NextRequest) {
     if (freshIndex && hasSlug(freshIndex, allowedTypes, slug)) return NextResponse.next();
   }
 
-  return notFoundResponse();
+  return notFoundResponse(request);
 }
 
 function hasSlug(index: SlugIndex, allowedTypes: string[], slug: string): boolean {

@@ -24,7 +24,7 @@ export default function AdminEditPostPage() {
     return (
       <div className="space-y-4">
         <Skeleton className="h-10 w-72" />
-        <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
           <Skeleton className="h-[520px] rounded-xl" />
           <Skeleton className="h-[320px] rounded-xl" />
         </div>

@@ -222,19 +222,16 @@ mutation ChangePassword($input: ChangePasswordInput!) {
   changePassword(input: $input)
 }
 
+# Trả đủ field để cache Apollo có đúng dữ liệu vừa lưu (form reset theo bản đã lưu, không bị dữ liệu cũ)
 mutation CreatePost($input: PostInput!) {
   createPost(input: $input) {
-    id
-    slug
-    status
+    ...PostFull
   }
 }
 
 mutation UpdatePost($input: UpdatePostInput!) {
   updatePost(input: $input) {
-    id
-    slug
-    status
+    ...PostFull
   }
 }
 

@@ -1,10 +1,38 @@
 import Link from 'next/link';
 import { BedDouble, Building2, MapPin, Ruler, ArrowUpRight } from 'lucide-react';
-import { PostType, buildImageUrl, formatAddress, formatDate, formatPriceShort, truncate } from '@phuochai/shared';
+import {
+  PostType,
+  buildImageUrl,
+  formatDate,
+  formatPriceShort,
+  priceSuffix,
+  stripAdministrativeParts,
+  truncate,
+} from '@phuochai/shared';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { imageAlt } from '@/lib/image-alt';
 import { cn } from '@/lib/utils';
 import type { PostCardFragment } from '@/generated/graphql';
+
+/**
+ * Dòng vị trí trên thẻ: chỉ địa chỉ chi tiết (đường, khu phố). Cả site đều ở Xã Phước Hải,
+ * TP. Hồ Chí Minh nên lặp lại xã/thành phố trên mọi thẻ chỉ gây rối; tin tức thì không hiện vị trí.
+ */
+function cardLocation(post: PostCardFragment): string | null {
+  if (post.type !== PostType.ACCOMMODATION && post.type !== PostType.REAL_ESTATE) return null;
+  return stripAdministrativeParts(post.addressRaw, { ward: post.ward }) || null;
+}
+
+/** Ngày đăng có ý nghĩa với tin tức và tin bất động sản; với nơi lưu trú (ngày nhập dữ liệu) thì bỏ. */
+function showCardDate(post: PostCardFragment): boolean {
+  return post.type !== PostType.ACCOMMODATION;
+}
+
+/** Giá gọn kèm đơn vị: "1,2 triệu/đêm", "9,5 tỷ". */
+function cardPrice(post: PostCardFragment): string | null {
+  return post.priceValue != null ? `${formatPriceShort(post.priceValue)}${priceSuffix(post.type)}` : null;
+}
 
 interface PostCardProps {
   post: PostCardFragment;
@@ -31,8 +59,13 @@ export function postHref(post: Pick<PostCardFragment, 'type' | 'slug'>): string 
 /** Thẻ bài viết dùng chung cho mọi danh sách: lưu trú, tin tức, bất động sản. */
 export function PostCard({ post, variant = 'default', className, priority = false }: PostCardProps) {
   const image = post.heroImage ? buildImageUrl(post.heroImage) : null;
+  const alt = imageAlt(post.heroImage?.alt, post.title);
   const href = postHref(post);
   const isRealEstate = post.type === PostType.REAL_ESTATE;
+  const isProduct = isRealEstate || post.type === PostType.ACCOMMODATION;
+  const location = cardLocation(post);
+  const price = cardPrice(post);
+  const showDate = showCardDate(post);
 
   if (variant === 'compact') {
     return (
@@ -42,7 +75,7 @@ export function PostCard({ post, variant = 'default', className, priority = fals
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={image}
-              alt={post.heroImage?.alt ?? post.title}
+              alt={alt}
               loading={priority ? 'eager' : 'lazy'}
               className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
             />
@@ -50,10 +83,12 @@ export function PostCard({ post, variant = 'default', className, priority = fals
         </div>
         <div className="min-w-0 flex-1">
           <p className="line-clamp-2 text-sm font-semibold leading-snug group-hover:text-primary">{post.title}</p>
-          <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="h-3 w-3" />
-            {post.ward ?? 'Phước Hải'}
-          </p>
+          {location ? (
+            <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="line-clamp-1">{location}</span>
+            </p>
+          ) : null}
         </div>
       </Link>
     );
@@ -68,7 +103,7 @@ export function PostCard({ post, variant = 'default', className, priority = fals
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={image}
-                alt={post.heroImage?.alt ?? post.title}
+                alt={alt}
                 loading={priority ? 'eager' : 'lazy'}
                 className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
               />
@@ -85,10 +120,17 @@ export function PostCard({ post, variant = 'default', className, priority = fals
               <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{truncate(post.summary, 140)}</p>
             </div>
             <div className="mt-3 flex items-center justify-between text-sm">
-              <span className="font-semibold text-coral-500">
-                {post.priceValue != null ? formatPriceShort(post.priceValue) : (post.priceRaw ?? 'Đang cập nhật')}
-              </span>
-              <span className="text-xs text-muted-foreground">{formatDate(post.publishedAt ?? post.createdAt)}</span>
+              {/* Tin tức không có giá: hiện lời mời đọc thay vì "Đang cập nhật" */}
+              {isProduct ? (
+                <span className="font-semibold text-coral-500">{price ?? post.priceRaw ?? 'Liên hệ'}</span>
+              ) : (
+                <span className="inline-flex items-center gap-1 font-medium text-primary">
+                  Đọc bài <ArrowUpRight className="h-3.5 w-3.5" />
+                </span>
+              )}
+              {showDate ? (
+                <span className="text-xs text-muted-foreground">{formatDate(post.publishedAt ?? post.createdAt)}</span>
+              ) : null}
             </div>
           </div>
         </Link>
@@ -108,7 +150,7 @@ export function PostCard({ post, variant = 'default', className, priority = fals
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={image}
-            alt={post.heroImage?.alt ?? post.title}
+            alt={alt}
             loading={priority ? 'eager' : 'lazy'}
             className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
           />
@@ -122,9 +164,9 @@ export function PostCard({ post, variant = 'default', className, priority = fals
           <Badge variant="secondary" className="bg-white/90 text-foreground shadow-sm backdrop-blur">
             {post.category?.name ?? 'Phước Hải'}
           </Badge>
-          {post.priceValue != null ? (
+          {price ? (
             <Badge variant="default" className="bg-coral-500 text-white shadow-sm">
-              {formatPriceShort(post.priceValue)}
+              {price}
             </Badge>
           ) : null}
         </div>
@@ -137,12 +179,12 @@ export function PostCard({ post, variant = 'default', className, priority = fals
           </h3>
         </Link>
 
-        <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
-          <MapPin className="h-3.5 w-3.5 shrink-0" />
-          <span className="line-clamp-1">
-            {formatAddress({ addressRaw: post.addressRaw, ward: post.ward, city: post.city }) || 'Phước Hải, TP. Hồ Chí Minh'}
-          </span>
-        </p>
+        {location ? (
+          <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5 shrink-0" />
+            <span className="line-clamp-1">{location}</span>
+          </p>
+        ) : null}
 
         <p className="mt-2 line-clamp-2 flex-1 text-sm text-muted-foreground">{truncate(post.summary, 130)}</p>
 
@@ -165,7 +207,7 @@ export function PostCard({ post, variant = 'default', className, priority = fals
               Xem chi tiết <ArrowUpRight className="h-3.5 w-3.5" />
             </span>
           )}
-          <span className="ml-auto">{formatDate(post.publishedAt ?? post.createdAt)}</span>
+          {showDate ? <span className="ml-auto">{formatDate(post.publishedAt ?? post.createdAt)}</span> : null}
         </div>
       </div>
     </Card>

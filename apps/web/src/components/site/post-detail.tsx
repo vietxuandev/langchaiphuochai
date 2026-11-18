@@ -8,7 +8,6 @@ import {
   Compass,
   Eye,
   Facebook,
-  FileText,
   Landmark,
   Mail,
   MapPin,
@@ -18,7 +17,16 @@ import {
   Route,
   Tag as TagIcon,
 } from 'lucide-react';
-import { BRAND, POST_TYPE_LABELS, PostType, buildImageUrl, formatAddress, formatDate, formatVnd } from '@phuochai/shared';
+import {
+  BRAND,
+  POST_TYPE_LABELS,
+  PostType,
+  buildImageUrl,
+  formatAddress,
+  formatDate,
+  formatVnd,
+  priceSuffix,
+} from '@phuochai/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -99,6 +107,13 @@ export function PostDetail({ post, related }: PostDetailProps) {
   const contactPhone = post.contactPhone ?? null;
   const contactZalo = post.contactZalo ?? null;
   const contactEmail = post.contactEmail ?? null;
+  // Không có liên hệ riêng của địa điểm thì dùng hotline/Zalo của website
+  const phoneHref = `tel:${contactPhone ?? BRAND.phone}`;
+  const phoneLabel = contactPhone ?? `Gọi tư vấn: ${BRAND.phoneDisplay}`;
+  const zaloHref = `https://zalo.me/${contactZalo ?? BRAND.zalo}`;
+  // Ngày đăng của nơi lưu trú là ngày nhập dữ liệu, không giúp gì cho khách -> chỉ hiện với tin tức/BĐS
+  const showDate = post.type !== PostType.ACCOMMODATION;
+  const hasContent = !!post.contentHtml?.replace(/<[^>]+>/g, '').trim();
 
   return (
     <article className="container py-6">
@@ -132,7 +147,7 @@ export function PostDetail({ post, related }: PostDetailProps) {
         ) : null}
       </nav>
 
-      <PostAdminActions postId={post.id} authorId={post.authorId ?? post.author?.id} />
+      <PostAdminActions postId={post.id} authorId={post.authorId ?? post.author?.id} missingContent={!hasContent} />
 
       <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
         <div className="min-w-0 space-y-6">
@@ -156,9 +171,11 @@ export function PostDetail({ post, related }: PostDetailProps) {
                 <MapPin className="h-4 w-4" />
                 {formatAddress({ addressRaw: post.addressRaw, ward: post.ward, city: post.city }) || 'Phước Hải'}
               </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Calendar className="h-4 w-4" /> {formatDate(post.publishedAt ?? post.createdAt)}
-              </span>
+              {showDate ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4" /> {formatDate(post.publishedAt ?? post.createdAt)}
+                </span>
+              ) : null}
               {post.views > 0 ? (
                 <span className="inline-flex items-center gap-1.5">
                   <Eye className="h-4 w-4" /> {post.views} lượt xem
@@ -173,20 +190,42 @@ export function PostDetail({ post, related }: PostDetailProps) {
             ) : null}
           </div>
 
-          {post.contentHtml ? (
+          {hasContent ? (
             <div
               className="prose-phuochai max-w-none"
-              // Nội dung được kế thừa từ site cũ; ảnh đã trỏ về /media local.
-              dangerouslySetInnerHTML={{ __html: post.contentHtml }}
+              // HTML đã được API lọc (sanitize) khi lưu; ảnh trỏ về /upload của server.
+              dangerouslySetInnerHTML={{ __html: post.contentHtml ?? '' }}
             />
-          ) : (
-            <Card className="border-dashed">
-              <CardContent className="flex items-center gap-3 p-6 text-sm text-muted-foreground">
-                <FileText className="h-5 w-5" />
-                Bài viết này chưa có nội dung chi tiết trên hệ thống cũ. Bạn có thể bổ sung mô tả trong trang quản trị.
+          ) : isProduct ? (
+            // Chưa có mô tả chi tiết: mời khách liên hệ thay vì để trống (gợi ý bổ sung chỉ hiện cho
+            // biên tập viên, ở PostAdminActions phía trên).
+            <Card className="border-primary/30 bg-muted/40">
+              <CardContent className="space-y-3 p-5">
+                <p className="font-display text-base font-semibold">
+                  {post.type === PostType.REAL_ESTATE
+                    ? 'Liên hệ để nhận thông tin chi tiết'
+                    : 'Liên hệ để biết giá và phòng trống'}
+                </p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {post.type === PostType.REAL_ESTATE
+                    ? 'Gọi hoặc nhắn Zalo để hỏi giá, pháp lý và hẹn lịch xem nhà.'
+                    : 'Thông tin phòng, tiện ích và chính sách đang được cập nhật. Gọi hoặc nhắn Zalo để được tư vấn nhanh.'}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild>
+                    <a href={phoneHref}>
+                      <Phone className="mr-2 h-4 w-4" /> {phoneLabel}
+                    </a>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <a href={zaloHref} target="_blank" rel="noreferrer">
+                      <MessageCircle className="mr-2 h-4 w-4" /> Chat Zalo
+                    </a>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-          )}
+          ) : null}
 
           {isProduct ? <AttributeGrid post={post} /> : null}
 
@@ -213,7 +252,12 @@ export function PostDetail({ post, related }: PostDetailProps) {
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">
                     {post.type === PostType.REAL_ESTATE ? 'Mức giá' : 'Giá từ'}
                   </p>
-                  <p className="font-display text-2xl font-bold text-coral-500">{formatVnd(post.priceValue)}</p>
+                  <p className="font-display text-2xl font-bold text-coral-500">
+                    {formatVnd(post.priceValue)}
+                    {priceSuffix(post.type) ? (
+                      <span className="text-base font-medium text-muted-foreground">{priceSuffix(post.type)}</span>
+                    ) : null}
+                  </p>
                   {post.pricePerM2Value ? (
                     <p className="text-xs text-muted-foreground">
                       ~ {formatVnd(post.pricePerM2Value)}/m²
@@ -231,33 +275,17 @@ export function PostDetail({ post, related }: PostDetailProps) {
               <Separator className="my-4" />
 
               <div className="space-y-2">
-                {contactPhone ? (
-                  <Button className="w-full" asChild>
-                    <a href={`tel:${contactPhone}`}>
-                      <Phone className="mr-2 h-4 w-4" /> {contactPhone}
-                    </a>
-                  </Button>
-                ) : (
-                  <Button className="w-full" asChild>
-                    <a href={`tel:${BRAND.phone}`}>
-                      <Phone className="mr-2 h-4 w-4" /> Gọi tư vấn: {BRAND.phoneDisplay}
-                    </a>
-                  </Button>
-                )}
+                <Button className="w-full" asChild>
+                  <a href={phoneHref}>
+                    <Phone className="mr-2 h-4 w-4" /> {phoneLabel}
+                  </a>
+                </Button>
 
-                {contactZalo ? (
-                  <Button variant="outline" className="w-full" asChild>
-                    <a href={`https://zalo.me/${contactZalo}`} target="_blank" rel="noreferrer">
-                      <MessageCircle className="mr-2 h-4 w-4" /> Chat Zalo
-                    </a>
-                  </Button>
-                ) : (
-                  <Button variant="outline" className="w-full" asChild>
-                    <a href={`https://zalo.me/${BRAND.zalo}`} target="_blank" rel="noreferrer">
-                      <MessageCircle className="mr-2 h-4 w-4" /> Chat Zalo
-                    </a>
-                  </Button>
-                )}
+                <Button variant="outline" className="w-full" asChild>
+                  <a href={zaloHref} target="_blank" rel="noreferrer">
+                    <MessageCircle className="mr-2 h-4 w-4" /> Chat Zalo
+                  </a>
+                </Button>
 
                 {contactEmail ? (
                   <Button variant="ghost" className="w-full" asChild>
@@ -281,7 +309,8 @@ export function PostDetail({ post, related }: PostDetailProps) {
             </CardContent>
           </Card>
 
-          {post.author ? (
+          {/* Tác giả chỉ có ý nghĩa với bài viết; với nơi lưu trú/BĐS khách cần liên hệ, không cần người đăng */}
+          {post.author && !isProduct ? (
             <Card className="border-border/70">
               <CardContent className="flex items-center gap-3 p-4">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-sea-100 font-semibold text-sea-700">

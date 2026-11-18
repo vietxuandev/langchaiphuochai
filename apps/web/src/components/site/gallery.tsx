@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Expand } from 'lucide-react';
 import { buildImageUrl } from '@phuochai/shared';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { imageAlt } from '@/lib/image-alt';
 import { cn } from '@/lib/utils';
 import type { PostFullFragment } from '@/generated/graphql';
 
@@ -29,7 +30,7 @@ export function Gallery({ images, title }: { images: GalleryImage[]; title: stri
     <div className="space-y-3">
       <div className="group relative aspect-[16/9] w-full overflow-hidden rounded-2xl bg-muted">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={currentUrl} alt={current.alt ?? title} className="h-full w-full object-cover" />
+        <img src={currentUrl} alt={imageAlt(current.alt, title)} className="h-full w-full object-cover" />
 
         <Dialog>
           <DialogTrigger asChild>
@@ -44,7 +45,7 @@ export function Gallery({ images, title }: { images: GalleryImage[]; title: stri
           </DialogTrigger>
           <DialogContent className="max-w-5xl border-none bg-black/95 p-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={currentUrl} alt={current.alt ?? title} className="max-h-[80vh] w-full object-contain" />
+            <img src={currentUrl} alt={imageAlt(current.alt, title)} className="max-h-[80vh] w-full object-contain" />
           </DialogContent>
         </Dialog>
 
@@ -91,7 +92,8 @@ export function Gallery({ images, title }: { images: GalleryImage[]; title: stri
               aria-label={`Xem ảnh ${index + 1}`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={buildImageUrl(image)} alt={image.alt ?? ''} className="h-full w-full object-cover" />
+              {/* Nút đã có aria-label "Xem ảnh N" nên ảnh thumbnail chỉ để trang trí */}
+              <img src={buildImageUrl(image)} alt="" className="h-full w-full object-cover" />
             </Button>
           ))}
         </div>

@@ -65,8 +65,8 @@ export function HomeHero({ stats }: HomeHeroProps) {
             <span className="block text-coral-200">tuyệt vời nhất tại Phước Hải</span>
           </h1>
           <p className="hero-text-shadow mt-4 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">
-            {stats.totalPosts}+ địa điểm và bài viết được tổng hợp, chuẩn hoá từ dữ liệu gốc - giúp bạn chọn chỗ ở,
-            lên lịch trình và tìm hiểu về vùng biển Phước Hải chỉ trong vài phút.
+            {stats.totalPosts}+ nơi lưu trú, quán ăn, điểm tham quan và kinh nghiệm du lịch Phước Hải - giúp bạn
+            chọn chỗ ở và lên lịch trình cho chuyến đi chỉ trong vài phút.
           </p>
 
           <form action="/tim-kiem" className="mt-7 flex max-w-xl gap-2">

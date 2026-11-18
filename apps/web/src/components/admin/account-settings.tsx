@@ -91,7 +91,7 @@ export function AccountSettings() {
         <p className="text-sm text-muted-foreground">Cập nhật thông tin cá nhân và mật khẩu đăng nhập.</p>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Card className="border-border/70">
           <CardHeader>
             <CardTitle className="font-display text-base">Hồ sơ cá nhân</CardTitle>

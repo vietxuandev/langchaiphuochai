@@ -25,21 +25,31 @@ export function formatVnd(value: number | null | undefined): string {
   return `${new Intl.NumberFormat('vi-VN').format(value)} ₫`;
 }
 
-/** Định dạng giá gọn: 17_000_000_000 -> "17 tỷ"; 550_000 -> "550 nghìn". */
+/** Số thập phân kiểu Việt Nam (dấu phẩy): 1.16 -> "1,2"; 6 -> "6". */
+function formatDecimal(value: number, maximumFractionDigits = 1): string {
+  return new Intl.NumberFormat('vi-VN', { maximumFractionDigits }).format(value);
+}
+
+/** Định dạng giá gọn: 17_000_000_000 -> "17 tỷ"; 1_160_000 -> "1,2 triệu"; 550_000 -> "550 nghìn". */
 export function formatPriceShort(value: number | null | undefined): string {
   if (value == null) return 'Thương lượng';
-  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(value % 1_000_000_000 === 0 ? 0 : 1)} tỷ`;
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(value % 1_000_000 === 0 ? 0 : 1)} triệu`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(0)} nghìn`;
+  if (value >= 1_000_000_000) return `${formatDecimal(value / 1_000_000_000)} tỷ`;
+  if (value >= 1_000_000) return `${formatDecimal(value / 1_000_000)} triệu`;
+  if (value >= 1_000) return `${formatDecimal(value / 1_000, 0)} nghìn`;
   return formatVnd(value);
 }
 
-/** Rút gọn số lớn cho thống kê: 1234 -> "1,2 N". */
+/** Đơn vị đi sau giá: giá nơi lưu trú tính theo đêm ("1,2 triệu/đêm"), các loại khác để trống. */
+export function priceSuffix(type: PostType | string | null | undefined): string {
+  return type === PostType.ACCOMMODATION ? '/đêm' : '';
+}
+
+/** Rút gọn số lớn cho thống kê: 21_900 -> "21,9 nghìn"; 1_250_000 -> "1,3 triệu". */
 export function formatCompact(value: number | null | undefined): string {
   if (value == null) return '0';
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace('.0', '')} Tr`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1).replace('.0', '')} N`;
-  return String(value);
+  if (value >= 1_000_000) return `${formatDecimal(value / 1_000_000)} triệu`;
+  if (value >= 1_000) return `${formatDecimal(value / 1_000)} nghìn`;
+  return formatDecimal(value, 0);
 }
 
 export function formatDate(value: string | Date | null | undefined): string {

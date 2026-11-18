@@ -20,7 +20,7 @@ export default async function AccommodationListPage({ searchParams }: PageProps)
       type={PostType.ACCOMMODATION}
       eyebrow="Nơi lưu trú"
       title="Khách sạn, homestay & villa tại Phước Hải"
-      description="Tổng hợp nơi lưu trú với mức giá, địa chỉ và hình ảnh được kế thừa từ dữ liệu gốc, giúp bạn chọn chỗ nghỉ phù hợp."
+      description="Khách sạn, homestay, villa và resort ở Phước Hải với giá tham khảo, địa chỉ và hình ảnh thực tế - dễ so sánh để chọn chỗ nghỉ phù hợp."
       searchParams={params}
     />
   );
