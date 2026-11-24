@@ -33,6 +33,20 @@ export interface AffiliateLinkInput {
   isActive?: boolean;
 }
 
+export interface AffiliateMetadataResult {
+  ok: boolean;
+  code?: string;
+  source?: 'html' | 'openapi';
+  finalUrl?: string;
+  itemId?: string | null;
+  shopId?: string | null;
+  title?: string | null;
+  description?: string | null;
+  imagePath?: string | null;
+  priceText?: string | null;
+  message?: string;
+}
+
 export interface AffiliateStats {
   totalLinks: number;
   activeLinks: number;
@@ -98,6 +112,16 @@ export async function fetchAffiliateLinks(params: {
   });
   if (!response.ok) throw new Error(await readError(response));
   return (await response.json()) as AffiliateList;
+}
+
+export async function fetchAffiliateMetadata(url: string): Promise<AffiliateMetadataResult> {
+  const response = await fetch('/api/affiliate/metadata', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(authHeaders() ?? {}) },
+    body: JSON.stringify({ url }),
+  });
+  if (!response.ok) throw new Error(await readError(response));
+  return (await response.json()) as AffiliateMetadataResult;
 }
 
 export async function fetchAffiliateStats(): Promise<AffiliateStats> {

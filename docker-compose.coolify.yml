@@ -56,6 +56,9 @@ services:
       # Gọi web để revalidate ISR sau khi publish/sửa/xoá
       WEB_INTERNAL_URL: http://web:${WEB_PORT:-3000}
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:-}
+      # Affiliate: hash IP click và token Open API (tuỳ chọn)
+      AFFILIATE_HASH_SALT: ${AFFILIATE_HASH_SALT:-}
+      SHOPEE_AFFILIATE_ACCESS_TOKEN: ${SHOPEE_AFFILIATE_ACCESS_TOKEN:-}
       # MCP server cho AI agent
       WATERMARK_ENABLED: ${WATERMARK_ENABLED:-true}
       MCP_ENABLED: ${MCP_ENABLED:-true}

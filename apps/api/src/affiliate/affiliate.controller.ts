@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Role } from '@phuochai/shared';
 import { Roles } from '../common/decorators';
@@ -29,6 +29,12 @@ export class AffiliateController {
       page: page ? Number(page) : undefined,
       pageSize: pageSize ? Number(pageSize) : undefined,
     });
+  }
+
+  @Post('metadata')
+  metadata(@Body() body: { url?: string }) {
+    if (!body.url?.trim()) throw new BadRequestException('Thiếu URL');
+    return this.affiliate.fetchMetadata(body.url.trim());
   }
 
   @Get(':id')

@@ -52,6 +52,7 @@ import {
   createAffiliateLink,
   deleteAffiliateLink,
   fetchAffiliateLinks,
+  fetchAffiliateMetadata,
   fetchAffiliateStats,
   updateAffiliateLink,
   type AffiliateLink,
@@ -84,6 +85,17 @@ const EMPTY_FORM: FormState = {
   isActive: true,
 };
 
+function slugify(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/gi, 'd')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
+
 function destinationHost(value: string): string {
   try {
     return new URL(value).hostname.replace(/^www\./, '');
@@ -108,6 +120,8 @@ export function AffiliateManager() {
   const [editing, setEditing] = useState<AffiliateLink | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [fetchingMeta, setFetchingMeta] = useState(false);
+  const [metadataMessage, setMetadataMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<AffiliateLink | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -175,6 +189,7 @@ export function AffiliateManager() {
     setEditing(null);
     setForm(EMPTY_FORM);
     setFormError(null);
+    setMetadataMessage(null);
     setDialogOpen(true);
   };
 
@@ -192,6 +207,7 @@ export function AffiliateManager() {
       isActive: link.isActive,
     });
     setFormError(null);
+    setMetadataMessage(null);
     setDialogOpen(true);
   };
 
@@ -215,6 +231,45 @@ export function AffiliateManager() {
       setRefresh((value) => value + 1);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Không đổi được trạng thái');
+    }
+  };
+
+  const handleFetchMetadata = async () => {
+    const url = form.destinationUrl.trim();
+    if (!url) {
+      toast.error('Dán link Shopee trước');
+      return;
+    }
+    setFetchingMeta(true);
+    setMetadataMessage(null);
+    try {
+      const result = await fetchAffiliateMetadata(url);
+      if (result.ok) {
+        setForm((current) => ({
+          ...current,
+          title: result.title || current.title,
+          description: result.description || current.description,
+          imagePath: result.imagePath || current.imagePath,
+          priceText: result.priceText || current.priceText,
+          slug: current.slug || slugify(result.title || ''),
+        }));
+        setMetadataMessage(
+          result.source === 'openapi'
+            ? 'Đã lấy dữ liệu từ Shopee Open API.'
+            : 'Đã lấy metadata từ trang Shopee.',
+        );
+        toast.success('Đã điền metadata từ link');
+      } else {
+        const message = result.message ?? 'Shopee không trả metadata cho link này.';
+        setMetadataMessage(message);
+        toast.warning(message);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không lấy được metadata';
+      setMetadataMessage(message);
+      toast.error(message);
+    } finally {
+      setFetchingMeta(false);
     }
   };
 
@@ -472,7 +527,19 @@ export function AffiliateManager() {
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="affiliate-url">URL đích Shopee</Label>
-                <Input id="affiliate-url" value={form.destinationUrl} onChange={(event) => updateField('destinationUrl', event.target.value)} placeholder="https://shopee.vn/..." required />
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Input id="affiliate-url" value={form.destinationUrl} onChange={(event) => updateField('destinationUrl', event.target.value)} placeholder="https://s.shopee.vn/..." required />
+                  <Button type="button" variant="outline" className="shrink-0" onClick={() => void handleFetchMetadata()} disabled={fetchingMeta}>
+                    {fetchingMeta ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Lấy thông tin từ link
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Ưu tiên link affiliate dạng <code>s.shopee.vn/...</code>. Shopee có thể chặn đọc HTML; khi đó cần cấu hình <code>SHOPEE_AFFILIATE_ACCESS_TOKEN</code> cho Open API hoặc nhập tay.
+                </p>
+                {metadataMessage ? (
+                  <p className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">{metadataMessage}</p>
+                ) : null}
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="affiliate-description">Mô tả ngắn</Label>

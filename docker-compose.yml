@@ -39,6 +39,9 @@ services:
       # Gọi web để revalidate ISR sau khi publish/sửa/xoá
       WEB_INTERNAL_URL: http://web:3000
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:-}
+      # Affiliate: hash IP click và token Open API (tuỳ chọn)
+      AFFILIATE_HASH_SALT: ${AFFILIATE_HASH_SALT:-}
+      SHOPEE_AFFILIATE_ACCESS_TOKEN: ${SHOPEE_AFFILIATE_ACCESS_TOKEN:-}
     volumes:
       - ./data:/app/data
     ports:

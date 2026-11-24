@@ -65,6 +65,48 @@ function validateSlug(input: string): string {
   return slug;
 }
 
+
+function extractShopeeIds(rawUrl: string): { itemId: string | null; shopId: string | null } {
+  try {
+    const path = new URL(rawUrl).pathname;
+    const matches = [...path.matchAll(/\/(\d{5,})(?=\/|$)/g)].map((match) => match[1]);
+    if (matches.length >= 2) {
+      return { shopId: matches[matches.length - 2], itemId: matches[matches.length - 1] };
+    }
+    if (matches.length === 1) return { shopId: null, itemId: matches[0] };
+    return { itemId: null, shopId: null };
+  } catch {
+    return { itemId: null, shopId: null };
+  }
+}
+
+function metaContent(html: string, key: string): string | null {
+  const patterns = [
+    new RegExp(`<meta[^>]+(?:property|name)=["']${key}["'][^>]+content=["']([^"']*)`, 'i'),
+    new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]+(?:property|name)=["']${key}["']`, 'i'),
+  ];
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match?.[1]) return match[1].trim();
+  }
+  return null;
+}
+
+function extractOpenGraph(html: string): {
+  title: string | null;
+  description: string | null;
+  image: string | null;
+  price: string | null;
+} {
+  const titleTag = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? null;
+  return {
+    title: metaContent(html, 'og:title') ?? (titleTag ? titleTag.replace(/\s+/g, ' ') : null),
+    description: metaContent(html, 'og:description') ?? metaContent(html, 'description'),
+    image: metaContent(html, 'og:image') ?? metaContent(html, 'twitter:image'),
+    price: metaContent(html, 'product:price:amount') ?? metaContent(html, 'og:price:amount'),
+  };
+}
+
 function localDateKey(value: Date): string {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
 }
@@ -195,6 +237,139 @@ export class AffiliateService {
     });
     if (!link) throw new NotFoundException('Không tìm thấy link affiliate');
     return link;
+  }
+
+  /**
+   * Lấy metadata sản phẩm từ link affiliate.
+   *
+   * - Luôn resolve redirect của Shopee để lấy item_id/shop_id.
+   * - Thử đọc OG tags nếu Shopee trả HTML có metadata.
+   * - Nếu có SHOPEE_AFFILIATE_ACCESS_TOKEN, gọi Open API product_item_get.
+   * - Shopee chặn bot ở nhiều thời điểm nên luôn trả thông tin một phần để admin nhập tay.
+   */
+  async fetchMetadata(inputUrl: string) {
+    const initial = validateDestination(inputUrl);
+    const { finalUrl, html } = await this.resolveFinalPage(initial);
+    const ids = extractShopeeIds(finalUrl);
+    const meta = extractOpenGraph(html);
+
+    if (meta.title || meta.image) {
+      return {
+        ok: true,
+        source: 'html' as const,
+        finalUrl,
+        itemId: ids.itemId,
+        shopId: ids.shopId,
+        title: meta.title,
+        description: meta.description,
+        imagePath: meta.image,
+        priceText: meta.price,
+      };
+    }
+
+    const token = process.env.SHOPEE_AFFILIATE_ACCESS_TOKEN?.trim();
+    if (!token) {
+      return {
+        ok: false,
+        code: 'MISSING_TOKEN',
+        finalUrl,
+        itemId: ids.itemId,
+        shopId: ids.shopId,
+        message:
+          'Shopee không trả metadata HTML cho link này. Cần cấu hình SHOPEE_AFFILIATE_ACCESS_TOKEN để dùng Open API, hoặc nhập tay.',
+      };
+    }
+
+    if (!ids.itemId) {
+      return {
+        ok: false,
+        code: 'MISSING_ITEM_ID',
+        finalUrl,
+        itemId: null,
+        shopId: ids.shopId,
+        message: 'Không tách được item_id từ link Shopee.',
+      };
+    }
+
+    try {
+      const params = new URLSearchParams({ item_id: ids.itemId });
+      if (ids.shopId) params.set('shop_id', ids.shopId);
+      const response = await fetch(`https://open.shopee.vn/openapi/product/v2/product_item_get?${params}`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        signal: AbortSignal.timeout(10_000),
+      });
+      const payload = (await response.json()) as {
+        data?: {
+          title?: string;
+          description?: string;
+          images?: string[];
+          price?: number;
+        };
+        message?: string;
+      };
+
+      if (!response.ok || !payload.data) {
+        return {
+          ok: false,
+          code: 'SHOPEE_API_ERROR',
+          finalUrl,
+          itemId: ids.itemId,
+          shopId: ids.shopId,
+          message: payload.message ?? `Open API trả HTTP ${response.status}`,
+        };
+      }
+
+      const data = payload.data;
+      return {
+        ok: true,
+        source: 'openapi' as const,
+        finalUrl,
+        itemId: ids.itemId,
+        shopId: ids.shopId,
+        title: data.title ?? null,
+        description: data.description ?? null,
+        imagePath: data.images?.[0] ?? null,
+        priceText: typeof data.price === 'number' ? `${new Intl.NumberFormat('vi-VN').format(data.price)}đ` : null,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        code: 'SHOPEE_API_ERROR',
+        finalUrl,
+        itemId: ids.itemId,
+        shopId: ids.shopId,
+        message: error instanceof Error ? error.message : 'Không gọi được Shopee Open API',
+      };
+    }
+  }
+
+  /** Resolve redirect thủ công, chỉ theo domain Shopee, trả HTML cuối cùng. */
+  private async resolveFinalPage(initialUrl: string): Promise<{ finalUrl: string; html: string }> {
+    let current = initialUrl;
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const response = await fetch(current, {
+        redirect: 'manual',
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          Accept: 'text/html,application/xhtml+xml',
+          'Accept-Language': 'vi-VN,vi;q=0.9,en;q=0.8',
+        },
+        signal: AbortSignal.timeout(10_000),
+      });
+
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get('location');
+        if (!location) break;
+        const next = new URL(location, current).toString();
+        current = validateDestination(next);
+        continue;
+      }
+
+      return { finalUrl: response.url || current, html: await response.text() };
+    }
+
+    return { finalUrl: current, html: '' };
   }
 
   async stats() {

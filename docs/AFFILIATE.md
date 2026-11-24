@@ -32,6 +32,28 @@ rel="sponsored nofollow noopener noreferrer"
 
 Không dán trực tiếp link Shopee vào bài.
 
+## Lấy metadata từ link Shopee
+
+Trong form tạo link có nút **Lấy thông tin từ link**.
+
+- Hệ thống resolve link `s.shopee.vn/...`, lấy `item_id`/`shop_id`.
+- Thử đọc OG metadata nếu trang Shopee trả về.
+- Nếu có `SHOPEE_AFFILIATE_ACCESS_TOKEN`, gọi Open API:
+
+```text
+GET https://open.shopee.vn/openapi/product/v2/product_item_get
+```
+
+để lấy tên, mô tả, ảnh, giá.
+
+Shopee thường chặn bot nên đọc HTML trực tiếp không đảm bảo. Muốn tự động điền ổn định, cần lấy **access token** từ Shopee Affiliate/Open API và đặt trong env API:
+
+```env
+SHOPEE_AFFILIATE_ACCESS_TOKEN=...
+```
+
+Nếu chưa có token, form sẽ báo `MISSING_TOKEN` và bạn nhập tay như trước.
+
 ## Dữ liệu
 
 - `affiliate_links`: link, slug, ảnh, giá tham khảo, campaign, sub_id, trạng thái, clicks.
