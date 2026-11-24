@@ -14,7 +14,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Role, formatDateTime } from '@phuochai/shared';
+import { Role, formatAffiliatePrice, formatDateTime } from '@phuochai/shared';
 import { AffiliateClicksChart } from '@/components/admin/dashboard-charts';
 import { AffiliateImagePicker } from '@/components/admin/affiliate-image-picker';
 import { Badge } from '@/components/ui/badge';
@@ -480,7 +480,7 @@ export function AffiliateManager() {
                       <TableCell className="max-w-[340px]">
                         <p className="truncate font-medium">{link.title}</p>
                         <p className="truncate text-xs text-muted-foreground">/go/{link.slug}</p>
-                        {link.priceText ? <p className="mt-0.5 text-xs text-sea-700">{link.priceText}</p> : null}
+                        {link.priceText ? <p className="mt-0.5 text-xs text-sea-700">{formatAffiliatePrice(link.priceText)}</p> : null}
                       </TableCell>
                       <TableCell className="hidden text-xs text-muted-foreground md:table-cell">
                         {destinationHost(link.destinationUrl)}

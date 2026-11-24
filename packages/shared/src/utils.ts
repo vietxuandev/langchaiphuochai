@@ -25,6 +25,27 @@ export function formatVnd(value: number | null | undefined): string {
   return `${new Intl.NumberFormat('vi-VN').format(value)} ₫`;
 }
 
+/**
+ * Chuẩn hoá giá dạng text từ affiliate: "498000" -> "498.000đ",
+ * "150.000đ" giữ nguyên, "150000 - 200000" -> "150.000 - 200.000đ".
+ */
+export function formatAffiliatePrice(value: string | null | undefined): string {
+  const raw = value?.trim();
+  if (!raw || !/\d/.test(raw)) return raw ?? '';
+
+  const hasCurrency = /(đ|₫|vnd|vnđ)/i.test(raw);
+  const normalized = raw
+    .replace(/₫/g, 'đ')
+    .replace(/\s*(vnđ|vnd|₫)\s*$/i, 'đ')
+    .replace(/\s*đ\s*$/i, 'đ')
+    .replace(/(\d[\d.,\s]*\d|\d)/g, (token) => {
+      const digits = token.replace(/[^\d]/g, '');
+      return digits ? new Intl.NumberFormat('vi-VN').format(Number(digits)) : token;
+    });
+
+  return hasCurrency ? normalized : `${normalized}đ`;
+}
+
 /** Số thập phân kiểu Việt Nam (dấu phẩy): 1.16 -> "1,2"; 6 -> "6". */
 function formatDecimal(value: number, maximumFractionDigits = 1): string {
   return new Intl.NumberFormat('vi-VN', { maximumFractionDigits }).format(value);

@@ -1,3 +1,5 @@
+import { formatAffiliatePrice } from '@phuochai/shared';
+
 interface AffiliateCard {
   slug: string;
   title: string;
@@ -39,7 +41,7 @@ function cardHtml(card: AffiliateCard, postSlug: string): string {
     ? `<p class="affiliate-card__description">${escapeHtml(card.description)}</p>`
     : '';
   const price = card.priceText
-    ? `<span class="affiliate-card__price">${escapeHtml(card.priceText)}</span>`
+    ? `<span class="affiliate-card__price">${escapeHtml(formatAffiliatePrice(card.priceText))}</span>`
     : '';
 
   return `<aside class="affiliate-card not-prose" aria-label="Sản phẩm gợi ý">
