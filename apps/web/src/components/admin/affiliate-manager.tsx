@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner';
 import { Role, formatDateTime } from '@phuochai/shared';
 import { AffiliateClicksChart } from '@/components/admin/dashboard-charts';
+import { AffiliateImagePicker } from '@/components/admin/affiliate-image-picker';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -118,6 +119,7 @@ export function AffiliateManager() {
   const [refresh, setRefresh] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AffiliateLink | null>(null);
+  const [slugTouched, setSlugTouched] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [fetchingMeta, setFetchingMeta] = useState(false);
@@ -187,6 +189,7 @@ export function AffiliateManager() {
 
   const openCreate = () => {
     setEditing(null);
+    setSlugTouched(false);
     setForm(EMPTY_FORM);
     setFormError(null);
     setMetadataMessage(null);
@@ -195,6 +198,7 @@ export function AffiliateManager() {
 
   const openEdit = (link: AffiliateLink) => {
     setEditing(link);
+    setSlugTouched(true);
     setForm({
       title: link.title,
       slug: link.slug,
@@ -213,6 +217,14 @@ export function AffiliateManager() {
 
   const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const updateTitle = (value: string) => {
+    setForm((current) => ({
+      ...current,
+      title: value,
+      slug: !editing && !slugTouched ? slugify(value) : current.slug,
+    }));
   };
 
   const handleCopy = async (slug: string) => {
@@ -515,11 +527,12 @@ export function AffiliateManager() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="affiliate-title">Tiêu đề</Label>
-                <Input id="affiliate-title" value={form.title} onChange={(event) => updateField('title', event.target.value)} required />
+                <Input id="affiliate-title" value={form.title} onChange={(event) => updateTitle(event.target.value)} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="affiliate-slug">Slug</Label>
-                <Input id="affiliate-slug" value={form.slug} onChange={(event) => updateField('slug', event.target.value)} placeholder="tui-chong-nang" required />
+                <Input id="affiliate-slug" value={form.slug} onChange={(event) => { setSlugTouched(true); updateField('slug', event.target.value); }} placeholder="tui-chong-nang" required />
+                <p className="text-xs text-muted-foreground">Tự động tạo từ tiêu đề; có thể sửa lại.</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="affiliate-price">Giá tham khảo</Label>
@@ -546,16 +559,18 @@ export function AffiliateManager() {
                 <Textarea id="affiliate-description" rows={2} value={form.description} onChange={(event) => updateField('description', event.target.value)} />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="affiliate-image">Ảnh sản phẩm</Label>
-                <Input id="affiliate-image" value={form.imagePath} onChange={(event) => updateField('imagePath', event.target.value)} placeholder="/upload/posts/... hoặc https://..." />
+                <Label>Ảnh sản phẩm</Label>
+                <AffiliateImagePicker value={form.imagePath} onChange={(path) => updateField('imagePath', path)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="affiliate-campaign">Chiến dịch</Label>
                 <Input id="affiliate-campaign" value={form.campaign} onChange={(event) => updateField('campaign', event.target.value)} placeholder="Ví dụ: do-di-bien" />
+                <p className="text-xs text-muted-foreground">Nhãn nội bộ để nhóm link/báo cáo, không gửi sang Shopee.</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="affiliate-subid">Sub ID</Label>
-                <Input id="affiliate-subid" value={form.subId} onChange={(event) => updateField('subId', event.target.value)} placeholder="Tùy chọn" />
+                <Input id="affiliate-subid" value={form.subId} onChange={(event) => updateField('subId', event.target.value)} placeholder="Tùy chọn, ví dụ: ph_blog" />
+                <p className="text-xs text-muted-foreground">Gửi sang Shopee thành <code>sub_id</code> khi redirect; dùng để nhận biết nguồn click. Chỉ chữ, số, <code>_</code>, <code>-</code>.</p>
               </div>
             </div>
 
