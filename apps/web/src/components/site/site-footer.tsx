@@ -68,7 +68,7 @@ export function SiteFooter({ categories }: SiteFooterProps) {
               Câu hỏi thường gặp
             </Link>
             <Link href="/trang/bang-gia-goi-dich-vu" className="hover:text-white">
-              Bảng giá dịch vụ
+              Hợp tác &amp; đăng tin
             </Link>
             <Link href="/trang/chinh-sach-bao-mat" className="hover:text-white">
               Chính sách bảo mật
