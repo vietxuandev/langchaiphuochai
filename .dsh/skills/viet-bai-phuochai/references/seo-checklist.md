@@ -47,6 +47,8 @@ Kế hoạch 4 ngày nghỉ 24/11 tại Phước Hải: ăn gì, chơi đâu, �
 - [ ] Không có H1 trong content.
 - [ ] Có bảng tóm tắt nếu là lịch trình/ so sánh.
 - [ ] Có FAQ 4-6 câu.
+- [ ] Nếu có affiliate: shortcode `[[affiliate:slug]]` hợp lệ, link đang active, không dán link Shopee trực tiếp.
+- [ ] Có disclosure affiliate và thẻ sản phẩm hiển thị đúng.
 - [ ] Có kết luận ngắn.
 
 ## Nội dung

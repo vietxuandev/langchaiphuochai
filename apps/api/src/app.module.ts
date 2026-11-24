@@ -7,6 +7,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
+import { AffiliateModule } from './affiliate/affiliate.module';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CrawlerModule } from './crawler/crawler.module';
@@ -112,6 +113,7 @@ const CLIENT_ERROR_CODES = new Set([
       serveStaticOptions: { index: false, fallthrough: true, maxAge: '7d' },
     }),
     PrismaModule,
+    AffiliateModule,
     NotificationsModule,
     AuthModule,
     UsersModule,

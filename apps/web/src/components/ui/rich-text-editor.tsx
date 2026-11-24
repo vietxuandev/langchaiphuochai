@@ -31,6 +31,7 @@ import {
   Pilcrow,
   Quote,
   Redo2,
+  ShoppingBag,
   Strikethrough,
   Table as TableIcon,
   Underline as UnderlineIcon,
@@ -62,6 +63,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { fetchAffiliateLinks, type AffiliateLink } from '@/lib/affiliate';
 import { uploadImage } from '@/lib/uploads';
 import { cn } from '@/lib/utils';
 
@@ -134,6 +136,11 @@ export function RichTextEditor({
   const [uploading, setUploading] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+  const [affiliateDialogOpen, setAffiliateDialogOpen] = useState(false);
+  const [affiliateSearch, setAffiliateSearch] = useState('');
+  const [affiliateLinks, setAffiliateLinks] = useState<AffiliateLink[]>([]);
+  const [affiliateLoading, setAffiliateLoading] = useState(false);
+  const [affiliateError, setAffiliateError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
@@ -177,6 +184,29 @@ export function RichTextEditor({
   useEffect(() => {
     if (!htmlMode) setHtmlDraft(value);
   }, [value, htmlMode]);
+
+  useEffect(() => {
+    if (!affiliateDialogOpen) return;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setAffiliateLoading(true);
+      setAffiliateError(null);
+      fetchAffiliateLinks({ query: affiliateSearch.trim(), active: true, pageSize: 100 })
+        .then((result) => {
+          if (!cancelled) setAffiliateLinks(result.items);
+        })
+        .catch((error: unknown) => {
+          if (!cancelled) setAffiliateError(error instanceof Error ? error.message : 'Không tải được link affiliate');
+        })
+        .finally(() => {
+          if (!cancelled) setAffiliateLoading(false);
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [affiliateDialogOpen, affiliateSearch]);
 
   /** Mặc định đóng watermark cho ảnh chèn vào nội dung. */
   const [watermark, setWatermark] = useState(true);
@@ -408,6 +438,16 @@ export function RichTextEditor({
           <Link2Off className="h-4 w-4" />
         </ToolbarButton>
 
+        <ToolbarButton
+          label="Chèn thẻ sản phẩm affiliate"
+          onClick={() => {
+            setAffiliateSearch('');
+            setAffiliateDialogOpen(true);
+          }}
+        >
+          <ShoppingBag className="h-4 w-4" />
+        </ToolbarButton>
+
         {/* Bảng */}
         <DropdownMenu>
           <Tooltip>
@@ -575,6 +615,71 @@ export function RichTextEditor({
               }}
             >
               Áp dụng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* --------------------------- Dialog affiliate ----------------------------- */}
+      <Dialog open={affiliateDialogOpen} onOpenChange={setAffiliateDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Chèn thẻ sản phẩm affiliate</DialogTitle>
+            <DialogDescription>
+              Chọn một link đang hoạt động. Thẻ sản phẩm sẽ được render trên trang công khai và tự gắn
+              disclosure, tracking và rel=&quot;sponsored&quot;.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <Input
+              value={affiliateSearch}
+              onChange={(event) => setAffiliateSearch(event.target.value)}
+              placeholder="Tìm theo tên, slug hoặc chiến dịch..."
+              aria-label="Tìm link affiliate"
+            />
+            <div className="max-h-72 space-y-1 overflow-y-auto rounded-lg border p-1">
+              {affiliateLoading ? (
+                <p className="p-3 text-sm text-muted-foreground">Đang tải link affiliate...</p>
+              ) : affiliateError ? (
+                <p className="p-3 text-sm text-destructive">{affiliateError}</p>
+              ) : affiliateLinks.length === 0 ? (
+                <p className="p-3 text-sm text-muted-foreground">
+                  Chưa có link active. Tạo link trong mục Affiliate trước.
+                </p>
+              ) : (
+                affiliateLinks.map((link) => (
+                  <Button
+                    key={link.id}
+                    type="button"
+                    variant="ghost"
+                    className="h-auto w-full items-start justify-start gap-3 whitespace-normal rounded-lg p-3 text-left font-normal hover:bg-muted"
+                    onClick={() => {
+                      editor.chain().focus().insertContent(`<p>[[affiliate:${link.slug}]]</p>`).run();
+                      setAffiliateDialogOpen(false);
+                    }}
+                  >
+                    <ShoppingBag className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium">{link.title}</span>
+                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                        /go/{link.slug}
+                        {link.priceText ? ` · ${link.priceText}` : ''}
+                      </span>
+                    </span>
+                  </Button>
+                ))
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Shortcode sẽ được lưu dưới dạng <code>[[affiliate:slug]]</code>; không sửa trực tiếp nếu
+              không cần.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setAffiliateDialogOpen(false)}>
+              Đóng
             </Button>
           </DialogFooter>
         </DialogContent>

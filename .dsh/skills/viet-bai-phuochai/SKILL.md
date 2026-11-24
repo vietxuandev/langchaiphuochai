@@ -149,7 +149,25 @@ Xem chi tiết trong `references/seo-checklist.md`. Tối thiểu:
 - Không bịa số liệu/ giờ mở cửa.
 - Trả về ID, slug, URL admin và trạng thái DRAFT.
 
-## 9. Tài nguyên
+## 9. Affiliate Shopee
+
+Khi bài có sản phẩm gợi ý mua kèm:
+
+- Chỉ dùng khi thật sự liên quan; tối đa 1-3 thẻ/bài.
+- Tạo link trong `/quan-tri/affiliate`, không dán link Shopee trực tiếp.
+- Chèn shortcode:
+
+```text
+[[affiliate:slug]]
+```
+
+- Không sửa shortcode thành link thường.
+- Thẻ sản phẩm tự có disclosure, `rel="sponsored nofollow noopener noreferrer"` và link `/go/<slug>`.
+- Không bịa giá; `priceText` chỉ là giá tham khảo nếu có dữ liệu.
+- Không thêm affiliate vào bài lịch sử, pháp lý hoặc nội dung không liên quan.
+- Kiểm tra thẻ hiển thị đúng trên trang công khai sau khi lưu.
+
+## 10. Tài nguyên
 
 - `references/toc-template.html` — mẫu TOC + heading.
 - `references/seo-checklist.md` — checklist SEO và nội dung.

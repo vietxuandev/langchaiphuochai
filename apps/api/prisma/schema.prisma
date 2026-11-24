@@ -393,3 +393,44 @@ model McpIdempotency {
   @@index([createdAt])
   @@map("mcp_idempotency")
 }
+
+/// Link affiliate Shopee được quản lý tập trung. Bài viết chỉ lưu /go/<slug>.
+model AffiliateLink {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  title          String
+  description    String?
+  merchant       String   @default("SHOPEE")
+  destinationUrl String
+  imagePath      String?
+  priceText      String?
+  campaign       String?
+  subId          String?
+  isActive       Boolean  @default(true)
+  clicks         Int      @default(0)
+  lastClickedAt  DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  clickLogs AffiliateClick[]
+
+  @@index([isActive])
+  @@index([clicks])
+  @@map("affiliate_links")
+}
+
+/// Log click qua /go/<slug>; không lưu IP thô.
+model AffiliateClick {
+  id        String   @id @default(cuid())
+  linkId    String
+  link      AffiliateLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  postSlug  String?
+  referrer  String?
+  ipHash    String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([linkId, createdAt])
+  @@index([createdAt])
+  @@map("affiliate_clicks")
+}

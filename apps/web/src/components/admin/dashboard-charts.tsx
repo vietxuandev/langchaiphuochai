@@ -42,6 +42,13 @@ const STATUS_CONFIG = {
   },
 } satisfies ChartConfig;
 
+const AFFILIATE_CLICK_CONFIG = {
+  count: {
+    label: 'Click',
+    color: 'hsl(var(--primary))',
+  },
+} satisfies ChartConfig;
+
 function monthLabel(value: string): string {
   const [year, month] = value.split('-');
   return `${month}/${year?.slice(2) ?? ''}`;
@@ -97,6 +104,31 @@ export function PostsByMonthChart({ data }: { data: MonthlyPoint[] }) {
 }
 
 /** Biểu đồ vòng tròn phân bố trạng thái bài viết, dùng ChartContainer của shadcn/ui. */
+
+/** Biểu đồ click affiliate 7 ngày, dùng ChartContainer của shadcn/ui. */
+export function AffiliateClicksChart({ data }: { data: Array<{ date: string; count: number }> }) {
+  const points = data.map((item) => ({
+    ...item,
+    label: `${item.date.slice(8)}/${item.date.slice(5, 7)}`,
+  }));
+
+  if (points.length === 0) {
+    return <p className="py-6 text-center text-sm text-muted-foreground">Chưa có dữ liệu click.</p>;
+  }
+
+  return (
+    <ChartContainer config={AFFILIATE_CLICK_CONFIG} className="h-32 w-full">
+      <BarChart accessibilityLayer data={points} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+        <CartesianGrid vertical={false} />
+        <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={6} />
+        <YAxis tickLine={false} axisLine={false} tickMargin={6} width={30} allowDecimals={false} />
+        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+        <Bar dataKey="count" fill="var(--color-count)" radius={[5, 5, 0, 0]} maxBarSize={28} />
+      </BarChart>
+    </ChartContainer>
+  );
+}
+
 export function StatusDonutChart({ data, className }: { data: StatusPoint[]; className?: string }) {
   const total = data.reduce((sum, item) => sum + item.count, 0);
   if (total === 0) {

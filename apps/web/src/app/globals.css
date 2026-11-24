@@ -368,3 +368,48 @@
     animation: none;
   }
 }
+
+/* ==========================================================================
+   Affiliate product card - HTML sinh từ shortcode [[affiliate:slug]]
+   ========================================================================== */
+@layer components {
+  .affiliate-card {
+    @apply my-6 grid overflow-hidden rounded-2xl border border-sea-200 bg-card shadow-card sm:grid-cols-[180px_1fr] dark:border-sea-800;
+  }
+
+  .affiliate-card__media {
+    @apply aspect-[4/3] bg-muted sm:aspect-auto sm:h-full;
+  }
+
+  .affiliate-card__media img {
+    @apply h-full w-full object-cover;
+  }
+
+  .affiliate-card__body {
+    @apply flex flex-col gap-2 p-4 sm:p-5;
+  }
+
+  .affiliate-card__eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.16em] text-coral-500;
+  }
+
+  .affiliate-card__title {
+    @apply font-display text-lg font-semibold leading-snug text-foreground;
+  }
+
+  .affiliate-card__description {
+    @apply text-sm leading-relaxed text-muted-foreground;
+  }
+
+  .affiliate-card__footer {
+    @apply mt-auto flex flex-wrap items-center justify-between gap-3 pt-2;
+  }
+
+  .affiliate-card__price {
+    @apply text-sm font-semibold text-sea-700 dark:text-sea-300;
+  }
+
+  .affiliate-card__cta {
+    @apply inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90;
+  }
+}

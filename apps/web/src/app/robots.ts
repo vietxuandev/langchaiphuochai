@@ -15,7 +15,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/quan-tri', '/quan-tri/', '/dang-nhap', '/dang-ky', '/tim-kiem', '/api/'],
+        disallow: ['/quan-tri', '/quan-tri/', '/dang-nhap', '/dang-ky', '/tim-kiem', '/go/', '/api/'],
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,

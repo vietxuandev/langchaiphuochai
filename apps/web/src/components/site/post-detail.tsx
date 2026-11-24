@@ -31,11 +31,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { AffiliateDisclosure } from '@/components/site/affiliate-disclosure';
 import { Gallery } from '@/components/site/gallery';
 import { ShareButtons } from '@/components/site/share-buttons';
 import { PostAdminActions } from '@/components/site/post-admin-actions';
 import { ViewTracker } from '@/components/site/view-tracker';
 import { PostCard, postHref } from '@/components/site/post-card';
+import { renderAffiliateShortcodes } from '@/lib/affiliate-content';
 import type { PostFullFragment, PostCardFragment } from '@/generated/graphql';
 
 interface PostDetailProps {
@@ -100,7 +102,7 @@ function AttributeGrid({ post }: { post: PostFullFragment }) {
 }
 
 /** Trang chi tiết dùng chung cho cả 4 loại nội dung. */
-export function PostDetail({ post, related }: PostDetailProps) {
+export async function PostDetail({ post, related }: PostDetailProps) {
   const typeLabel = POST_TYPE_LABELS[post.type as PostType] ?? 'Bài viết';
   const isProduct = post.type === PostType.ACCOMMODATION || post.type === PostType.REAL_ESTATE;
 
@@ -113,7 +115,8 @@ export function PostDetail({ post, related }: PostDetailProps) {
   const zaloHref = `https://zalo.me/${contactZalo ?? BRAND.zalo}`;
   // Ngày đăng của nơi lưu trú là ngày nhập dữ liệu, không giúp gì cho khách -> chỉ hiện với tin tức/BĐS
   const showDate = post.type !== PostType.ACCOMMODATION;
-  const hasContent = !!post.contentHtml?.replace(/<[^>]+>/g, '').trim();
+  const affiliateContent = await renderAffiliateShortcodes(post.contentHtml ?? '', post.slug);
+  const hasContent = !!affiliateContent.html.replace(/<[^>]+>/g, '').trim();
 
   return (
     <article className="container py-6">
@@ -190,11 +193,13 @@ export function PostDetail({ post, related }: PostDetailProps) {
             ) : null}
           </div>
 
+          {affiliateContent.hasAffiliate ? <AffiliateDisclosure /> : null}
+
           {hasContent ? (
             <div
               className="prose-phuochai max-w-none"
-              // HTML đã được API lọc (sanitize) khi lưu; ảnh trỏ về /upload của server.
-              dangerouslySetInnerHTML={{ __html: post.contentHtml ?? '' }}
+              // HTML đã được API lọc (sanitize) khi lưu; thẻ affiliate được render từ dữ liệu DB đã escape.
+              dangerouslySetInnerHTML={{ __html: affiliateContent.html }}
             />
           ) : isProduct ? (
             // Chưa có mô tả chi tiết: mời khách liên hệ thay vì để trống (gợi ý bổ sung chỉ hiện cho
