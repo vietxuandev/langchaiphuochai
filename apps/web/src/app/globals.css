@@ -377,8 +377,13 @@
     @apply my-6 grid overflow-hidden rounded-2xl border border-sea-200 bg-card shadow-card sm:grid-cols-[180px_1fr] dark:border-sea-800;
   }
 
+  /* Prose mặc định thêm my-4 cho p; bên trong card phải bỏ margin để card gọn. */
+  .prose-phuochai .affiliate-card p {
+    @apply my-0;
+  }
+
   .affiliate-card__media {
-    @apply aspect-[4/3] bg-muted sm:aspect-auto sm:h-full;
+    @apply h-36 w-full bg-muted;
   }
 
   .affiliate-card__media img {
@@ -386,7 +391,7 @@
   }
 
   .affiliate-card__body {
-    @apply flex flex-col gap-2 p-4 sm:p-5;
+    @apply flex flex-col gap-1.5 p-4;
   }
 
   .affiliate-card__eyebrow {
@@ -394,15 +399,15 @@
   }
 
   .affiliate-card__title {
-    @apply font-display text-lg font-semibold leading-snug text-foreground;
+    @apply line-clamp-2 font-display text-base font-semibold leading-snug text-foreground;
   }
 
   .affiliate-card__description {
-    @apply text-sm leading-relaxed text-muted-foreground;
+    @apply line-clamp-2 text-sm leading-relaxed text-muted-foreground;
   }
 
   .affiliate-card__footer {
-    @apply mt-auto flex flex-wrap items-center justify-between gap-3 pt-2;
+    @apply mt-auto flex flex-wrap items-center justify-between gap-2 pt-1;
   }
 
   .affiliate-card__price {
@@ -410,6 +415,11 @@
   }
 
   .affiliate-card__cta {
-    @apply inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90;
+    @apply inline-flex h-9 items-center justify-center rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90;
+  }
+
+  /* .prose-phuochai a có specificity cao hơn; override để chữ CTA không trùng màu nền. */
+  .prose-phuochai .affiliate-card__cta {
+    @apply text-primary-foreground no-underline hover:text-primary-foreground;
   }
 }
