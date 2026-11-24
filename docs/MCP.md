@@ -1,6 +1,6 @@
 # MCP server cho AI agent
 
-> Phase 1 + quản lý bài: personal access token + 13 tool (đọc, tạo, sửa nháp, đổi trạng thái, xoá, đọc/validate affiliate). Xem kế hoạch tổng thể ở [MCP_PLAN.md](./MCP_PLAN.md).
+> Phase 1 + quản lý bài: personal access token + 15 tool (đọc, tạo, sửa nháp, đổi trạng thái, xoá, đọc/validate affiliate). Xem kế hoạch tổng thể ở [MCP_PLAN.md](./MCP_PLAN.md).
 
 ## 1. Tổng quan
 
@@ -171,6 +171,31 @@ Cần scope `posts:write`; chỉ áp dụng cho bài `DRAFT`.
 | `alt` | string | Không bắt buộc |
 
 Ảnh hero cũ được chuyển về gallery, ảnh mới được gán role `hero`.
+
+### `list_news_posts`
+
+Cần scope `posts:read`.
+
+| Tham số | Kiểu | Ghi chú |
+|---|---|---|
+| `page` | int | Mặc định 1 |
+| `limit` | 1..50 | Mặc định 30 |
+| `status` | `DRAFT` \| `PUBLISHED` \| `ARCHIVED` | Không bắt buộc |
+
+Trả chỉ số audit: TOC, số H2, H2 có id, ảnh, link, summary/seoTitle, hero.
+
+### `format_news_seo`
+
+Cần scope `posts:write`; sửa bài `PUBLISHED` cần thêm `posts:publish`.
+
+| Tham số | Kiểu | Ghi chú |
+|---|---|---|
+| `page` | int | Mặc định 1 |
+| `limit` | 1..20 | Mặc định 20 |
+| `status` | PostStatus | Không bắt buộc |
+| `dryRun` | boolean | Mặc định `true` |
+
+Chỉ chuẩn hoá format/SEO: tạo lại TOC từ H2, bổ sung `id` cho H2, `seoTitle`, summary. Không viết lại nội dung. Luôn chạy `dryRun` trước khi apply.
 
 ### `list_affiliate_links`
 

@@ -19,8 +19,9 @@ Quy trình viết bài:
 5. Chỉ dùng set_post_status khi người quản trị yêu cầu rõ ràng việc xuất bản, thu hồi hoặc lưu trữ.
 6. Chỉ ADMIN được dùng delete_post; mặc định ưu tiên ARCHIVED thay vì xoá vĩnh viễn.
 7. Nếu có ảnh: gọi upload_image với base64, lấy path trả về rồi chèn vào nội dung.
-8. Nếu cần ảnh hero: upload_image rồi gọi set_post_hero với path tương ứng.
-9. Nếu thêm sản phẩm affiliate: gọi list_affiliate_links, chọn link phù hợp, validate_affiliate_links rồi chèn shortcode [[affiliate:slug]] vào bài; không tự bịa slug.
+8. Trước khi sửa SEO hàng loạt: dùng list_news_posts để audit, format_news_seo dryRun trước khi apply.
+9. Nếu cần ảnh hero: upload_image rồi gọi set_post_hero với path tương ứng.
+10. Nếu thêm sản phẩm affiliate: gọi list_affiliate_links, chọn link phù hợp, validate_affiliate_links rồi chèn shortcode [[affiliate:slug]] vào bài; không tự bịa slug.
 
 Quy ước nội dung:
 - Viết tiếng Việt, giọng gần gũi, không bịa số liệu/giá nếu không có nguồn.
@@ -177,6 +178,55 @@ export class McpServerFactory {
             type: (args.type as PostType | undefined) ?? null,
             status: (args.status as PostStatus | undefined) ?? null,
             limit: typeof args.limit === 'number' ? args.limit : null,
+          }),
+        ),
+    );
+
+    register(
+      'list_news_posts',
+      {
+        title: 'Danh sách bài Tin tức để audit SEO',
+        description:
+          'Liệt kê bài NEWS có phân trang, kèm chỉ số SEO cơ bản: TOC, H2 có id, ảnh, link, độ dài summary/seoTitle, hero. Dùng để audit trước khi sửa hàng loạt.',
+        inputSchema: {
+          page: z.number().int().min(1).optional().describe('Trang, mặc định 1'),
+          limit: z.number().int().min(1).max(50).optional().describe('Tối đa 50, mặc định 30'),
+          status: z.enum(POST_STATUS_VALUES).optional().describe('Lọc trạng thái; bỏ trống để lấy tất cả'),
+        },
+        annotations: { readOnlyHint: true },
+      },
+      (args) =>
+        run('list_news_posts', args, 'posts:read', () =>
+          this.tools.listNewsPosts({
+            page: typeof args.page === 'number' ? args.page : null,
+            limit: typeof args.limit === 'number' ? args.limit : null,
+            status: (args.status as PostStatus | undefined) ?? null,
+          }),
+        ),
+    );
+
+    register(
+      'format_news_seo',
+      {
+        title: 'Audit/chuẩn hoá SEO bài Tin tức',
+        description:
+          'Mặc định dryRun=true: chỉ audit TOC/H2 id/summary/seoTitle và trả thay đổi dự kiến. ' +
+          'dryRun=false mới ghi vào DB; sửa bài PUBLISHED cần scope posts:publish. Không viết lại nội dung.',
+        inputSchema: {
+          page: z.number().int().min(1).optional(),
+          limit: z.number().int().min(1).max(20).optional().describe('Tối đa 20 bài/lần'),
+          status: z.enum(POST_STATUS_VALUES).optional(),
+          dryRun: z.boolean().optional().describe('Mặc định true; false để apply'),
+        },
+        annotations: { readOnlyHint: false, destructiveHint: true },
+      },
+      (args) =>
+        run('format_news_seo', args, 'posts:write', () =>
+          this.tools.formatNewsPosts(auth, {
+            page: typeof args.page === 'number' ? args.page : null,
+            limit: typeof args.limit === 'number' ? args.limit : null,
+            status: (args.status as PostStatus | undefined) ?? null,
+            dryRun: typeof args.dryRun === 'boolean' ? args.dryRun : null,
           }),
         ),
     );

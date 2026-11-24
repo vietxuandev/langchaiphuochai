@@ -6,6 +6,7 @@ import sanitizeHtml from 'sanitize-html';
 import { PrismaService } from '../prisma/prisma.service';
 import { PostsService, type Viewer } from '../posts/posts.service';
 import { UploadsService } from '../uploads/uploads.service';
+import { normalizeNewsSeo } from './news-seo';
 import { AffiliateService } from '../affiliate/affiliate.service';
 import { mcpConfig } from './mcp.config';
 import type { McpAuthContext } from './api-tokens.service';
@@ -192,6 +193,127 @@ export class McpToolsService {
     return rows.map((row) => ({ ...row, url: `${mcpConfig.siteUrl}${this.postPath(row.type, row.slug)}` }));
   }
 
+  /** Danh sách bài NEWS có phân trang + chỉ số SEO cơ bản để audit hàng loạt. */
+  async listNewsPosts(input: { page?: number | null; limit?: number | null; status?: PostStatus | null }) {
+    const limit = Math.min(Math.max(input.limit ?? 30, 1), 50);
+    const page = Math.max(input.page ?? 1, 1);
+    const where = {
+      type: PostType.NEWS,
+      ...(input.status ? { status: input.status } : {}),
+    };
+
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.post.count({ where }),
+      this.prisma.post.findMany({
+        where,
+        orderBy: [{ publishedAt: 'desc' }, { updatedAt: 'desc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          status: true,
+          summary: true,
+          seoTitle: true,
+          contentHtml: true,
+          updatedAt: true,
+          publishedAt: true,
+          images: { where: { role: 'hero' }, select: { id: true } },
+        },
+      }),
+    ]);
+
+    return {
+      total,
+      page,
+      pageSize: limit,
+      totalPages: Math.ceil(total / limit),
+      items: rows.map((row) => {
+        const html = row.contentHtml ?? '';
+        return {
+          id: row.id,
+          slug: row.slug,
+          title: row.title,
+          status: row.status,
+          summaryLength: row.summary?.trim().length ?? 0,
+          seoTitle: row.seoTitle,
+          seoTitleLength: row.seoTitle?.trim().length ?? 0,
+          contentLength: html.length,
+          hasToc: /id=["']main-toc["']/i.test(html),
+          h2Count: (html.match(/<h2\b/gi) ?? []).length,
+          h2WithId: (html.match(/<h2[^>]*\bid=/gi) ?? []).length,
+          h3Count: (html.match(/<h3\b/gi) ?? []).length,
+          imageCount: (html.match(/<img\b/gi) ?? []).length,
+          linkCount: (html.match(/<a\b/gi) ?? []).length,
+          hasHero: row.images.length > 0,
+          updatedAt: row.updatedAt,
+          publishedAt: row.publishedAt,
+        };
+      }),
+    };
+  }
+
+  /**
+   * Audit/apply chuẩn hoá SEO cho một trang bài NEWS.
+   *
+   * dryRun mặc định true. Khi apply bài PUBLISHED, token phải có posts:publish
+   * vì nội dung đang sống sẽ được cập nhật trực tiếp (không đổi trạng thái).
+   */
+  async formatNewsPosts(
+    auth: McpAuthContext,
+    input: { page?: number | null; limit?: number | null; status?: PostStatus | null; dryRun?: boolean | null },
+  ) {
+    const dryRun = input.dryRun !== false;
+    const limit = Math.min(Math.max(input.limit ?? 20, 1), 20);
+    const page = Math.max(input.page ?? 1, 1);
+    const where = {
+      type: PostType.NEWS,
+      ...(input.status ? { status: input.status } : {}),
+    };
+
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.post.count({ where }),
+      this.prisma.post.findMany({
+        where,
+        orderBy: [{ publishedAt: 'desc' }, { updatedAt: 'desc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+        select: { id: true, slug: true, title: true, status: true, summary: true, seoTitle: true, contentHtml: true },
+      }),
+    ]);
+
+    if (!dryRun && rows.some((row) => row.status !== PostStatus.DRAFT) && !auth.scopes.includes('posts:publish')) {
+      throw new McpToolError('FORBIDDEN', 'Cần scope posts:publish để sửa bài đã publish.');
+    }
+
+    const items = [];
+    for (const row of rows) {
+      const result = normalizeNewsSeo(row.contentHtml ?? '', row.title, row.summary, row.seoTitle);
+      const changed = result.changes.length > 0;
+
+      if (!dryRun && changed) {
+        await this.prisma.post.update({
+          where: { id: row.id },
+          data: { contentHtml: result.html, seoTitle: result.seoTitle, summary: result.summary },
+        });
+      }
+
+      items.push({
+        id: row.id,
+        slug: row.slug,
+        status: row.status,
+        changed,
+        dryRun,
+        changes: result.changes,
+        before: result.before,
+        after: result.after,
+      });
+    }
+
+    return { dryRun, page, pageSize: limit, total, totalPages: Math.ceil(total / limit), items };
+  }
+
   /** Chi tiết một bài để agent tham khảo/không tạo trùng. */
   async getPost(input: { id?: string | null; slug?: string | null }) {
     if (!input.id && !input.slug) throw new McpToolError('INVALID_INPUT', 'Cần truyền id hoặc slug');
@@ -214,6 +336,7 @@ export class McpToolsService {
       status: post.status,
       title: post.title,
       summary: post.summary,
+      seoTitle: post.seoTitle,
       contentHtml: (post.contentHtml ?? '').slice(0, 200_000),
       url: `${mcpConfig.siteUrl}${this.postPath(post.type, post.slug)}`,
       category: post.category ? { slug: post.category.slug, name: post.category.name } : null,
