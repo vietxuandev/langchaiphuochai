@@ -11,6 +11,7 @@ import {
 } from '@apollo/client-integration-nextjs';
 import { toast } from 'sonner';
 import { getToken } from '@/lib/auth/token';
+import { notifySessionExpired } from '@/lib/auth/session';
 
 /** Gắn Bearer token vào mọi request nếu người dùng đã đăng nhập. */
 const authLink = setContext((_operation, { headers }) => {
@@ -29,17 +30,25 @@ function makeClient() {
     credentials: 'same-origin',
   });
 
-  const errorLink = onError(({ graphQLErrors, networkError }) => {
+  const errorLink = onError(({ operation, graphQLErrors, networkError }) => {
+    // Login/register có thể trả lỗi xác thực; không được báo "phiên hết hạn" ở đây.
+    const isAuthOperation = operation.operationName === 'Login' || operation.operationName === 'Register';
     const first = graphQLErrors?.[0];
-    if (first) {
-      const code = first.extensions?.code;
-      if (code === 'UNAUTHENTICATED') {
-        toast.error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
-      } else if (code === 'FORBIDDEN') {
-        toast.error(first.message || 'Bạn không có quyền thực hiện thao tác này');
+    const code = first?.extensions?.code;
+    const statusCode = (networkError as { statusCode?: number } | undefined)?.statusCode;
+
+    if ((code === 'UNAUTHENTICATED' || statusCode === 401) && !isAuthOperation) {
+      // Chỉ báo khi đang có token; nếu token đã bị xoá thì các query 401 tiếp theo im lặng.
+      if (getToken() && notifySessionExpired()) {
+        toast.error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại', { id: 'session-expired' });
       }
+      return;
+    }
+
+    if (code === 'FORBIDDEN') {
+      toast.error(first?.message || 'Bạn không có quyền thực hiện thao tác này', { id: 'graphql-forbidden' });
     } else if (networkError) {
-      toast.error('Không kết nối được tới máy chủ GraphQL');
+      toast.error('Không kết nối được tới máy chủ GraphQL', { id: 'graphql-network' });
     }
   });
 

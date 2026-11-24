@@ -10,6 +10,7 @@ import {
   type MeQuery,
 } from '@/generated/graphql';
 import { clearAuth, getToken, setStoredUser, setToken } from './token';
+import { resetSessionExpiredNotice, SESSION_EXPIRED_EVENT } from './session';
 
 export type AuthUser = NonNullable<MeQuery['me']>;
 
@@ -61,6 +62,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    const onExpired = () => {
+      setUser(null);
+      setLoading(false);
+      void apollo.clearStore();
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, [apollo]);
+
   const login = useCallback(
     async (email: string, password: string) => {
       const result = await loginMutation({ variables: { input: { email, password } } });
@@ -68,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Hiện đúng lý do từ API (sai mật khẩu, đang bị khoá tạm vì sai nhiều lần...)
       if (!payload) throw new Error(result.errors?.[0]?.message ?? 'Đăng nhập thất bại');
       setToken(payload.accessToken);
+      resetSessionExpiredNotice();
       const me = payload.user as AuthUser;
       setUser(me);
       setStoredUser(me);
@@ -91,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     clearAuth();
+    resetSessionExpiredNotice();
     setUser(null);
     void apollo.clearStore();
   }, [apollo]);
