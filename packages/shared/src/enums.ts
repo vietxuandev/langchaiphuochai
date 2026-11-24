@@ -95,6 +95,7 @@ export const McpScope = {
   POSTS_WRITE: 'posts:write',
   POSTS_PUBLISH: 'posts:publish',
   MEDIA_WRITE: 'media:write',
+  AFFILIATE_READ: 'affiliate:read',
 } as const;
 export type McpScope = (typeof McpScope)[keyof typeof McpScope];
 
@@ -152,6 +153,7 @@ export const MCP_SCOPE_LABELS: Record<McpScope, string> = {
   [McpScope.POSTS_WRITE]: 'Tạo/sửa bản nháp',
   [McpScope.POSTS_PUBLISH]: 'Xuất bản / thu hồi',
   [McpScope.MEDIA_WRITE]: 'Tải ảnh lên',
+  [McpScope.AFFILIATE_READ]: 'Đọc link affiliate',
 };
 
 export const MCP_SCOPE_DESCRIPTIONS: Record<McpScope, string> = {
@@ -159,4 +161,5 @@ export const MCP_SCOPE_DESCRIPTIONS: Record<McpScope, string> = {
   [McpScope.POSTS_WRITE]: 'Tạo và sửa bài ở trạng thái bản nháp (cần người duyệt trước khi đăng)',
   [McpScope.POSTS_PUBLISH]: 'Chuyển bản nháp sang đã đăng và thu hồi bài',
   [McpScope.MEDIA_WRITE]: 'Tải ảnh lên server và gắn vào bài viết',
+  [McpScope.AFFILIATE_READ]: 'Xem danh mục link Shopee đang hoạt động để chèn thẻ sản phẩm',
 };

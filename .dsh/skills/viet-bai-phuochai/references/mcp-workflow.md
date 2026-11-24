@@ -9,6 +9,8 @@
 | `list_wards` | Chọn đúng xã/phường |
 | `search_posts` | Kiểm tra bài trùng, tìm bài liên quan |
 | `get_post` | Lấy nội dung, slug, ảnh, thông tin địa điểm |
+| `list_affiliate_links` | Chọn link Shopee đang hoạt động |
+| `validate_affiliate_links` | Kiểm tra slug affiliate trước khi chèn |
 | `create_post` | Tạo bản nháp |
 | `update_post` | Sửa bài đang DRAFT |
 | `set_post_status` | Publish / thu hồi / archive |
@@ -22,6 +24,8 @@ whoami
 → list_wards (nếu bài có địa chỉ)
 → search_posts (từ khoá chính)
 → get_post (3-6 bài liên quan)
+→ list_affiliate_links (nếu bài có sản phẩm)
+→ validate_affiliate_links
 → tạo contentHtml có TOC id
 → create_post
 → get_post kiểm tra

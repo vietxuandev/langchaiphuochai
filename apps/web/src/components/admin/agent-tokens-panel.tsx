@@ -58,7 +58,12 @@ import {
 type TokenRow = AgentTokensQuery['agentTokens'][number];
 
 /** Scope mặc định: đọc + tạo bản nháp + tải ảnh. Xuất bản phải bật riêng. */
-const DEFAULT_SCOPES: string[] = [McpScope.POSTS_READ, McpScope.POSTS_WRITE, McpScope.MEDIA_WRITE];
+const DEFAULT_SCOPES: string[] = [
+  McpScope.POSTS_READ,
+  McpScope.POSTS_WRITE,
+  McpScope.AFFILIATE_READ,
+  McpScope.MEDIA_WRITE,
+];
 
 const EXPIRY_OPTIONS = [
   { value: '30', label: '30 ngày' },

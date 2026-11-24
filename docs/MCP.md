@@ -1,6 +1,6 @@
 # MCP server cho AI agent
 
-> Phase 1 + quản lý bài: personal access token + 9 tool (đọc, tạo, sửa nháp, đổi trạng thái, xoá). Xem kế hoạch tổng thể ở [MCP_PLAN.md](./MCP_PLAN.md).
+> Phase 1 + quản lý bài: personal access token + 11 tool (đọc, tạo, sửa nháp, đổi trạng thái, xoá, đọc/validate affiliate). Xem kế hoạch tổng thể ở [MCP_PLAN.md](./MCP_PLAN.md).
 
 ## 1. Tổng quan
 
@@ -145,6 +145,39 @@ Trả `[{ id, slug, title, type, status, summary, updatedAt, url }]`.
 | `id` hoặc `slug` | string |
 
 Trả chi tiết gồm `contentHtml`, ảnh, tag, danh mục, địa chỉ, `updatedAt`.
+
+### `list_affiliate_links`
+
+Cần scope `affiliate:read`.
+
+| Tham số | Kiểu | Ghi chú |
+|---|---|---|
+| `query` | string ≤ 120 | Tìm theo tiêu đề/slug/campaign |
+| `campaign` | string ≤ 80 | Lọc theo campaign |
+| `active` | boolean | Mặc định `true` |
+| `limit` | 1..50 | Mặc định 20 |
+
+Trả `{ total, items: [{ slug, title, description, imagePath, priceText, campaign, shortcode, url }] }`. Không trả URL đích Shopee.
+
+### `validate_affiliate_links`
+
+Cần scope `affiliate:read`.
+
+| Tham số | Kiểu | Ghi chú |
+|---|---|---|
+| `slugs` | string[] 1..20 | Danh sách slug cần kiểm tra |
+
+Trả:
+
+```json
+{
+  "valid": [{ "slug": "...", "title": "..." }],
+  "inactive": [],
+  "missing": []
+}
+```
+
+Dùng trước khi chèn `[[affiliate:slug]]`.
 
 ### `create_post`
 

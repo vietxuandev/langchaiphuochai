@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { PostStatus, PostType } from '@phuochai/shared';
+import { McpScope, PostStatus, PostType } from '@phuochai/shared';
 import { z } from 'zod';
 import type { McpAuthContext } from './api-tokens.service';
 import { McpAuditService } from './mcp-audit.service';
@@ -18,6 +18,7 @@ Quy trình viết bài:
 4. Dùng update_post để sửa bài còn ở trạng thái nháp.
 5. Chỉ dùng set_post_status khi người quản trị yêu cầu rõ ràng việc xuất bản, thu hồi hoặc lưu trữ.
 6. Chỉ ADMIN được dùng delete_post; mặc định ưu tiên ARCHIVED thay vì xoá vĩnh viễn.
+7. Nếu thêm sản phẩm affiliate: gọi list_affiliate_links, chọn link phù hợp, validate_affiliate_links rồi chèn shortcode [[affiliate:slug]] vào bài; không tự bịa slug.
 
 Quy ước nội dung:
 - Viết tiếng Việt, giọng gần gũi, không bịa số liệu/giá nếu không có nguồn.
@@ -190,6 +191,50 @@ export class McpServerFactory {
           this.tools.getPost({
             id: typeof args.id === 'string' ? args.id : null,
             slug: typeof args.slug === 'string' ? args.slug : null,
+          }),
+        ),
+    );
+
+    register(
+      'list_affiliate_links',
+      {
+        title: 'Danh mục link affiliate',
+        description:
+          'Liệt kê link Shopee đang hoạt động để chọn sản phẩm liên quan. Trả về slug, tiêu đề, mô tả, ảnh, giá tham khảo, campaign và shortcode. Không trả URL đích/affiliate secret.',
+        inputSchema: {
+          query: z.string().max(120).optional().describe('Tìm theo tiêu đề, slug hoặc campaign'),
+          campaign: z.string().max(80).optional(),
+          active: z.boolean().optional().describe('Mặc định true; false để xem link đã tắt'),
+          limit: z.number().int().min(1).max(50).optional().describe('Tối đa 50, mặc định 20'),
+        },
+        annotations: { readOnlyHint: true },
+      },
+      (args) =>
+        run('list_affiliate_links', args, McpScope.AFFILIATE_READ, () =>
+          this.tools.listAffiliateLinks({
+            query: (args.query as string | undefined) ?? null,
+            campaign: (args.campaign as string | undefined) ?? null,
+            active: typeof args.active === 'boolean' ? args.active : null,
+            limit: typeof args.limit === 'number' ? args.limit : null,
+          }),
+        ),
+    );
+
+    register(
+      'validate_affiliate_links',
+      {
+        title: 'Kiểm tra slug affiliate',
+        description:
+          'Kiểm tra danh sách slug affiliate trước khi chèn shortcode [[affiliate:slug]]. Trả về valid/inactive/missing.',
+        inputSchema: {
+          slugs: z.array(z.string().min(1).max(80)).min(1).max(20),
+        },
+        annotations: { readOnlyHint: true },
+      },
+      (args) =>
+        run('validate_affiliate_links', args, McpScope.AFFILIATE_READ, () =>
+          this.tools.validateAffiliateLinks({
+            slugs: Array.isArray(args.slugs) ? (args.slugs as string[]) : [],
           }),
         ),
     );

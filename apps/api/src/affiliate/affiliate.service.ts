@@ -18,6 +18,7 @@ export interface AffiliateLinkInput {
 
 export interface AffiliateListOptions {
   query?: string;
+  campaign?: string;
   active?: boolean;
   page?: number;
   pageSize?: number;
@@ -125,8 +126,12 @@ export class AffiliateService {
     const page = Math.max(1, Math.floor(options.page ?? 1));
     const pageSize = Math.min(100, Math.max(1, Math.floor(options.pageSize ?? 20)));
     const query = options.query?.trim();
+    const campaign = options.campaign?.trim();
     const where: Prisma.AffiliateLinkWhereInput = {
       ...(typeof options.active === 'boolean' ? { isActive: options.active } : {}),
+      ...(campaign
+        ? { campaign: { equals: campaign, mode: 'insensitive' as const } }
+        : {}),
       ...(query
         ? {
             OR: [

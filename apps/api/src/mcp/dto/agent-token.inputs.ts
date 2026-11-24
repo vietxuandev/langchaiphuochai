@@ -9,7 +9,7 @@ export class CreateAgentTokenInputType {
   agentName?: string;
 
   @Field(() => [String], {
-    description: 'Quyền: posts:read, posts:write, posts:publish, media:write',
+    description: 'Quyền: posts:read, posts:write, posts:publish, media:write, affiliate:read',
   })
   scopes!: string[];
 

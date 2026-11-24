@@ -219,7 +219,9 @@ input CreateAgentTokenInput {
   """
   name: String!
 
-  """Quyền: posts:read, posts:write, posts:publish, media:write"""
+  """
+  Quyền: posts:read, posts:write, posts:publish, media:write, affiliate:read
+  """
   scopes: [String!]!
 }
 

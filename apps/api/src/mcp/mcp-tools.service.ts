@@ -5,6 +5,7 @@ import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
 import { PrismaService } from '../prisma/prisma.service';
 import { PostsService, type Viewer } from '../posts/posts.service';
+import { AffiliateService } from '../affiliate/affiliate.service';
 import { mcpConfig } from './mcp.config';
 import type { McpAuthContext } from './api-tokens.service';
 import { McpAuditService } from './mcp-audit.service';
@@ -83,6 +84,7 @@ export class McpToolsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly posts: PostsService,
+    private readonly affiliate: AffiliateService,
     private readonly audit: McpAuditService,
   ) {}
 
@@ -221,6 +223,50 @@ export class McpToolsService {
       images: post.images.map((image) => ({ path: image.path, alt: image.alt, role: image.role })),
       updatedAt: post.updatedAt,
       createdAt: post.createdAt,
+    };
+  }
+
+  /** Danh mục link affiliate đang hoạt động để agent chọn sản phẩm liên quan. */
+  async listAffiliateLinks(input: {
+    query?: string | null;
+    campaign?: string | null;
+    active?: boolean | null;
+    limit?: number | null;
+  }) {
+    const limit = Math.min(Math.max(input.limit ?? 20, 1), 50);
+    const result = await this.affiliate.list({
+      query: input.query ?? undefined,
+      campaign: input.campaign ?? undefined,
+      active: input.active ?? true,
+      page: 1,
+      pageSize: limit,
+    });
+
+    return {
+      total: result.total,
+      items: result.items.map(({ destinationUrl: _destinationUrl, ...link }) => ({
+        ...link,
+        url: `${mcpConfig.siteUrl}/go/${link.slug}`,
+        shortcode: `[[affiliate:${link.slug}]]`,
+      })),
+    };
+  }
+
+  /** Kiểm tra slug affiliate trước khi agent chèn shortcode vào bài. */
+  async validateAffiliateLinks(input: { slugs: string[] }) {
+    const slugs = [...new Set(input.slugs.map((slug) => slug.trim().toLowerCase()).filter(Boolean))].slice(0, 20);
+    if (slugs.length === 0) throw new McpToolError('INVALID_INPUT', 'Cần truyền ít nhất một slug affiliate');
+
+    const rows = await this.prisma.affiliateLink.findMany({
+      where: { slug: { in: slugs } },
+      select: { slug: true, title: true, isActive: true },
+    });
+    const bySlug = new Map(rows.map((row) => [row.slug, row]));
+
+    return {
+      valid: rows.filter((row) => row.isActive).map((row) => ({ slug: row.slug, title: row.title })),
+      inactive: rows.filter((row) => !row.isActive).map((row) => ({ slug: row.slug, title: row.title })),
+      missing: slugs.filter((slug) => !bySlug.has(slug)),
     };
   }
 
