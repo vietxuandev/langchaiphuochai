@@ -1,9 +1,6 @@
-'use client';
-
 import Image from 'next/image';
-import { useState } from 'react';
+import Link from 'next/link';
 import {
-  ArrowRight,
   BedDouble,
   BookOpen,
   Building2,
@@ -19,7 +16,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
 import heroImage from '@/assets/phuoc-hai-hero.jpg';
 
 interface HomeHeroProps {
@@ -32,34 +28,27 @@ interface HomeHeroProps {
   };
 }
 
-const QUICK_FILTERS = [
-  { label: 'Homestay', keyword: 'Homestay tại Phước Hải', icon: Home },
-  { label: 'Khách sạn', keyword: 'Khách sạn tại Phước Hải', icon: Building2 },
-  { label: 'Villa', keyword: 'Villa tại Phước Hải', icon: Sparkles },
-  { label: 'Quán ăn', keyword: 'Quán ăn tại Phước Hải', icon: UtensilsCrossed },
-  { label: 'Điểm tham quan', keyword: 'Điểm tham quan tại Phước Hải', icon: Compass },
-  { label: 'Bất động sản', keyword: 'Bất động sản tại Phước Hải', icon: MapPinned },
+const QUICK_LINKS = [
+  { label: 'Homestay', slug: 'homestay', icon: Home },
+  { label: 'Khách sạn', slug: 'khach-san', icon: Building2 },
+  { label: 'Villa', slug: 'villa', icon: Sparkles },
+  { label: 'Quán ăn', slug: 'an-uong', icon: UtensilsCrossed },
+  { label: 'Điểm tham quan', slug: 'diem-tham-quan', icon: Compass },
+  { label: 'Bất động sản', slug: 'nha-ven-bien', icon: MapPinned },
 ];
 
 const numberFormat = new Intl.NumberFormat('vi-VN');
 
 /**
- * Hero trang chủ theo hướng full-bleed ảnh biển.
+ * Hero trang chủ.
  *
- * Header/logo/nav dùng chung ở SiteHeader (BrandLogo), hero chỉ tập trung vào
- * thông điệp, tìm kiếm, quick filter và số liệu. Toàn bộ control dùng shadcn.
+ * Nội dung + thanh tìm kiếm giữ nguyên bản cũ của phuochai-web; chỉ thay
+ * background gradient bằng ảnh biển full-bleed (lấy từ project dulichphuochai)
+ * kèm lớp phủ tối để chữ trắng vẫn rõ.
  */
 export function HomeHero({ stats }: HomeHeroProps) {
-  const [keyword, setKeyword] = useState('');
-  const [activeFilter, setActiveFilter] = useState('');
-
-  const applyFilter = (filter: (typeof QUICK_FILTERS)[number]) => {
-    setActiveFilter(filter.label);
-    setKeyword(filter.keyword);
-  };
-
   return (
-    <section className="relative flex min-h-[680px] flex-col overflow-hidden bg-[#0b3036] text-white lg:min-h-[760px]">
+    <section className="relative overflow-hidden bg-[#123d45] text-white">
       <Image
         src={heroImage}
         alt="Bờ biển Phước Hải trong ánh nắng sớm"
@@ -68,80 +57,53 @@ export function HomeHero({ stats }: HomeHeroProps) {
         sizes="100vw"
         className="object-cover"
       />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/45 via-black/15 to-black/65" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.22)_0%,transparent_70%)]" />
+      {/* Scrim rất nhẹ, chỉ phủ nửa trái để chữ dễ đọc mà vẫn giữ ảnh rõ */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-full bg-gradient-to-r from-[#082f35]/45 via-[#082f35]/18 to-transparent sm:w-3/4 lg:w-1/2" />
 
-      <div className="container relative flex flex-1 flex-col justify-between gap-10 py-14 sm:py-16 lg:py-20">
-        <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center text-center">
-          <Badge className="hero-text-shadow border border-white/25 bg-white/15 px-4 py-1.5 text-white backdrop-blur-md">
-            <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Danh bạ lưu trú &amp; du lịch Phước Hải
+      <div className="container relative py-16 lg:py-24">
+        <div className="max-w-4xl">
+          <Badge className="hero-text-shadow bg-white/[0.15] text-white backdrop-blur">
+            <Sparkles className="mr-1 h-3.5 w-3.5" /> Danh bạ lưu trú &amp; du lịch Phước Hải
           </Badge>
-
-          <h1 className="hero-text-shadow mt-5 max-w-4xl font-display text-3xl font-bold leading-[1.12] tracking-tight sm:text-4xl lg:text-5xl">
+          <h1 className="hero-text-shadow mt-4 font-display text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
             Tìm nơi lưu trú, điểm đến và ẩm thực
-            <span className="mt-1 block italic text-coral-300">tuyệt vời nhất tại Phước Hải</span>
+            <span className="block text-coral-200">tuyệt vời nhất tại Phước Hải</span>
           </h1>
-
-          <p className="hero-text-shadow mt-5 max-w-2xl text-sm leading-relaxed text-white/85 sm:text-base">
-            {numberFormat.format(stats.totalPosts)}+ nơi lưu trú, quán ăn, điểm tham quan và kinh nghiệm du lịch
-            Phước Hải - giúp bạn chọn chỗ ở và lên lịch trình chỉ trong vài phút.
+          <p className="hero-text-shadow mt-4 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">
+            {stats.totalPosts}+ nơi lưu trú, quán ăn, điểm tham quan và kinh nghiệm du lịch Phước Hải - giúp bạn
+            chọn chỗ ở và lên lịch trình cho chuyến đi chỉ trong vài phút.
           </p>
 
-          <Card className="mt-7 w-full max-w-3xl overflow-hidden border-white/60 bg-white/95 text-foreground shadow-2xl backdrop-blur-xl dark:border-white/20 dark:bg-background/95">
-            <CardContent className="p-0">
-              <div
-                className="flex items-center gap-1 overflow-x-auto border-b border-border/60 px-3 pb-2 pt-2.5"
-                role="group"
-                aria-label="Lọc nhanh"
-              >
-                {QUICK_FILTERS.map((filter) => {
-                  const Icon = filter.icon;
-                  const active = activeFilter === filter.label;
-                  return (
-                    <Button
-                      key={filter.label}
-                      type="button"
-                      variant={active ? 'default' : 'ghost'}
-                      size="sm"
-                      className={cn(
-                        'shrink-0 gap-1.5 rounded-xl px-3.5',
-                        active ? 'shadow-sm' : 'text-muted-foreground hover:bg-muted',
-                      )}
-                      aria-pressed={active}
-                      onClick={() => applyFilter(filter)}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {filter.label}
-                    </Button>
-                  );
-                })}
-              </div>
+          <form action="/tim-kiem" className="mt-7 flex max-w-xl gap-2">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                name="q"
+                placeholder="Nhập tên homestay, quán ăn, bãi tắm..."
+                className="h-12 border-transparent bg-white pl-9 text-foreground shadow-lg"
+                aria-label="Tìm kiếm"
+              />
+            </div>
+            <Button type="submit" size="lg" className="h-12 bg-coral-500 hover:bg-coral-600">
+              Tìm kiếm
+            </Button>
+          </form>
 
-              <form action="/tim-kiem" className="flex flex-col gap-2 p-2.5 sm:flex-row sm:items-center">
-                <div className="relative flex-1">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
-                  <Input
-                    name="q"
-                    value={keyword}
-                    onChange={(event) => {
-                      setKeyword(event.target.value);
-                      setActiveFilter('');
-                    }}
-                    placeholder="Nhập tên homestay, quán ăn, bãi tắm..."
-                    aria-label="Tìm kiếm"
-                    className="h-12 border-0 bg-transparent pl-10 text-base shadow-none focus-visible:ring-0"
-                  />
-                </div>
-                <Button type="submit" size="lg" className="h-12 shrink-0 gap-2 bg-coral-500 hover:bg-coral-600">
-                  Tìm kiếm
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+          <div className="mt-6 flex flex-wrap gap-2">
+            {QUICK_LINKS.map((link) => (
+              <Link
+                key={link.slug}
+                href={`/danh-muc/${link.slug}`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.12] px-3.5 py-1.5 text-xs font-medium backdrop-blur transition hover:bg-white/25"
+              >
+                <link.icon className="h-3.5 w-3.5" /> {link.label}
+              </Link>
+            ))}
+          </div>
         </div>
 
-        <div className="grid w-full grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+        {/* Thống kê */}
+        <div className="mt-10 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
           {[
             { label: 'Nơi lưu trú', value: stats.accommodations, icon: BedDouble },
             { label: 'Bài viết & cẩm nang', value: stats.news, icon: BookOpen },
@@ -154,7 +116,7 @@ export function HomeHero({ stats }: HomeHeroProps) {
                 key={item.label}
                 className="border-white/20 bg-white/10 text-white shadow-lg backdrop-blur-md transition-colors hover:bg-white/15"
               >
-                <CardContent className="flex items-center gap-3 p-4 sm:p-4">
+                <CardContent className="flex items-center gap-3 p-4">
                   <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/20">
                     <Icon className="h-5 w-5" />
                   </span>
