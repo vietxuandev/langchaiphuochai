@@ -12,7 +12,9 @@
 services:
   # ------------------------------ PostgreSQL ---------------------------------
   db:
-    image: postgres:17-alpine
+    # Dùng mirror ECR Public thay Docker Hub: server Coolify không có IPv6,
+    # còn registry-1.docker.io đang ưu tiên AAAA và gây lỗi network unreachable.
+    image: public.ecr.aws/docker/library/postgres:17-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-phuochai}
