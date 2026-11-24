@@ -28,63 +28,6 @@ export default async function HomePage() {
     <div>
       <HomeHero stats={stats} />
 
-      {/* --------------------------- Nơi lưu trú --------------------------- */}
-      <section className="container py-14">
-        <SectionHeading
-          eyebrow="Nơi lưu trú"
-          title="Được xem nhiều nhất tại Phước Hải"
-          description="Khách sạn, homestay, villa và resort với thông tin giá, vị trí và hình ảnh thực tế."
-          action={
-            <Button variant="outline" asChild>
-              <Link href="/luu-tru">
-                Xem tất cả <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          }
-        />
-
-        <div className="mt-6 flex flex-wrap gap-2">
-          {accommodationCategories.map((category) => (
-            <Link key={category.id} href={`/danh-muc/${category.slug}`}>
-              <Badge variant="secondary" className="cursor-pointer px-3 py-1.5 hover:bg-sea-200">
-                {category.name} · {category.postCount}
-              </Badge>
-            </Link>
-          ))}
-        </div>
-
-        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {accommodations.items.map((post, index) => (
-            <PostCard key={post.id} post={post} priority={index < 4} />
-          ))}
-        </div>
-      </section>
-
-      {/* ------------------------ Bất động sản ------------------------ */}
-      {realEstates.items.length > 0 ? (
-        <section className="bg-muted/40 py-14">
-          <div className="container">
-            <SectionHeading
-              eyebrow="Bất động sản"
-              title="Nhà đất & villa ven biển"
-              description="Danh sách bất động sản với mức giá, diện tích và pháp lý rõ ràng."
-              action={
-                <Button variant="outline" asChild>
-                  <Link href="/bat-dong-san">
-                    Xem tất cả <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              }
-            />
-            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {realEstates.items.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
       {/* ----------------------------- Tin tức ----------------------------- */}
       <section className="container py-14">
         <SectionHeading
@@ -150,6 +93,64 @@ export default async function HomePage() {
           </div>
         ) : null}
       </section>
+
+      {/* --------------------------- Nơi lưu trú --------------------------- */}
+      <section className="bg-muted/40 py-14">
+        <div className="container">
+        <SectionHeading
+          eyebrow="Nơi lưu trú"
+          title="Được xem nhiều nhất tại Phước Hải"
+          description="Khách sạn, homestay, villa và resort với thông tin giá, vị trí và hình ảnh thực tế."
+          action={
+            <Button variant="outline" asChild>
+              <Link href="/luu-tru">
+                Xem tất cả <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          }
+        />
+
+        <div className="mt-6 flex flex-wrap gap-2">
+          {accommodationCategories.map((category) => (
+            <Link key={category.id} href={`/danh-muc/${category.slug}`}>
+              <Badge variant="secondary" className="cursor-pointer px-3 py-1.5 hover:bg-sea-200">
+                {category.name} · {category.postCount}
+              </Badge>
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {accommodations.items.map((post, index) => (
+            <PostCard key={post.id} post={post} priority={index < 4} />
+          ))}
+        </div>
+        </div>
+      </section>
+
+      {/* ------------------------ Bất động sản ------------------------ */}
+      {realEstates.items.length > 0 ? (
+        <section className="container py-14">
+            <SectionHeading
+              eyebrow="Bất động sản"
+              title="Nhà đất & villa ven biển"
+              description="Danh sách bất động sản với mức giá, diện tích và pháp lý rõ ràng."
+              action={
+                <Button variant="outline" asChild>
+                  <Link href="/bat-dong-san">
+                    Xem tất cả <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              }
+            />
+            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {realEstates.items.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+      </section>
+      ) : null}
+
     </div>
   );
 }
