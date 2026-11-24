@@ -1,6 +1,6 @@
 # MCP server cho AI agent
 
-> Phase 1 + quản lý bài: personal access token + 12 tool (đọc, tạo, sửa nháp, đổi trạng thái, xoá, đọc/validate affiliate). Xem kế hoạch tổng thể ở [MCP_PLAN.md](./MCP_PLAN.md).
+> Phase 1 + quản lý bài: personal access token + 13 tool (đọc, tạo, sửa nháp, đổi trạng thái, xoá, đọc/validate affiliate). Xem kế hoạch tổng thể ở [MCP_PLAN.md](./MCP_PLAN.md).
 
 ## 1. Tổng quan
 
@@ -159,6 +159,18 @@ Cần scope `media:write`.
 | `watermark` | boolean | Mặc định `false` |
 
 Trả `{ path, url, bytes, mimeType, markdown }`. Dùng `path` để chèn vào nội dung.
+
+### `set_post_hero`
+
+Cần scope `posts:write`; chỉ áp dụng cho bài `DRAFT`.
+
+| Tham số | Kiểu | Ghi chú |
+|---|---|---|
+| `id` hoặc `slug` | string | Chọn bài |
+| `imagePath` | string | Đường dẫn `/upload/...` đã upload |
+| `alt` | string | Không bắt buộc |
+
+Ảnh hero cũ được chuyển về gallery, ảnh mới được gán role `hero`.
 
 ### `list_affiliate_links`
 

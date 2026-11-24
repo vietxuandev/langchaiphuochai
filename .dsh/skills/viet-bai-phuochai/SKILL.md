@@ -156,6 +156,7 @@ Khi bài có sản phẩm gợi ý mua kèm:
 - Chỉ dùng khi thật sự liên quan; tối đa 1-3 thẻ/bài.
 - Gọi `list_affiliate_links` để chọn link đang hoạt động.
 - Nếu cần ảnh mới, gọi `upload_image` với base64 và dùng path trả về.
+- Set ảnh hero bằng `set_post_hero`; chỉ áp dụng cho bài DRAFT.
 - Gọi `validate_affiliate_links` với slug đã chọn trước khi lưu.
 - Tạo link trong `/quan-tri/affiliate`, không dán link Shopee trực tiếp.
 - Chèn shortcode:

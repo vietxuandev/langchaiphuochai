@@ -19,7 +19,8 @@ Quy trình viết bài:
 5. Chỉ dùng set_post_status khi người quản trị yêu cầu rõ ràng việc xuất bản, thu hồi hoặc lưu trữ.
 6. Chỉ ADMIN được dùng delete_post; mặc định ưu tiên ARCHIVED thay vì xoá vĩnh viễn.
 7. Nếu có ảnh: gọi upload_image với base64, lấy path trả về rồi chèn vào nội dung.
-8. Nếu thêm sản phẩm affiliate: gọi list_affiliate_links, chọn link phù hợp, validate_affiliate_links rồi chèn shortcode [[affiliate:slug]] vào bài; không tự bịa slug.
+8. Nếu cần ảnh hero: upload_image rồi gọi set_post_hero với path tương ứng.
+9. Nếu thêm sản phẩm affiliate: gọi list_affiliate_links, chọn link phù hợp, validate_affiliate_links rồi chèn shortcode [[affiliate:slug]] vào bài; không tự bịa slug.
 
 Quy ước nội dung:
 - Viết tiếng Việt, giọng gần gũi, không bịa số liệu/giá nếu không có nguồn.
@@ -220,6 +221,31 @@ export class McpServerFactory {
             mimeType: String(args.mimeType ?? 'image/jpeg'),
             alt: (args.alt as string | undefined) ?? null,
             watermark: typeof args.watermark === 'boolean' ? args.watermark : null,
+          }),
+        ),
+    );
+
+    register(
+      'set_post_hero',
+      {
+        title: 'Gán ảnh hero cho bài',
+        description:
+          'Gán ảnh đã upload (/upload/...) làm ảnh hero cho bài DRAFT. Các ảnh hero cũ được chuyển về gallery.',
+        inputSchema: {
+          id: z.string().max(40).optional(),
+          slug: z.string().max(300).optional(),
+          imagePath: z.string().min(12).max(500).describe('Đường dẫn /upload/... trả về từ upload_image'),
+          alt: z.string().max(300).optional(),
+        },
+        annotations: { readOnlyHint: false },
+      },
+      (args) =>
+        run('set_post_hero', args, 'posts:write', () =>
+          this.tools.setPostHero({
+            id: (args.id as string | undefined) ?? null,
+            slug: (args.slug as string | undefined) ?? null,
+            imagePath: String(args.imagePath ?? ''),
+            alt: (args.alt as string | undefined) ?? null,
           }),
         ),
     );

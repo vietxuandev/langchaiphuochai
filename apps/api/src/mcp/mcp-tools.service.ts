@@ -305,6 +305,54 @@ export class McpToolsService {
     };
   }
 
+  /** Gán ảnh hero cho bài DRAFT; ảnh phải là file đã upload trong /upload/. */
+  async setPostHero(input: { id?: string | null; slug?: string | null; imagePath: string; alt?: string | null }) {
+    const current = await this.findPostRef(input);
+    if (current.status !== PostStatus.DRAFT) {
+      throw new McpToolError('POST_NOT_DRAFT', 'Chỉ được set hero cho bài DRAFT. Hãy đưa bài về nháp trước.');
+    }
+
+    const imagePath = input.imagePath.trim();
+    if (!imagePath.startsWith('/upload/')) {
+      throw new McpToolError('INVALID_INPUT', 'imagePath phải là đường dẫn /upload/... đã upload');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.postImage.updateMany({
+        where: { postId: current.id, role: 'hero' },
+        data: { role: 'gallery' },
+      });
+      const existing = await tx.postImage.findFirst({
+        where: { postId: current.id, path: imagePath },
+        select: { id: true },
+      });
+      if (existing) {
+        await tx.postImage.update({
+          where: { id: existing.id },
+          data: { role: 'hero', alt: input.alt?.slice(0, 300) ?? null, sortOrder: 0 },
+        });
+      } else {
+        await tx.postImage.create({
+          data: {
+            postId: current.id,
+            path: imagePath,
+            role: 'hero',
+            alt: input.alt?.slice(0, 300) ?? null,
+            sortOrder: 0,
+          },
+        });
+      }
+    });
+
+    return {
+      id: current.id,
+      slug: current.slug,
+      status: current.status,
+      heroImage: imagePath,
+      url: `${mcpConfig.siteUrl}${this.postPath(current.type, current.slug)}`,
+    };
+  }
+
   /**
    * Tạo bài mới ở trạng thái DRAFT.
    *
