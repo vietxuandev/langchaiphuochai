@@ -91,6 +91,30 @@ function buildToc(items: Array<{ id: string; label: string }>): string {
   ].join('\n');
 }
 
+function findTocBlock(html: string): { start: number; end: number; block: string } | null {
+  const opening = /<div[^>]*\bid=["']main-toc["'][^>]*>/i.exec(html);
+  if (!opening) return null;
+  const start = opening.index;
+  let cursor = start + opening[0].length;
+  let depth = 1;
+  const tag = /<\/?div\b[^>]*>/gi;
+  tag.lastIndex = cursor;
+  let match: RegExpExecArray | null;
+  while ((match = tag.exec(html))) {
+    if (/^<\//.test(match[0])) depth -= 1;
+    else depth += 1;
+    if (depth === 0) {
+      const end = match.index + match[0].length;
+      return { start, end, block: html.slice(start, end) };
+    }
+  }
+  return null;
+}
+
+function tocRefs(block: string): Set<string> {
+  return new Set([...block.matchAll(/href=["']#([^"']+)["']/gi)].map((match) => match[1]));
+}
+
 export function normalizeNewsSeo(html: string, title: string, currentSummary: string | null, currentSeoTitle: string | null): NewsSeoResult {
   const before = metrics(html, currentSummary ?? '', currentSeoTitle ?? '');
   const changes: string[] = [];
@@ -98,9 +122,11 @@ export function normalizeNewsSeo(html: string, title: string, currentSummary: st
   const toc: Array<{ id: string; label: string }> = [];
   let index = 0;
 
-  let body = removeToc(html).trim();
+  const oldToc = findTocBlock(html);
+  const oldRefs = oldToc ? tocRefs(oldToc.block) : new Set<string>();
 
-  body = body.replace(/<h2\b([^>]*)>([\s\S]*?)<\/h2>/gi, (full, attrs: string, inner: string) => {
+  // Chỉ sửa heading/id; không tự đổi nội dung.
+  let body = html.replace(/<h2\b([^>]*)>([\s\S]*?)<\/h2>/gi, (full, attrs: string, inner: string) => {
     index += 1;
     const existing = /\bid=["']([^"']+)["']/i.exec(attrs)?.[1]?.trim();
     let id = existing || `menu${index}`;
@@ -123,15 +149,19 @@ export function normalizeNewsSeo(html: string, title: string, currentSummary: st
     return `<h2${nextAttrs}>${inner}</h2>`;
   });
 
-  if (toc.length >= 2) {
+  const hasAllTocLinks = toc.length > 0 && toc.every((item) => oldRefs.has(item.id));
+  const needsToc = toc.length >= 2 && (!oldToc || !hasAllTocLinks);
+
+  if (needsToc) {
+    body = removeToc(body).trim();
     body = `${buildToc(toc)}\n\n${body}`;
-    changes.push('Tạo lại mục lục từ H2');
-  } else if (before.hasToc) {
+    changes.push(oldToc ? 'Chuẩn hoá mục lục' : 'Thêm mục lục');
+  } else if (oldToc && toc.length < 2) {
+    body = removeToc(body).trim();
     changes.push('Bỏ TOC cũ (bài ít hơn 2 H2)');
   }
 
-  if (!/id=["']main-toc["']/i.test(html) && toc.length >= 2) changes.push('Thêm mục lục');
-  if (before.h2WithId < before.h2Count) changes.push('Bổ sung id cho H2');
+  if (before.h2WithId < toc.length) changes.push('Bổ sung id cho H2');
 
   let summary = (currentSummary ?? '').trim();
   if (!summary || summary.length < 80) {
