@@ -1,9 +1,8 @@
 import Link from 'next/link';
-import { ArrowRight, TrendingUp } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { PostType } from '@phuochai/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { HomeHero } from '@/components/site/home-hero';
 import { PostCard } from '@/components/site/post-card';
@@ -17,7 +16,7 @@ export default async function HomePage() {
   const [stats, categories] = await Promise.all([getPublicStats(), getNavCategories()]);
   const [accommodations, latestNews, realEstates] = await Promise.all([
     getPosts({ type: PostType.ACCOMMODATION, pageSize: 8, sortBy: 'VIEWS', sortOrder: 'DESC' }),
-    getPosts({ type: PostType.NEWS, pageSize: 6, sortBy: 'PUBLISHED_AT', sortOrder: 'DESC' }),
+    getPosts({ type: PostType.NEWS, pageSize: 4, sortBy: 'PUBLISHED_AT', sortOrder: 'DESC' }),
     getPosts({ type: PostType.REAL_ESTATE, pageSize: 4, sortBy: 'PUBLISHED_AT', sortOrder: 'DESC' }),
   ]);
 
@@ -28,7 +27,7 @@ export default async function HomePage() {
     <div>
       <HomeHero stats={stats} />
 
-      {/* ----------------------------- Tin tức ----------------------------- */}
+      {/* --------------------------- Cẩm nang du lịch --------------------------- */}
       <section className="container py-14">
         <SectionHeading
           eyebrow="Cẩm nang du lịch"
@@ -43,55 +42,21 @@ export default async function HomePage() {
           }
         />
 
-        <div className="mt-6 grid gap-8 lg:grid-cols-[2fr_1fr]">
-          <div className="grid gap-5 sm:grid-cols-2">
-            {latestNews.items.slice(0, 4).map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-          </div>
-
-          <div className="space-y-4">
-            <Card className="border-border/70 shadow-soft">
-              <CardContent className="p-5">
-                <p className="flex items-center gap-2 font-display text-sm font-semibold">
-                  <TrendingUp className="h-4 w-4 text-coral-500" /> Chủ đề được quan tâm
-                </p>
-                <div className="mt-3 space-y-2">
-                  {newsCategories.map((category) => (
-                    <Link
-                      key={category.id}
-                      href={`/danh-muc/${category.slug}`}
-                      className="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-muted"
-                    >
-                      <span>{category.name}</span>
-                      <span className="text-xs text-muted-foreground">{category.postCount} bài</span>
-                    </Link>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/70 bg-sea-50 shadow-soft dark:bg-sea-900/30">
-              <CardContent className="p-5">
-                <p className="font-display text-sm font-semibold">Bạn là chủ địa điểm?</p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Đăng nhập để cập nhật thông tin, hình ảnh và giá cho địa điểm của bạn trên hệ thống.
-                </p>
-                <Button className="mt-4 w-full" asChild>
-                  <Link href="/dang-nhap">Đăng nhập để quản lý</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="mt-6 flex flex-wrap gap-2">
+          {newsCategories.map((category) => (
+            <Link key={category.id} href={`/danh-muc/${category.slug}`}>
+              <Badge variant="secondary" className="cursor-pointer px-3 py-1.5 hover:bg-sea-200">
+                {category.name} · {category.postCount}
+              </Badge>
+            </Link>
+          ))}
         </div>
 
-        {latestNews.items.length > 4 ? (
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {latestNews.items.slice(4).map((post) => (
-              <PostCard key={post.id} post={post} variant="horizontal" />
-            ))}
-          </div>
-        ) : null}
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {latestNews.items.slice(0, 4).map((post) => (
+            <PostCard key={post.id} post={post} />
+          ))}
+        </div>
       </section>
 
       {/* --------------------------- Nơi lưu trú --------------------------- */}

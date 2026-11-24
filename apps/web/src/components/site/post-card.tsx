@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BedDouble, Building2, MapPin, Ruler, ArrowUpRight } from 'lucide-react';
+import { BedDouble, MapPin, Ruler, ArrowUpRight } from 'lucide-react';
 import {
   PostType,
   buildImageUrl,
@@ -10,6 +10,7 @@ import {
   truncate,
 } from '@phuochai/shared';
 import { Badge } from '@/components/ui/badge';
+import { PostCardImage } from '@/components/site/post-card-image';
 import { Card } from '@/components/ui/card';
 import { imageAlt } from '@/lib/image-alt';
 import { cn } from '@/lib/utils';
@@ -71,15 +72,7 @@ export function PostCard({ post, variant = 'default', className, priority = fals
     return (
       <Link href={href} className={cn('group flex gap-3 rounded-xl p-2 transition hover:bg-muted/60', className)}>
         <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-muted">
-          {image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={image}
-              alt={alt}
-              loading={priority ? 'eager' : 'lazy'}
-              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-            />
-          ) : null}
+          <PostCardImage src={image} alt={alt} priority={priority} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="line-clamp-2 text-sm font-semibold leading-snug group-hover:text-primary">{post.title}</p>
@@ -99,15 +92,7 @@ export function PostCard({ post, variant = 'default', className, priority = fals
       <Card className={cn('group overflow-hidden border-border/70 shadow-soft transition hover:shadow-card', className)}>
         <Link href={href} className="flex flex-col sm:flex-row">
           <div className="relative h-48 w-full overflow-hidden bg-muted sm:h-auto sm:w-56">
-            {image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={image}
-                alt={alt}
-                loading={priority ? 'eager' : 'lazy'}
-                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-              />
-            ) : null}
+            <PostCardImage src={image} alt={alt} priority={priority} />
             <Badge variant="secondary" className="absolute left-2 top-2 bg-white/90 text-foreground">
               {post.category?.name ?? 'Phước Hải'}
             </Badge>
@@ -146,19 +131,7 @@ export function PostCard({ post, variant = 'default', className, priority = fals
       )}
     >
       <Link href={href} className="relative block aspect-[4/3] overflow-hidden bg-muted">
-        {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={image}
-            alt={alt}
-            loading={priority ? 'eager' : 'lazy'}
-            className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sea-100 to-sea-200 text-sea-600">
-            <Building2 className="h-10 w-10" />
-          </div>
-        )}
+        <PostCardImage src={image} alt={alt} priority={priority} className="duration-700 group-hover:scale-110" />
 
         <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
           <Badge variant="secondary" className="bg-white/90 text-foreground shadow-sm backdrop-blur">
