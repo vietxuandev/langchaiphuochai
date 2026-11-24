@@ -86,7 +86,10 @@ function buildToc(items: Array<{ id: string; label: string }>): string {
   return [
     '<div id="main-toc">',
     '<strong>Mục lục</strong>',
-    ...items.map((item, index) => `  <div><a href="#${item.id}">${index + 1}. ${item.label}</a></div>`),
+    ...items.map((item, index) => {
+      const label = /^\d+[.)]\s+/.test(item.label) ? item.label : `${index + 1}. ${item.label}`;
+      return `  <div><a href="#${item.id}">${label}</a></div>`;
+    }),
     '</div>',
   ].join('\n');
 }
@@ -150,7 +153,9 @@ export function normalizeNewsSeo(html: string, title: string, currentSummary: st
   });
 
   const hasAllTocLinks = toc.length > 0 && toc.every((item) => oldRefs.has(item.id));
-  const needsToc = toc.length >= 2 && (!oldToc || !hasAllTocLinks);
+  // TOC cũ có thể đã bị nhân đôi số thứ tự ("1. 1. ...") từ lần format trước.
+  const hasDuplicateNumbers = oldToc ? /<a\b[^>]*>\s*\d+\.\s+\d+\./i.test(oldToc.block) : false;
+  const needsToc = toc.length >= 2 && (!oldToc || !hasAllTocLinks || hasDuplicateNumbers);
 
   if (needsToc) {
     body = removeToc(body).trim();
