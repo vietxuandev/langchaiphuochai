@@ -5,6 +5,7 @@ import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
 import { PrismaService } from '../prisma/prisma.service';
 import { PostsService, type Viewer } from '../posts/posts.service';
+import { UploadsService } from '../uploads/uploads.service';
 import { AffiliateService } from '../affiliate/affiliate.service';
 import { mcpConfig } from './mcp.config';
 import type { McpAuthContext } from './api-tokens.service';
@@ -85,6 +86,7 @@ export class McpToolsService {
     private readonly prisma: PrismaService,
     private readonly posts: PostsService,
     private readonly affiliate: AffiliateService,
+    private readonly uploads: UploadsService,
     private readonly audit: McpAuditService,
   ) {}
 
@@ -223,6 +225,39 @@ export class McpToolsService {
       images: post.images.map((image) => ({ path: image.path, alt: image.alt, role: image.role })),
       updatedAt: post.updatedAt,
       createdAt: post.createdAt,
+    };
+  }
+
+  /** Upload ảnh base64 từ MCP, trả path public để chèn vào content. */
+  async uploadImage(input: {
+    dataBase64: string;
+    filename: string;
+    mimeType: string;
+    alt?: string | null;
+    watermark?: boolean | null;
+  }) {
+    const raw = input.dataBase64.replace(/^data:[^;]+;base64,/, '').trim();
+    if (!raw) throw new McpToolError('INVALID_INPUT', 'Thiếu dữ liệu ảnh base64');
+    if (raw.length > 4_000_000) throw new McpToolError('INVALID_INPUT', 'Ảnh base64 quá lớn (tối đa khoảng 4MB)');
+
+    const buffer = Buffer.from(raw, 'base64');
+    if (buffer.length === 0) throw new McpToolError('INVALID_INPUT', 'Dữ liệu ảnh không hợp lệ');
+
+    const result = await this.uploads.save(
+      {
+        originalname: input.filename,
+        mimetype: input.mimeType,
+        size: buffer.length,
+        buffer,
+      },
+      'posts',
+      { watermark: input.watermark ?? false },
+    );
+
+    return {
+      ...result,
+      alt: input.alt ?? input.filename,
+      markdown: `![${input.alt ?? input.filename}](${result.path})`,
     };
   }
 

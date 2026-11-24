@@ -1,6 +1,6 @@
 # MCP server cho AI agent
 
-> Phase 1 + quản lý bài: personal access token + 11 tool (đọc, tạo, sửa nháp, đổi trạng thái, xoá, đọc/validate affiliate). Xem kế hoạch tổng thể ở [MCP_PLAN.md](./MCP_PLAN.md).
+> Phase 1 + quản lý bài: personal access token + 12 tool (đọc, tạo, sửa nháp, đổi trạng thái, xoá, đọc/validate affiliate). Xem kế hoạch tổng thể ở [MCP_PLAN.md](./MCP_PLAN.md).
 
 ## 1. Tổng quan
 
@@ -145,6 +145,20 @@ Trả `[{ id, slug, title, type, status, summary, updatedAt, url }]`.
 | `id` hoặc `slug` | string |
 
 Trả chi tiết gồm `contentHtml`, ảnh, tag, danh mục, địa chỉ, `updatedAt`.
+
+### `upload_image`
+
+Cần scope `media:write`.
+
+| Tham số | Kiểu | Ghi chú |
+|---|---|---|
+| `dataBase64` | string | Dữ liệu ảnh base64, tối đa khoảng 4MB |
+| `filename` | string | Tên file |
+| `mimeType` | `image/jpeg` \| PNG \| WEBP \| GIF \| AVIF | |
+| `alt` | string | Không bắt buộc |
+| `watermark` | boolean | Mặc định `false` |
+
+Trả `{ path, url, bytes, mimeType, markdown }`. Dùng `path` để chèn vào nội dung.
 
 ### `list_affiliate_links`
 

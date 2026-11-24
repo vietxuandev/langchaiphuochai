@@ -18,7 +18,8 @@ Quy trình viết bài:
 4. Dùng update_post để sửa bài còn ở trạng thái nháp.
 5. Chỉ dùng set_post_status khi người quản trị yêu cầu rõ ràng việc xuất bản, thu hồi hoặc lưu trữ.
 6. Chỉ ADMIN được dùng delete_post; mặc định ưu tiên ARCHIVED thay vì xoá vĩnh viễn.
-7. Nếu thêm sản phẩm affiliate: gọi list_affiliate_links, chọn link phù hợp, validate_affiliate_links rồi chèn shortcode [[affiliate:slug]] vào bài; không tự bịa slug.
+7. Nếu có ảnh: gọi upload_image với base64, lấy path trả về rồi chèn vào nội dung.
+8. Nếu thêm sản phẩm affiliate: gọi list_affiliate_links, chọn link phù hợp, validate_affiliate_links rồi chèn shortcode [[affiliate:slug]] vào bài; không tự bịa slug.
 
 Quy ước nội dung:
 - Viết tiếng Việt, giọng gần gũi, không bịa số liệu/giá nếu không có nguồn.
@@ -68,14 +69,15 @@ export class McpServerFactory {
     const run = async <T>(
       tool: string,
       args: unknown,
-      scope: string | null,
+      scope: string | string[] | null,
       fn: () => Promise<T>,
       postId?: (result: T) => string | null,
     ): Promise<CallToolResult> => {
       const started = Date.now();
 
-      if (scope && !auth.scopes.includes(scope)) {
-        const message = `Token thiếu quyền "${scope}" cho tool ${tool}.`;
+      const allowedScopes = scope ? (Array.isArray(scope) ? scope : [scope]) : [];
+      if (allowedScopes.length > 0 && !allowedScopes.some((item) => auth.scopes.includes(item))) {
+        const message = `Token thiếu quyền "${allowedScopes.join(' hoặc ')}" cho tool ${tool}.`;
         await this.audit.write({
           auth,
           tool,
@@ -196,6 +198,33 @@ export class McpServerFactory {
     );
 
     register(
+      'upload_image',
+      {
+        title: 'Upload ảnh cho bài viết',
+        description:
+          'Upload ảnh base64 vào thư mục upload/posts và trả path public để chèn vào contentHtml/contentMarkdown. Hỗ trợ JPEG, PNG, WEBP, GIF, AVIF; tối đa khoảng 4MB dữ liệu base64.',
+        inputSchema: {
+          dataBase64: z.string().min(20).max(4_000_000).describe('Dữ liệu ảnh base64, có thể kèm tiền tố data:image/...;base64,'),
+          filename: z.string().min(1).max(200),
+          mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']),
+          alt: z.string().max(300).optional(),
+          watermark: z.boolean().optional().describe('Mặc định false cho ảnh do agent upload'),
+        },
+        annotations: { readOnlyHint: false },
+      },
+      (args) =>
+        run('upload_image', args, 'media:write', () =>
+          this.tools.uploadImage({
+            dataBase64: String(args.dataBase64 ?? ''),
+            filename: String(args.filename ?? 'image.jpg'),
+            mimeType: String(args.mimeType ?? 'image/jpeg'),
+            alt: (args.alt as string | undefined) ?? null,
+            watermark: typeof args.watermark === 'boolean' ? args.watermark : null,
+          }),
+        ),
+    );
+
+    register(
       'list_affiliate_links',
       {
         title: 'Danh mục link affiliate',
@@ -210,7 +239,7 @@ export class McpServerFactory {
         annotations: { readOnlyHint: true },
       },
       (args) =>
-        run('list_affiliate_links', args, McpScope.AFFILIATE_READ, () =>
+        run('list_affiliate_links', args, [McpScope.AFFILIATE_READ, McpScope.POSTS_READ], () =>
           this.tools.listAffiliateLinks({
             query: (args.query as string | undefined) ?? null,
             campaign: (args.campaign as string | undefined) ?? null,
@@ -232,7 +261,7 @@ export class McpServerFactory {
         annotations: { readOnlyHint: true },
       },
       (args) =>
-        run('validate_affiliate_links', args, McpScope.AFFILIATE_READ, () =>
+        run('validate_affiliate_links', args, [McpScope.AFFILIATE_READ, McpScope.POSTS_READ], () =>
           this.tools.validateAffiliateLinks({
             slugs: Array.isArray(args.slugs) ? (args.slugs as string[]) : [],
           }),
