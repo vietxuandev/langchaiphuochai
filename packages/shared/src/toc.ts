@@ -14,6 +14,8 @@
  *   </ul>
  *   </div>
  *
+ * Heading KHÔNG đánh số tay ("1. Giới thiệu"): `normalizeToc` tự bỏ số đó, TOC mới là nơi duy nhất hiện số.
+ *
  * `normalizeToc` bỏ TOC cũ (kể cả kiểu `<div name="tableOfContents" style="margin-left:..">`),
  * bổ sung `id` cho H2/H3 còn thiếu rồi dựng lại TOC từ các heading. Chạy lại nhiều lần cho cùng kết quả.
  */
@@ -28,8 +30,6 @@ export interface TocNormalizeResult {
 
 const TOC_OPENING = /<div[^>]*\bid=["']main-toc["'][^>]*>/i;
 const HEADING = /<(h[23])\b([^>]*)>([\s\S]*?)<\/\1>/gi;
-/** Số thứ tự viết tay ở đầu heading: "1.", "2)", "3.1." */
-const LEADING_NUMBER = /^\d+(?:\.\d+)*[.)]\s*/;
 
 function decodeBasic(value: string): string {
   return value
@@ -45,9 +45,13 @@ function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/** Bỏ số viết tay ở đầu heading (kể cả khi nằm trong <strong>): "1. Giới thiệu" -> "Giới thiệu". */
+function stripHeadingNumber(inner: string): string {
+  return inner.replace(/^(\s*(?:<[^>]+>\s*)*)\d+(?:\.\d+)*[.)]\s+/, '$1');
+}
+
 function headingLabel(inner: string): string {
-  const text = decodeBasic(inner.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
-  return text.replace(LEADING_NUMBER, '').trim();
+  return decodeBasic(inner.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
 }
 
 /** Vị trí khối TOC (đếm `<div>` lồng nhau để lấy đúng thẻ đóng). */
@@ -147,9 +151,10 @@ export function normalizeToc(html: string | null | undefined): TocNormalizeResul
     const level = tag.toLowerCase() === 'h2' ? 2 : 3;
     const existing = /\bid=["']([^"']+)["']/i.exec(attrs)?.[1];
     const id = existing ?? nextId();
-    const label = headingLabel(inner);
+    const cleanInner = stripHeadingNumber(inner);
+    const label = headingLabel(cleanInner);
     if (label) entries.push({ id, label, level });
-    return existing ? full : `<${tag}${attrs} id="${id}">${inner}</${tag}>`;
+    return `<${tag}${attrs}${existing ? '' : ` id="${id}"`}>${cleanInner}</${tag}>`;
   });
 
   const sections = entries.filter((entry) => entry.level === 2).length;
