@@ -66,11 +66,17 @@ function findTocBlock(html: string): { start: number; end: number } | null {
   return null;
 }
 
-/** Bỏ khối TOC (nếu có), trả về phần còn lại đã trim. */
+/** TOC "phẳng" do editor tạo: <p><strong>Mục lục</strong></p> rồi mỗi mục là một <p><a href="#..">. */
+const PARAGRAPH_TOC =
+  /<p>\s*<strong>\s*Mục lục\s*<\/strong>\s*<\/p>(?:\s*<p>\s*<a\b[^>]*\bhref=["']#[^"']*["'][^>]*>[\s\S]*?<\/a>\s*<\/p>)*/gi;
+
+/** Bỏ mọi khối TOC (kiểu div#main-toc và kiểu đoạn <p> phẳng), trả về phần còn lại đã trim. */
 export function removeToc(html: string): string {
-  const block = findTocBlock(html);
-  if (!block) return html;
-  return `${html.slice(0, block.start)}${html.slice(block.end)}`.trim();
+  let result = html;
+  for (let block = findTocBlock(result); block; block = findTocBlock(result)) {
+    result = `${result.slice(0, block.start)}${result.slice(block.end)}`;
+  }
+  return result.replace(PARAGRAPH_TOC, '').trim();
 }
 
 interface TocEntry {
