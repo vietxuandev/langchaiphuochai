@@ -195,7 +195,7 @@ Cần scope `posts:write`; sửa bài `PUBLISHED` cần thêm `posts:publish`.
 | `status` | PostStatus | Không bắt buộc |
 | `dryRun` | boolean | Mặc định `true` |
 
-Chỉ chuẩn hoá format/SEO: tạo lại TOC từ H2, bổ sung `id` cho H2, `seoTitle`, summary. Không viết lại nội dung. Luôn chạy `dryRun` trước khi apply.
+Chỉ chuẩn hoá format/SEO: tạo lại TOC chuẩn (`<div id="main-toc">` + `ul>li`, H3 lồng trong H2) từ heading, bổ sung `id` cho H2/H3, `seoTitle`, summary. Không viết lại nội dung. Luôn chạy `dryRun` trước khi apply.
 
 ### `list_affiliate_links`
 

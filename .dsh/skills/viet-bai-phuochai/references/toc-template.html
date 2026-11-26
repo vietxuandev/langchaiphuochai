@@ -3,21 +3,32 @@ Mẫu TOC + heading cho bài viết Phước Hải.
 
 Quy tắc:
 - TOC nằm trên cùng, trước intro.
-- Số mục TOC phải bằng số <h2 id="menuN">.
+- Định dạng chuẩn: <div id="main-toc"> + <strong>Mục lục</strong> + <ul><li><a href="#menuN">.
+- H3 lồng trong H2 bằng <ul> con nằm trong <li> của H2.
+- KHÔNG viết số thứ tự trong chữ link/heading: CSS của website tự đánh số 1., 2., 2.1.
+- Mỗi link TOC có đúng một heading id="menuN" (H2 và H3). Không dùng name=, style=, <ol>.
 - Không dùng <h1> trong content.
-- id phải là menu1, menu2, ...; không dùng name=.
-- Dùng <div> cho từng mục nếu giữ số 1., 2. trong text.
-- Nếu dùng <ol>, KHÔNG viết số trong link text vì trình duyệt đã tự đánh số.
 -->
 
 <div id="main-toc">
-  <strong>Mục lục</strong>
-  <div><a href="#menu1">1. Vì sao nên đến Phước Hải?</a></div>
-  <div><a href="#menu2">2. Lịch trình gợi ý</a></div>
-  <div><a href="#menu3">3. Ăn gì ở Phước Hải?</a></div>
-  <div><a href="#menu4">4. Ở đâu tại Phước Hải?</a></div>
-  <div><a href="#menu5">5. Lưu ý trước khi đi</a></div>
-  <div><a href="#menu6">6. Câu hỏi thường gặp</a></div>
+<strong>Mục lục</strong>
+<ul>
+<li><a href="#menu1">Vì sao nên đến Phước Hải?</a></li>
+<li><a href="#menu2">Lịch trình gợi ý</a></li>
+<li><a href="#menu3">Ăn gì ở Phước Hải?</a>
+<ul>
+<li><a href="#menu4">Hải sản tươi</a></li>
+<li><a href="#menu5">Quán ăn sáng</a></li>
+</ul>
+</li>
+<li><a href="#menu6">Lưu ý trước khi đi</a></li>
+<li><a href="#menu7">Câu hỏi thường gặp</a>
+<ul>
+<li><a href="#menu8">4 ngày ở Phước Hải có đủ không?</a></li>
+<li><a href="#menu9">Nên ở homestay hay resort?</a></li>
+</ul>
+</li>
+</ul>
 </div>
 
 <p>Đoạn mở đầu 1: nêu bối cảnh, đối tượng độc giả và lý do bài viết hữu ích.</p>
@@ -28,15 +39,14 @@ Quy tắc:
   <figcaption>Chú thích ngắn cho ảnh.</figcaption>
 </figure>
 
-<h2 id="menu1">1. Vì sao nên đến Phước Hải?</h2>
+<h2 id="menu1">Vì sao nên đến Phước Hải?</h2>
 <p>Nội dung trả lời trực tiếp câu hỏi, có ví dụ/địa điểm thật.</p>
-<h3>Ý phụ trong mục 1</h3>
 <ul>
   <li>Ý cụ thể 1.</li>
   <li>Ý cụ thể 2.</li>
 </ul>
 
-<h2 id="menu2">2. Lịch trình gợi ý</h2>
+<h2 id="menu2">Lịch trình gợi ý</h2>
 <table>
   <thead>
     <tr><th>Thời gian</th><th>Hoạt động</th><th>Ghi chú</th></tr>
@@ -48,24 +58,24 @@ Quy tắc:
   </tbody>
 </table>
 
-<h2 id="menu3">3. Ăn gì ở Phước Hải?</h2>
+<h2 id="menu3">Ăn gì ở Phước Hải?</h2>
+<h3 id="menu4">Hải sản tươi</h3>
 <p>Gợi ý món và link tới bài ăn uống liên quan.</p>
+<h3 id="menu5">Quán ăn sáng</h3>
+<p>Gợi ý quán và món.</p>
 
-<h2 id="menu4">4. Ở đâu tại Phước Hải?</h2>
-<p>Gợi ý homestay/resort kèm link <code>/luu-tru/&lt;slug&gt;</code>.</p>
-
-<h2 id="menu5">5. Lưu ý trước khi đi</h2>
+<h2 id="menu6">Lưu ý trước khi đi</h2>
 <ul>
   <li>Thời tiết, thủy triều, an toàn.</li>
   <li>Đặt phòng và hỏi giá trước.</li>
   <li>Giữ vệ sinh, tôn trọng người địa phương.</li>
 </ul>
 
-<h2 id="menu6">6. Câu hỏi thường gặp</h2>
-<h3>4 ngày ở Phước Hải có đủ không?</h3>
+<h2 id="menu7">Câu hỏi thường gặp</h2>
+<h3 id="menu8">4 ngày ở Phước Hải có đủ không?</h3>
 <p>Trả lời ngắn, trực tiếp.</p>
-<h3>Nên ở homestay hay resort?</h3>
+<h3 id="menu9">Nên ở homestay hay resort?</h3>
 <p>Trả lời ngắn, trực tiếp.</p>
 
-<h2 id="menu7">Kết luận</h2>
-<p>Tóm tắt và CTA nhẹ. Có thể thêm id menu7 dù không có trong TOC.</p>
+<h2 id="menu10">Kết luận</h2>
+<p>Tóm tắt và CTA nhẹ. Có thể thêm id menu10 dù không có trong TOC.</p>
