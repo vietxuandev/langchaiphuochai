@@ -44,7 +44,7 @@
     "verify:content": "node scripts/verify-content.mjs",
     "verify:queries": "node scripts/verify-queries.mjs",
     "strip:tags": "node scripts/strip-tags-block.mjs",
-    "normalize:toc": "node scripts/normalize-toc.mjs",
+    "normalize:toc": "tsx apps/api/scripts/normalize-toc.ts",
     "docker:prod:config": "docker compose -f docker-compose.coolify.yml --env-file .env.coolify config",
     "docker:prod:seed": "docker compose -f docker-compose.coolify.yml --profile tools run --rm seed",
     "verify:repo": "node scripts/verify-repo.mjs",
