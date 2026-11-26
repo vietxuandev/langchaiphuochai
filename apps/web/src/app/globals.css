@@ -420,7 +420,7 @@
   }
 
   .affiliate-card__media {
-    @apply h-36 w-full bg-muted;
+    @apply aspect-square w-full self-start bg-muted;
   }
 
   .affiliate-card__media img {
