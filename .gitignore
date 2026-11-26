@@ -4,6 +4,7 @@ dist/
 .npm-cache/
 .env
 .env.local
+.mcp.json
 # File do graphql-codegen sinh ra (Dockerfile chạy codegen trước khi build)
 /apps/web/src/generated/
 *.log
