@@ -285,6 +285,28 @@
     content: counters(toc, '.') '. ';
     @apply font-semibold text-muted-foreground;
   }
+
+  /* Bài có mục lục: heading H2/H3 đánh số cùng quy tắc với mục lục (1., 1.1.). */
+  .prose-phuochai:has(#main-toc) {
+    counter-reset: sec;
+  }
+
+  .prose-phuochai:has(#main-toc) h2 {
+    counter-increment: sec;
+    counter-reset: subsec;
+  }
+
+  .prose-phuochai:has(#main-toc) h3 {
+    counter-increment: subsec;
+  }
+
+  .prose-phuochai:has(#main-toc) h2::before {
+    content: counter(sec) '. ';
+  }
+
+  .prose-phuochai:has(#main-toc) h3::before {
+    content: counter(sec) '.' counter(subsec) '. ';
+  }
 }
 
 /* ==========================================================================
