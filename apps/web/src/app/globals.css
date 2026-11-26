@@ -248,6 +248,43 @@
   .prose-phuochai pre code {
     @apply bg-transparent p-0;
   }
+
+  /* Mục lục: <div id="main-toc"><strong>Mục lục</strong><ul><li><a>…</a><ul>…</ul></li></ul></div>
+     Số thứ tự (1., 2., 2.1.) do CSS đánh, không viết vào nội dung. */
+  .prose-phuochai #main-toc {
+    @apply my-6 rounded-xl border border-primary/20 bg-primary/5 px-5 py-4;
+  }
+
+  .prose-phuochai #main-toc > strong {
+    @apply mb-2 block font-display text-base font-semibold text-foreground;
+  }
+
+  .prose-phuochai #main-toc ul {
+    @apply m-0 list-none space-y-0 p-0;
+    counter-reset: toc;
+  }
+
+  .prose-phuochai #main-toc ul ul {
+    @apply mt-1 pl-6;
+  }
+
+  .prose-phuochai #main-toc li {
+    @apply my-1 leading-6;
+    counter-increment: toc;
+  }
+
+  .prose-phuochai #main-toc li > a {
+    @apply no-underline;
+  }
+
+  .prose-phuochai #main-toc li > a:hover {
+    @apply underline;
+  }
+
+  .prose-phuochai #main-toc li > a::before {
+    content: counters(toc, '.') '. ';
+    @apply font-semibold text-muted-foreground;
+  }
 }
 
 /* ==========================================================================

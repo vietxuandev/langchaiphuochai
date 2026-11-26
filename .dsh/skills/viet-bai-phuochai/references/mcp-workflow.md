@@ -45,7 +45,7 @@ whoami
   "ward": "Xã Phước Hải",
   "tags": ["Phước Hải", "24/11", "lịch trình 4 ngày"],
   "idempotencyKey": "ke-hoach-4-ngay-nghi-24-11-phuoc-hai-2026",
-  "contentHtml": "<div id=\"main-toc\"><strong>Mục lục</strong><ol><li><a href=\"#menu1\">Vì sao chọn Phước Hải?</a></li></ol></div><h2 id=\"menu1\">1. Vì sao chọn Phước Hải?</h2><p>...</p>"
+  "contentHtml": "<div id=\"main-toc\"><strong>Mục lục</strong><ul><li><a href=\"#menu1\">Vì sao chọn Phước Hải?</a></li><li><a href=\"#menu2\">Lịch trình gợi ý</a></li></ul></div><h2 id=\"menu1\">Vì sao chọn Phước Hải?</h2><p>...</p>"
 }
 ```
 
@@ -57,10 +57,11 @@ whoami
 - Dùng `id="menu1"`, `menu2`... và `href="#menu1"`.
 - Không dùng `name=`.
 - Nếu dùng `contentMarkdown`, heading Markdown không có `id`; vì vậy bài có TOC phải dùng `contentHtml`.
-- Nếu TOC dùng `<div>` thì có thể giữ số `1.`, `2.` trong text.
-- Nếu TOC dùng `<ol>` thì không viết số trong link text, tránh lỗi `1. 1. Giới thiệu chung`.
+- TOC chuẩn là `<div id="main-toc"><strong>Mục lục</strong><ul><li><a>`; H3 lồng bằng `<ul>` con trong `<li>` của H2.
+- Không viết số trong chữ link TOC: CSS website tự đánh số 1., 2., 2.1.
+- Bài sai định dạng (TOC cũ, thiếu id): `format_news_seo` (dryRun trước) dựng lại TOC chuẩn từ H2/H3.
 - Kiểm tra sau khi lưu:
-  - số `<h2 id="menu...">` phải bằng số `href="#menu..."`.
+  - mỗi `href="#menu..."` trong TOC có heading `id` tương ứng.
   - TOC phải nằm trước intro.
   - Không có chuỗi lặp số kiểu `>1. 1.`.
 

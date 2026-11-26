@@ -1,6 +1,6 @@
 ---
 name: viet-bai-phuochai
-description: Viết bài du lịch, ẩm thực, lưu trú và lịch trình cho Làng Chài Phước Hải bằng MCP, chuẩn SEO, có mục lục anchor ở đầu bài.
+description: Viết bài du lịch, ẩm thực, lưu trú và lịch trình cho Làng Chài Phước Hải bằng MCP, chuẩn SEO, có mục lục chuẩn ul>li ở đầu bài.
 whenToUse: Khi người dùng yêu cầu viết mới, cập nhật, lên lịch trình, chuẩn hoá SEO hoặc tạo bản nháp bài viết cho website Làng Chài Phước Hải.
 ---
 
@@ -46,27 +46,34 @@ Không dùng H1 trong nội dung: tiêu đề bài đã là H1.
 
 ### TOC bắt buộc
 
-Dùng đúng mẫu trong `references/toc-template.html`. Tóm tắt:
+Dùng đúng mẫu trong `references/toc-template.html` (định dạng chuẩn duy nhất của website, kể cả bài crawl từ web cũ):
 
 ```html
 <div id="main-toc">
-  <strong>Mục lục</strong>
-  <div><a href="#menu1">1. Tên mục 1</a></div>
-  <div><a href="#menu2">2. Tên mục 2</a></div>
+<strong>Mục lục</strong>
+<ul>
+<li><a href="#menu1">Tên mục 1</a></li>
+<li><a href="#menu2">Tên mục 2</a>
+<ul>
+<li><a href="#menu3">Ý phụ (H3) của mục 2</a></li>
+</ul>
+</li>
+</ul>
 </div>
 
-<h2 id="menu1">1. Tên mục 1</h2>
+<h2 id="menu1">Tên mục 1</h2>
 ```
 
 Quy tắc:
 
-- Mỗi mục TOC phải có đúng một heading `id="menuN"`.
-- Số thứ tự trong TOC và H2 phải khớp.
-- Dùng `<div>` cho từng mục nếu muốn giữ số `1.`, `2.` trong text.
-- Nếu dùng `<ol>` thì **không** viết số trong link text, vì trình duyệt đã tự đánh số; tránh lỗi “1. 1. Giới thiệu chung”.
-- Không dùng `name=`; sanitizer MCP hiện chỉ cho `id`.
-- Không dựa vào component client để tạo anchor; anchor phải nằm trong HTML lưu vào bài.
+- `<ul><li><a>` lồng nhau: H2 là `li` cấp 1, H3 là `ul>li` lồng bên trong H2 chứa nó. Không dùng `<ol>`, không dùng `<div>` cho từng mục.
+- **Không viết số** (`1.`, `2.1.`) trong chữ của link TOC: CSS của website tự đánh số 1., 2., 2.1. Heading cũng nên bỏ số để TOC và bài khớp nhau.
+- Mỗi link TOC phải có đúng một heading `id="menuN"` tương ứng; H2 và H3 đều có `id`.
+- Không dùng `name=`, `style=`, `data-number`; sanitizer chỉ giữ cấu trúc chuẩn.
+- Nếu bài có ít hơn 2 H2 thì bỏ TOC.
+- Anchor phải nằm trong HTML lưu vào bài, không dựa vào component client.
 - Nếu có “Kết luận” ngoài TOC, vẫn có thể gán `id="menuN"` tiếp theo.
+- Bài đã có hoặc bài cũ sai định dạng: chạy MCP `format_news_seo` (dryRun trước) để dựng lại TOC chuẩn từ heading.
 
 ## 4. Viết nội dung
 

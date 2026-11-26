@@ -10,6 +10,7 @@
 # Script một lần chạy bằng file đã build (không cần tsx):
 #   node apps/api/dist/prisma/seed.js
 #   node apps/api/dist/scripts/sanitize-post-html.js [--apply]
+#   node apps/api/dist/scripts/normalize-toc.js [--apply]
 # =============================================================================
 
 # ---------- Build stage ----------

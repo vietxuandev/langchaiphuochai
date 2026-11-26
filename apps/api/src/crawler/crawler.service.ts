@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { createHash, randomUUID } from 'node:crypto';
-import { PostStatus, PostType, UPLOAD, stripTagsBlock, stripTagsText } from '@phuochai/shared';
+import { PostStatus, PostType, UPLOAD, normalizeToc, stripTagsBlock, stripTagsText } from '@phuochai/shared';
 import type { Prisma } from '@prisma/client';
 import { sanitizePostHtml } from '../common/post-html';
 import { PrismaService } from '../prisma/prisma.service';
@@ -235,7 +235,9 @@ export class CrawlerService {
           categorySlugs,
         });
         // HTML lấy từ web khác: luôn lọc trước khi lưu (trang công khai render nguyên HTML)
-        const normalizedHtml = normalizeDashes(stripTagsBlock(contentHtml));
+        // Mục lục kiểu cũ (div name="tableOfContents") -> định dạng chuẩn ul>li của website mới
+        const tocHtml = contentHtml && /id=["']main-toc["']/i.test(contentHtml) ? normalizeToc(contentHtml).html : contentHtml;
+        const normalizedHtml = normalizeDashes(stripTagsBlock(tocHtml));
         const safeContentHtml = normalizedHtml ? sanitizePostHtml(normalizedHtml) : normalizedHtml;
         const category = item.category?.slug ?? null;
         const categoryRow =
