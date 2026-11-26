@@ -67,7 +67,7 @@ Dùng đúng mẫu trong `references/toc-template.html` (định dạng chuẩn 
 Quy tắc:
 
 - `<ul><li><a>` lồng nhau: H2 là `li` cấp 1, H3 là `ul>li` lồng bên trong H2 chứa nó. Không dùng `<ol>`, không dùng `<div>` cho từng mục.
-- **Không viết số** (`1.`, `2.1.`) trong chữ của link TOC: CSS của website tự đánh số 1., 2., 2.1. Heading cũng nên bỏ số để TOC và bài khớp nhau.
+- **Không viết số** (`1.`, `2.1.`) trong chữ của link TOC: CSS của website tự đánh số 1., 2., 2.1. **Heading H2/H3 cũng không viết số** (`<h2>Vì sao…</h2>`, không phải `<h2>1. Vì sao…</h2>`); `format_news_seo` tự bỏ số còn sót.
 - Mỗi link TOC phải có đúng một heading `id="menuN"` tương ứng; H2 và H3 đều có `id`.
 - Không dùng `name=`, `style=`, `data-number`; sanitizer chỉ giữ cấu trúc chuẩn.
 - Nếu bài có ít hơn 2 H2 thì bỏ TOC.
