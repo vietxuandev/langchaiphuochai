@@ -9,6 +9,7 @@ import {
 } from '@phuochai/shared';
 import type { PostInput } from '@phuochai/shared';
 import { htmlToText, sanitizePostHtml } from '../common/post-html';
+import { FacebookService } from './facebook.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CategoriesService } from '../categories/categories.service';
@@ -40,6 +41,7 @@ export class PostsService {
     private readonly prisma: PrismaService,
     private readonly categories: CategoriesService,
     private readonly notifications: NotificationsService,
+    private readonly facebook: FacebookService,
   ) {}
 
   /* ------------------------------------------------------------------ */
@@ -202,6 +204,7 @@ export class PostsService {
     const post = this.toEntity(created);
     if (status === PostStatus.PUBLISHED) {
       await this.notifyPost(post, viewer, 'published');
+      this.facebook.autoPost(post);
       this.revalidateWeb(this.publicPaths(post.type, post.slug));
     } else if (status === PostStatus.DRAFT) {
       await this.notifyPost(post, viewer, 'pending');
@@ -254,6 +257,7 @@ export class PostsService {
     const post = this.toEntity(updated);
     if (status === PostStatus.PUBLISHED && current.status !== PostStatus.PUBLISHED) {
       await this.notifyPost(post, viewer, 'published');
+      this.facebook.autoPost(post);
     } else if (
       current.status === PostStatus.PUBLISHED &&
       post.status === PostStatus.PUBLISHED &&
@@ -304,6 +308,7 @@ export class PostsService {
     const post = this.toEntity(updated);
     if (status === PostStatus.PUBLISHED && current.status !== PostStatus.PUBLISHED) {
       await this.notifyPost(post, viewer, 'published');
+      this.facebook.autoPost(post);
     }
     if (current.status !== status && (current.status === PostStatus.PUBLISHED || status === PostStatus.PUBLISHED)) {
       this.revalidateWeb(this.publicPaths(post.type, post.slug));

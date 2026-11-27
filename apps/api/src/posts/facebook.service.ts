@@ -1,0 +1,64 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { PostType } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import type { PostEntity } from './entities/post.entity';
+
+const GRAPH_VERSION = 'v21.0';
+
+/** Tự đăng bài đã xuất bản lên Facebook Page. Bật bằng FB_AUTO_POST=true. */
+@Injectable()
+export class FacebookService {
+  private readonly logger = new Logger(FacebookService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
+
+  /** Không chặn luồng chính: mọi lỗi chỉ được log. */
+  autoPost(post: PostEntity): void {
+    if (process.env.FB_AUTO_POST !== 'true') return;
+    if (post.type === PostType.PAGE) return;
+    void this.publish(post).catch((err) =>
+      this.logger.warn(`Đăng Facebook thất bại cho "${post.slug}": ${(err as Error).message}`),
+    );
+  }
+
+  private async publish(post: PostEntity): Promise<void> {
+    const pageId = process.env.FB_PAGE_ID;
+    const token = process.env.FB_PAGE_TOKEN;
+    if (!pageId || !token) {
+      this.logger.warn('Thiếu FB_PAGE_ID hoặc FB_PAGE_TOKEN, bỏ qua đăng Facebook.');
+      return;
+    }
+
+    const existing = await this.prisma.post.findUnique({
+      where: { id: post.id },
+      select: { facebookPostId: true },
+    });
+    if (!existing || existing.facebookPostId) return;
+
+    const message = [post.title, post.summary].filter(Boolean).join('\n\n');
+    const res = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/feed`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, link: this.postUrl(post), access_token: token }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const data = (await res.json().catch(() => ({}))) as { id?: string; error?: { message?: string } };
+    if (!res.ok || !data.id) {
+      throw new Error(data.error?.message ?? `HTTP ${res.status}`);
+    }
+
+    await this.prisma.post.update({ where: { id: post.id }, data: { facebookPostId: data.id } });
+    this.logger.log(`Đã đăng "${post.slug}" lên Facebook (${data.id})`);
+  }
+
+  private postUrl(post: PostEntity): string {
+    const site = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://langchaiphuochai.com').replace(/\/+$/, '');
+    const base =
+      post.type === PostType.ACCOMMODATION
+        ? '/luu-tru'
+        : post.type === PostType.NEWS
+          ? '/tin-tuc'
+          : '/bat-dong-san';
+    return `${site}${base}/${post.slug}`;
+  }
+}
