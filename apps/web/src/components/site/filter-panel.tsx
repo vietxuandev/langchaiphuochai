@@ -230,7 +230,7 @@ export function FilterPanel({ type, categories, filters, total, onChange }: Filt
   return (
     <>
       {/* Desktop */}
-      <Card className="sticky top-24 hidden h-fit border-border/70 p-5 shadow-soft lg:block">
+      <Card className="sticky top-28 hidden h-fit border-border/70 p-5 shadow-soft lg:block">
         <div className="mb-4 flex items-center justify-between">
           <p className="font-display text-sm font-semibold uppercase tracking-wide">Bộ lọc</p>
           <Badge variant="muted">{total} kết quả</Badge>
