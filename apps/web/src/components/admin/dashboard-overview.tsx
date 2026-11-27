@@ -24,12 +24,14 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatCard } from '@/components/ui/stat-card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PostsByMonthChart, StatusDonutChart } from '@/components/admin/dashboard-charts';
+import { PostsByMonthTypeChart, StatusDonutChart } from '@/components/admin/dashboard-charts';
+import { DashboardInsights } from '@/components/admin/dashboard-insights';
 import { postHref } from '@/components/site/post-card';
 import { useAuth } from '@/lib/auth/auth-context';
 import {
   useAdminNotificationsQuery,
   useAdminPostsQuery,
+  useDashboardInsightsQuery,
   useDashboardStatsQuery,
   usePendingUserCountQuery,
 } from '@/generated/graphql';
@@ -55,6 +57,7 @@ export function DashboardOverview() {
   });
 
   const stats = data?.dashboardStats;
+  const monthType = useDashboardInsightsQuery({ skip: !visible, fetchPolicy: 'cache-and-network' }).data?.dashboardInsights.postsByMonthType ?? [];
   const pendingCount = pendingData?.pendingUserCount ?? 0;
   const unreadCount = notificationData?.adminNotifications.unreadCount ?? 0;
 
@@ -96,19 +99,13 @@ export function DashboardOverview() {
           title="Tổng bài viết"
           value={stats?.totalPosts ?? 0}
           icon={FileText}
-          hint={`${stats?.publishedPosts ?? 0} đã đăng · ${stats?.draftPosts ?? 0} bản nháp`}
+          hint={`${stats?.draftPosts ?? 0} bản nháp cần hoàn thiện hoặc chờ duyệt`}
         />
         <StatCard
           title="Đã xuất bản"
           value={stats?.publishedPosts ?? 0}
           icon={CheckCircle2}
           hint="Bài đang hiển thị công khai"
-        />
-        <StatCard
-          title="Bản nháp"
-          value={stats?.draftPosts ?? 0}
-          icon={FileText}
-          hint="Cần hoàn thiện hoặc chờ duyệt"
         />
         <StatCard
           title="Lưu trữ"
@@ -129,12 +126,9 @@ export function DashboardOverview() {
           hint="Tài khoản trong hệ thống"
         />
         {isAdmin ? (
-          <StatCard
-            title="Chờ duyệt"
-            value={pendingCount}
-            icon={UserPlus}
-            hint="Tài khoản đăng ký mới"
-          />
+          <Link href="/quan-tri/nguoi-dung" className="block rounded-xl transition hover:ring-2 hover:ring-primary/30">
+            <StatCard title="Chờ duyệt" value={pendingCount} icon={UserPlus} hint="Tài khoản đăng ký mới" />
+          </Link>
         ) : (
           <StatCard
             title="Danh mục"
@@ -143,23 +137,20 @@ export function DashboardOverview() {
             hint="Danh mục đang quản lý"
           />
         )}
-        <StatCard
-          title="Thông báo"
-          value={unreadCount}
-          icon={Bell}
-          hint="Thông báo chưa đọc"
-        />
+        <Link href="/quan-tri/thong-bao" className="block rounded-xl transition hover:ring-2 hover:ring-primary/30">
+          <StatCard title="Thông báo" value={unreadCount} icon={Bell} hint="Thông báo chưa đọc" />
+        </Link>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="border-border/70">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-display text-base">
-              <BarChart3 className="h-4 w-4 text-sea-600" /> Bài viết theo tháng
+              <BarChart3 className="h-4 w-4 text-sea-600" /> Bài viết theo tháng và loại
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <PostsByMonthChart data={stats?.postsByMonth ?? []} />
+            <PostsByMonthTypeChart data={monthType} />
           </CardContent>
         </Card>
 
@@ -174,6 +165,8 @@ export function DashboardOverview() {
           </CardContent>
         </Card>
       </div>
+
+      <DashboardInsights />
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Card className="border-border/70">
@@ -212,6 +205,7 @@ export function DashboardOverview() {
                     <TableHead>Tiêu đề</TableHead>
                     <TableHead className="hidden sm:table-cell">Loại</TableHead>
                     <TableHead className="hidden md:table-cell">Trạng thái</TableHead>
+                    <TableHead className="hidden text-right lg:table-cell">Lượt xem</TableHead>
                     <TableHead className="hidden lg:table-cell">Ngày tạo</TableHead>
                     <TableHead className="w-20" />
                   </TableRow>
@@ -232,6 +226,7 @@ export function DashboardOverview() {
                           {POST_STATUS_LABELS[post.status as keyof typeof POST_STATUS_LABELS] ?? post.status}
                         </Badge>
                       </TableCell>
+                      <TableCell className="hidden text-right text-xs lg:table-cell">{post.views}</TableCell>
                       <TableCell className="hidden text-xs text-muted-foreground lg:table-cell">
                         {formatDateTime(post.createdAt)}
                       </TableCell>

@@ -267,6 +267,7 @@ model Post {
 
   images PostImage[]
   tags   Tag[]       @relation("PostTags")
+  viewDaily PostViewDaily[]
 
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -280,6 +281,18 @@ model Post {
   @@index([ward])
   @@index([priceValue])
   @@map("posts")
+}
+
+/// Lượt xem gộp theo ngày (múi giờ Asia/Ho_Chi_Minh) để thống kê xu hướng.
+model PostViewDaily {
+  postId String
+  post   Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  day    DateTime @db.Date
+  views  Int      @default(0)
+
+  @@id([postId, day])
+  @@index([day])
+  @@map("post_view_daily")
 }
 
 model PostImage {

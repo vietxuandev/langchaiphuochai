@@ -162,6 +162,10 @@ export class PostsService {
   async incrementViews(id: string): Promise<void> {
     try {
       await this.prisma.post.update({ where: { id }, data: { views: { increment: 1 } } });
+      await this.prisma.$executeRaw`
+        INSERT INTO post_view_daily ("postId", "day", "views")
+        VALUES (${id}, (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date, 1)
+        ON CONFLICT ("postId", "day") DO UPDATE SET "views" = post_view_daily."views" + 1`;
     } catch {
       // Bỏ qua nếu bài viết đã bị xoá
     }

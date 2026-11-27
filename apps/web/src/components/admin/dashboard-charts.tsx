@@ -1,6 +1,6 @@
 'use client';
 
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, Legend, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -179,5 +179,73 @@ export function StatusDonutChart({ data, className }: { data: StatusPoint[]; cla
         ))}
       </ul>
     </div>
+  );
+}
+
+const TYPE_SERIES = [
+  { key: 'NEWS', label: 'Tin tức', color: 'hsl(var(--primary))' },
+  { key: 'ACCOMMODATION', label: 'Lưu trú', color: 'hsl(var(--accent))' },
+  { key: 'REAL_ESTATE', label: 'Bất động sản', color: 'hsl(var(--muted-foreground))' },
+] as const;
+
+const TYPE_CONFIG = Object.fromEntries(
+  TYPE_SERIES.map((item) => [item.key, { label: item.label, color: item.color }]),
+) satisfies ChartConfig;
+
+/** Bài viết theo tháng, xếp chồng theo loại nội dung. */
+export function PostsByMonthTypeChart({
+  data,
+}: {
+  data: Array<{ month: string; type: string; count: number }>;
+}) {
+  const points = lastSixMonths([]).map((point) => {
+    const row: Record<string, string | number> = { month: point.month };
+    for (const item of TYPE_SERIES) {
+      row[item.key] = data.find((entry) => entry.month === point.month && entry.type === item.key)?.count ?? 0;
+    }
+    return row;
+  });
+
+  return (
+    <ChartContainer config={TYPE_CONFIG} className="h-48 w-full">
+      <BarChart accessibilityLayer data={points} margin={{ top: 16, right: 8, left: 0, bottom: 0 }}>
+        <CartesianGrid vertical={false} />
+        <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={monthLabel} />
+        <YAxis tickLine={false} axisLine={false} tickMargin={8} width={36} allowDecimals={false} />
+        <ChartTooltip
+          cursor={false}
+          content={<ChartTooltipContent labelFormatter={(value) => monthLabel(String(value))} />}
+        />
+        <Legend formatter={(value) => TYPE_CONFIG[value as keyof typeof TYPE_CONFIG]?.label ?? value} />
+        {TYPE_SERIES.map((item, index) => (
+          <Bar
+            key={item.key}
+            dataKey={item.key}
+            stackId="type"
+            fill={`var(--color-${item.key})`}
+            radius={index === TYPE_SERIES.length - 1 ? [6, 6, 0, 0] : 0}
+            maxBarSize={56}
+          />
+        ))}
+      </BarChart>
+    </ChartContainer>
+  );
+}
+
+const VIEWS_CONFIG = { count: { label: 'Lượt xem', color: 'hsl(var(--primary))' } } satisfies ChartConfig;
+
+/** Lượt xem 30 ngày gần nhất theo ngày. */
+export function DailyCountChart({ data, label = 'Lượt xem' }: { data: Array<{ day: string; count: number }>; label?: string }) {
+  const points = data.map((item) => ({ ...item, label: `${item.day.slice(8)}/${item.day.slice(5, 7)}` }));
+  return (
+    <ChartContainer config={{ count: { ...VIEWS_CONFIG.count, label } }} className="h-40 w-full">
+      <BarChart accessibilityLayer data={points} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+        <CartesianGrid vertical={false} />
+        <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={6} interval={4} />
+        <YAxis tickLine={false} axisLine={false} tickMargin={6} width={30} allowDecimals={false} />
+        <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+        <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} maxBarSize={18} />
+      </BarChart>
+    </ChartContainer>
   );
 }

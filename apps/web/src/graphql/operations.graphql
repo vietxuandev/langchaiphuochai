@@ -109,6 +109,93 @@ query Me {
 
 # --------------------------- Khu vực quản trị ------------------------------
 
+query DashboardInsights {
+  dashboardInsights {
+    publishedChecked
+    contentHealth {
+      key
+      label
+      count
+      items {
+        id
+        title
+        detail
+      }
+    }
+    attention {
+      key
+      label
+      count
+      items {
+        id
+        title
+        detail
+      }
+    }
+    views {
+      last7
+      last30
+      trackedSince
+      byDay {
+        day
+        count
+      }
+      topPosts {
+        id
+        title
+        slug
+        type
+        views
+        views30d
+      }
+    }
+    affiliate {
+      totalLinks
+      activeLinks
+      totalClicks
+      clicks7
+      clicks30
+      byDay {
+        day
+        count
+      }
+      topLinks {
+        id
+        title
+        slug
+        clicks
+        clicks30d
+        isActive
+      }
+    }
+    activity {
+      mcpCalls7d
+      mcpErrors7d
+      recentMcp {
+        id
+        tool
+        status
+        postId
+        durationMs
+        createdAt
+      }
+      lastImport {
+        source
+        created
+        updated
+        skipped
+        startedAt
+        finishedAt
+      }
+    }
+    postsByMonthType {
+      month
+      type
+      count
+    }
+  }
+}
+
 query DashboardStats {
   dashboardStats {
     totalPosts

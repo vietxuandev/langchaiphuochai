@@ -2,6 +2,13 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type ActivityInsight {
+  lastImport: LastImport
+  mcpCalls7d: Int!
+  mcpErrors7d: Int!
+  recentMcp: [McpActivity!]!
+}
+
 input AdminCreateUserInput {
   email: String!
   name: String!
@@ -38,6 +45,25 @@ type AdminNotificationPage {
 
   """Tổng số thông báo chưa đọc của người dùng hiện tại"""
   unreadCount: Int!
+}
+
+type AffiliateInsight {
+  activeLinks: Int!
+  byDay: [DayCount!]!
+  clicks7: Int!
+  clicks30: Int!
+  topLinks: [AffiliateTopLink!]!
+  totalClicks: Int!
+  totalLinks: Int!
+}
+
+type AffiliateTopLink {
+  clicks: Int!
+  clicks30d: Int!
+  id: String!
+  isActive: Boolean!
+  slug: String!
+  title: String!
 }
 
 type AgentToken {
@@ -225,6 +251,16 @@ input CreateAgentTokenInput {
   scopes: [String!]!
 }
 
+type DashboardInsights {
+  activity: ActivityInsight!
+  affiliate: AffiliateInsight!
+  attention: [InsightIssue!]!
+  contentHealth: [InsightIssue!]!
+  postsByMonthType: [MonthTypeCount!]!
+  publishedChecked: Int!
+  views: ViewsInsight!
+}
+
 type DashboardStats {
   archivedPosts: Int!
   draftPosts: Int!
@@ -243,12 +279,54 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type DayCount {
+  count: Int!
+  day: String!
+}
+
+type InsightIssue {
+  count: Int!
+  items: [InsightItem!]!
+  key: String!
+  label: String!
+}
+
+type InsightItem {
+  detail: String
+  id: String!
+  title: String!
+}
+
 """Giá trị JSON tuỳ ý (object, array, string, number, boolean)"""
 scalar JSON
+
+type LastImport {
+  created: Int!
+  finishedAt: DateTime
+  skipped: Int!
+  source: String!
+  startedAt: DateTime!
+  updated: Int!
+}
 
 input LoginInput {
   email: String!
   password: String!
+}
+
+type McpActivity {
+  createdAt: DateTime!
+  durationMs: Int!
+  id: String!
+  postId: String
+  status: String!
+  tool: String!
+}
+
+type MonthTypeCount {
+  count: Int!
+  month: String!
+  type: String!
 }
 
 type MonthlyCount {
@@ -611,6 +689,11 @@ type Query {
   """Xem nội dung đầy đủ của một bài đã kiểm tra"""
   crawlPreview(id: String!): CrawlPreview!
 
+  """
+  Số liệu mở rộng cho dashboard: sức khoẻ nội dung, xu hướng, affiliate, hoạt động
+  """
+  dashboardInsights: DashboardInsights!
+
   """Thống kê dashboard (editor/admin)"""
   dashboardStats: DashboardStats!
 
@@ -718,6 +801,15 @@ type Tag {
   id: String!
   name: String!
   slug: String!
+}
+
+type TopPost {
+  id: String!
+  slug: String!
+  title: String!
+  type: String!
+  views: Int!
+  views30d: Int!
 }
 
 type TypeCount {
@@ -828,6 +920,14 @@ enum UserStatus {
 
   """Bị từ chối"""
   REJECTED
+}
+
+type ViewsInsight {
+  byDay: [DayCount!]!
+  last7: Int!
+  last30: Int!
+  topPosts: [TopPost!]!
+  trackedSince: String
 }
 
 """Số bài viết theo xã/phường"""
