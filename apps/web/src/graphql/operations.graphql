@@ -493,3 +493,42 @@ mutation CreateAgentToken($input: CreateAgentTokenInput!) {
 mutation RevokeAgentToken($id: String!) {
   revokeAgentToken(id: $id)
 }
+
+# Hàng chờ tự đăng Facebook (chỉ ADMIN)
+query FacebookQueue {
+  facebookQueue {
+    enabled
+    postTimes
+    postsPerDay
+    onlyNews
+    pendingCount
+    missingCaptionCount
+    nextPostTitle
+    nextSlot
+    lastRunAt
+    lastError
+  }
+}
+
+mutation UpdateFacebookQueue($enabled: Boolean, $postTimes: [String!], $onlyNews: Boolean) {
+  updateFacebookQueue(enabled: $enabled, postTimes: $postTimes, onlyNews: $onlyNews) {
+    enabled
+    postTimes
+    postsPerDay
+    onlyNews
+    pendingCount
+    missingCaptionCount
+    nextPostTitle
+    nextSlot
+    lastRunAt
+    lastError
+  }
+}
+
+mutation RunFacebookQueueNow {
+  runFacebookQueueNow {
+    posted
+    title
+    error
+  }
+}

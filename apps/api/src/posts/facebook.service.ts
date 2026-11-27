@@ -7,21 +7,12 @@ const GRAPH_VERSION = 'v21.0';
 
 export type FacebookPostInput = Pick<PostEntity, 'id' | 'slug' | 'type' | 'title' | 'summary' | 'facebookCaption'>;
 
-/** Tự đăng bài đã xuất bản lên Facebook Page. Bật bằng FB_AUTO_POST=true. */
+/** Đăng / gỡ bài trên Facebook Page qua Graph API. Đăng tự động do FacebookQueueService phụ trách. */
 @Injectable()
 export class FacebookService {
   private readonly logger = new Logger(FacebookService.name);
 
   constructor(private readonly prisma: PrismaService) {}
-
-  /** Không chặn luồng chính: mọi lỗi chỉ được log. */
-  autoPost(post: FacebookPostInput): void {
-    if (process.env.FB_AUTO_POST !== 'true') return;
-    if (post.type === PostType.PAGE) return;
-    void this.postNow(post).catch((err) =>
-      this.logger.warn(`Đăng Facebook thất bại cho "${post.slug}": ${(err as Error).message}`),
-    );
-  }
 
   /** Thu hồi nền: xoá bài trên Page và xoá facebookPostId để có thể đăng lại sau này. */
   retract(postId: string, facebookPostId: string | null | undefined): void {
@@ -59,7 +50,7 @@ export class FacebookService {
     const data = (await res.json().catch(() => ({}))) as { id?: string; error?: { message?: string } };
     if (!res.ok || !data.id) throw new Error(data.error?.message ?? `HTTP ${res.status}`);
 
-    await this.prisma.post.update({ where: { id: post.id }, data: { facebookPostId: data.id } });
+    await this.prisma.post.update({ where: { id: post.id }, data: { facebookPostId: data.id, facebookPostedAt: new Date() } });
     this.logger.log(`Đã đăng "${post.slug}" lên Facebook (${data.id})`);
     return data.id;
   }

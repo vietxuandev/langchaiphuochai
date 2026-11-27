@@ -553,6 +553,97 @@ export class McpServerFactory {
     );
 
     register(
+      'list_posts_missing_facebook_caption',
+      {
+        title: 'Bài chưa có facebookCaption',
+        description:
+          'Liệt kê bài PUBLISHED chưa có facebookCaption (cũ nhất trước), kèm excerpt nội dung để soạn caption theo skill viet-bai-facebook-phuochai. ' +
+          'Sau khi soạn xong dùng set_facebook_caption. Mặc định chỉ bài NEWS.',
+        inputSchema: {
+          limit: z.number().int().min(1).max(30).optional().describe('Mặc định 10'),
+          onlyNews: z.boolean().optional().describe('Mặc định true; false để gồm cả lưu trú/bất động sản'),
+        },
+        annotations: { readOnlyHint: true },
+      },
+      (args) =>
+        run('list_posts_missing_facebook_caption', args, 'posts:read', () =>
+          this.tools.listPostsMissingFacebookCaption({
+            limit: typeof args.limit === 'number' ? args.limit : null,
+            onlyNews: typeof args.onlyNews === 'boolean' ? args.onlyNews : null,
+          }),
+        ),
+    );
+
+    register(
+      'set_facebook_caption',
+      {
+        title: 'Lưu nội dung đăng Facebook',
+        description:
+          'Lưu facebookCaption cho một bài ở BẤT KỲ trạng thái nào (kể cả PUBLISHED). Chỉ lưu, không đăng và không đổi nội dung bài. ' +
+          'Caption là văn bản thuần (không Markdown), tối đa 3000 ký tự; truyền chuỗi rỗng để xoá.',
+        inputSchema: {
+          id: z.string().max(40).optional(),
+          slug: z.string().max(300).optional(),
+          caption: z.string().max(3000),
+        },
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+      },
+      (args) =>
+        run(
+          'set_facebook_caption',
+          args,
+          'posts:write',
+          () =>
+            this.tools.setFacebookCaption(auth, {
+              id: (args.id as string | undefined) ?? null,
+              slug: (args.slug as string | undefined) ?? null,
+              caption: args.caption as string,
+            }),
+          (result) => result.id,
+        ),
+    );
+
+    register(
+      'get_facebook_queue',
+      {
+        title: 'Xem hàng chờ tự đăng Facebook',
+        description:
+          'Xem cấu hình và trạng thái hàng chờ tự đăng Facebook (bật/tắt, khung giờ, số bài chờ, bài thiếu caption, lần chạy gần nhất). Chỉ ADMIN.',
+        inputSchema: {},
+        annotations: { readOnlyHint: true },
+      },
+      (args) => run('get_facebook_queue', args, 'posts:read', () => this.tools.getFacebookQueue(auth)),
+    );
+
+    register(
+      'set_facebook_queue',
+      {
+        title: 'Cấu hình hàng chờ tự đăng Facebook',
+        description:
+          'Bật/tắt và cấu hình hàng chờ: mỗi khung giờ đăng 1 bài NEWS cũ nhất chưa đăng (cần có facebookCaption). ' +
+          'Số bài/ngày = số khung giờ trong postTimes (giờ Việt Nam, dạng HH:mm). Chỉ ADMIN, cần posts:publish.',
+        inputSchema: {
+          enabled: z.boolean().optional(),
+          postTimes: z.array(z.string().max(5)).min(1).max(24).optional().describe('Ví dụ ["08:00","19:30"]'),
+          onlyNews: z.boolean().optional().describe('true: chỉ bài tin tức; false: cả lưu trú/bất động sản'),
+        },
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+      },
+      (args) =>
+        run(
+          'set_facebook_queue',
+          args,
+          'posts:publish',
+          () =>
+            this.tools.setFacebookQueue(auth, {
+              enabled: typeof args.enabled === 'boolean' ? args.enabled : null,
+              postTimes: Array.isArray(args.postTimes) ? (args.postTimes as string[]) : null,
+              onlyNews: typeof args.onlyNews === 'boolean' ? args.onlyNews : null,
+            }),
+        ),
+    );
+
+    register(
       'delete_post',
       {
         title: 'Xoá bài viết',

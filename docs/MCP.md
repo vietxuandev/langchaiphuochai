@@ -300,7 +300,19 @@ Cần scope `posts:publish`, `MCP_ALLOW_PUBLISH=true`, vai trò EDITOR trở lê
 
 Xoá bài khỏi Facebook Page và xoá `facebookPostId`; bài trên website giữ nguyên. Tham số `id` hoặc `slug`. Cần `posts:publish`. Lỗi: `NOT_POSTED`, `FACEBOOK_ERROR`.
 
-Tự động: khi bài chuyển sang PUBLISHED và `FB_AUTO_POST=true`, bài được đăng lên Facebook; khi bài rời PUBLISHED hoặc bị xoá thì bài Facebook bị xoá theo.
+Không còn tự đăng khi xuất bản. Khi bài rời PUBLISHED hoặc bị xoá thì bài Facebook bị xoá theo.
+
+### `list_posts_missing_facebook_caption`
+
+Liệt kê bài PUBLISHED chưa có `facebookCaption` (cũ nhất trước) kèm `excerpt` nội dung để soạn caption. Tham số: `limit` (≤ 30, mặc định 10), `onlyNews` (mặc định `true`). Cần `posts:read`.
+
+### `set_facebook_caption`
+
+Lưu `facebookCaption` cho bài ở mọi trạng thái (kể cả PUBLISHED), không đăng. Tham số: `id` hoặc `slug`, `caption` (≤ 3.000, rỗng để xoá). Cần `posts:write` và vai trò EDITOR trở lên.
+
+### `get_facebook_queue` / `set_facebook_queue`
+
+Hàng chờ tự đăng: mỗi khung giờ trong `postTimes` (giờ Việt Nam, `HH:mm`) đăng 1 bài cũ nhất đã PUBLISHED, chưa đăng và **đã có `facebookCaption`**. Số bài/ngày = số khung giờ. Bài đã gỡ khỏi Facebook thì không tự vào lại hàng chờ. `set_facebook_queue` nhận `enabled`, `postTimes`, `onlyNews`. Chỉ ADMIN; `set_facebook_queue` cần `posts:publish`. Cũng chỉnh được ở `/quan-tri/facebook`.
 
 ### `delete_post`
 

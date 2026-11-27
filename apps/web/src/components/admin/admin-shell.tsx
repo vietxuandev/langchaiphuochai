@@ -7,6 +7,7 @@ import {
   Bell,
   ChevronRight,
   ExternalLink,
+  Facebook,
   FileText,
   DownloadCloud,
   KeyRound,
@@ -51,6 +52,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/quan-tri/nguoi-dung', label: 'Người dùng', icon: Users, minRole: Role.ADMIN },
   { href: '/quan-tri/thong-bao', label: 'Thông báo', icon: Bell, minRole: Role.EDITOR },
   { href: '/quan-tri/crawl', label: 'Crawl bài mới', icon: DownloadCloud, minRole: Role.ADMIN },
+  { href: '/quan-tri/facebook', label: 'Tự đăng Facebook', icon: Facebook, minRole: Role.ADMIN },
   { href: '/quan-tri/agent-tokens', label: 'Token AI agent', icon: KeyRound, minRole: Role.ADMIN },
   { href: '/quan-tri/tai-khoan', label: 'Tài khoản', icon: UserCircle, minRole: Role.USER },
 ];

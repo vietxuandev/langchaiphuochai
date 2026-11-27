@@ -256,6 +256,35 @@ type MonthlyCount {
   month: String!
 }
 
+type FacebookQueueStatus {
+  enabled: Boolean!
+  lastError: String
+  lastRunAt: DateTime
+
+  """Số bài chưa đăng nhưng chưa có facebookCaption nên bị bỏ qua"""
+  missingCaptionCount: Int!
+
+  """Khung giờ đăng kế tiếp (YYYY-MM-DD HH:mm)"""
+  nextSlot: String
+  nextPostTitle: String
+  onlyNews: Boolean!
+
+  """Số bài đủ điều kiện đang chờ đăng (đã có caption)"""
+  pendingCount: Int!
+
+  """Các khung giờ đăng HH:mm (giờ Việt Nam)"""
+  postTimes: [String!]!
+
+  """Số bài đăng mỗi ngày (= số khung giờ)"""
+  postsPerDay: Int!
+}
+
+type FacebookQueueRunResult {
+  error: String
+  posted: Boolean!
+  title: String
+}
+
 type Mutation {
   """Duyệt tài khoản đăng ký mới (có thể cấp vai trò)"""
   approveUser(
@@ -312,6 +341,12 @@ type Mutation {
 
   """Đăng ký tài khoản mới - tài khoản ở trạng thái chờ quản trị viên duyệt"""
   register(input: RegisterInput!): RegisterResult!
+
+  """Đăng ngay bài kế tiếp trong hàng chờ (admin)"""
+  runFacebookQueueNow: FacebookQueueRunResult!
+
+  """Cập nhật cấu hình hàng chờ tự đăng Facebook (admin)"""
+  updateFacebookQueue(enabled: Boolean, onlyNews: Boolean, postTimes: [String!]): FacebookQueueStatus!
 
   """Từ chối tài khoản đăng ký mới"""
   rejectUser(
@@ -596,6 +631,9 @@ type PublicStats {
 }
 
 type Query {
+  """Trạng thái hàng chờ tự đăng Facebook (admin)"""
+  facebookQueue: FacebookQueueStatus!
+
   """Danh sách thông báo của quản trị viên"""
   adminNotifications(filter: AdminNotificationFilterInput, page: Int = 1, pageSize: Int = 20): AdminNotificationPage!
 

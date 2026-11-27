@@ -204,7 +204,6 @@ export class PostsService {
     const post = this.toEntity(created);
     if (status === PostStatus.PUBLISHED) {
       await this.notifyPost(post, viewer, 'published');
-      this.facebook.autoPost(post);
       this.revalidateWeb(this.publicPaths(post.type, post.slug));
     } else if (status === PostStatus.DRAFT) {
       await this.notifyPost(post, viewer, 'pending');
@@ -257,7 +256,6 @@ export class PostsService {
     const post = this.toEntity(updated);
     if (status === PostStatus.PUBLISHED && current.status !== PostStatus.PUBLISHED) {
       await this.notifyPost(post, viewer, 'published');
-      this.facebook.autoPost(post);
     } else if (current.status === PostStatus.PUBLISHED && post.status !== PostStatus.PUBLISHED) {
       this.facebook.retract(post.id, current.facebookPostId);
     } else if (
@@ -352,7 +350,6 @@ export class PostsService {
     const post = this.toEntity(updated);
     if (status === PostStatus.PUBLISHED && current.status !== PostStatus.PUBLISHED) {
       await this.notifyPost(post, viewer, 'published');
-      this.facebook.autoPost(post);
     } else if (current.status === PostStatus.PUBLISHED && status !== PostStatus.PUBLISHED) {
       this.facebook.retract(post.id, current.facebookPostId);
     }

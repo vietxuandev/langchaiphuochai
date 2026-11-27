@@ -269,8 +269,10 @@ model Post {
   tags   Tag[]       @relation("PostTags")
 
   /// Nội dung bài đăng Facebook (soạn bằng skill viet-bai-facebook-phuochai).
-  facebookCaption String?
-  facebookPostId  String?
+  facebookCaption  String?
+  facebookPostId   String?
+  /// Thời điểm đăng Facebook lần đầu; không bị xoá khi gỡ bài, để hàng chờ không đăng lại bài đã gỡ chủ ý.
+  facebookPostedAt DateTime?
 
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -400,21 +402,21 @@ model McpIdempotency {
 
 /// Link affiliate Shopee được quản lý tập trung. Bài viết chỉ lưu /go/<slug>.
 model AffiliateLink {
-  id             String   @id @default(cuid())
-  slug           String   @unique
+  id             String    @id @default(cuid())
+  slug           String    @unique
   title          String
   description    String?
-  merchant       String   @default("SHOPEE")
+  merchant       String    @default("SHOPEE")
   destinationUrl String
   imagePath      String?
   priceText      String?
   campaign       String?
   subId          String?
-  isActive       Boolean  @default(true)
-  clicks         Int      @default(0)
+  isActive       Boolean   @default(true)
+  clicks         Int       @default(0)
   lastClickedAt  DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   clickLogs AffiliateClick[]
 
@@ -425,16 +427,32 @@ model AffiliateLink {
 
 /// Log click qua /go/<slug>; không lưu IP thô.
 model AffiliateClick {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   linkId    String
   link      AffiliateLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
   postSlug  String?
   referrer  String?
   ipHash    String?
   userAgent String?
-  createdAt DateTime @default(now())
+  createdAt DateTime      @default(now())
 
   @@index([linkId, createdAt])
   @@index([createdAt])
   @@map("affiliate_clicks")
+}
+
+/// Cấu hình hàng chờ tự đăng Facebook (một dòng duy nhất, id = "default").
+model FacebookQueueSetting {
+  id        String    @id @default("default")
+  enabled   Boolean   @default(false)
+  /// Các khung giờ đăng "HH:mm" (giờ Việt Nam), phân tách bằng dấu phẩy; mỗi khung đăng 1 bài.
+  postTimes String    @default("08:00")
+  onlyNews  Boolean   @default(true)
+  /// Khung giờ gần nhất đã xử lý, dạng "YYYY-MM-DD HH:mm", để không chạy trùng.
+  lastSlot  String?
+  lastRunAt DateTime?
+  lastError String?
+  updatedAt DateTime  @updatedAt
+
+  @@map("facebook_queue_settings")
 }

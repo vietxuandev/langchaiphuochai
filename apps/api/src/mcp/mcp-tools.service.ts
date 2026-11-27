@@ -4,6 +4,7 @@ import type { PostInput } from '@phuochai/shared';
 import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
 import { PrismaService } from '../prisma/prisma.service';
+import { FacebookQueueService } from '../posts/facebook-queue.service';
 import { FacebookService } from '../posts/facebook.service';
 import { PostsService, type Viewer } from '../posts/posts.service';
 import { UploadsService } from '../uploads/uploads.service';
@@ -88,6 +89,7 @@ export class McpToolsService {
     private readonly prisma: PrismaService,
     private readonly posts: PostsService,
     private readonly facebook: FacebookService,
+    private readonly facebookQueue: FacebookQueueService,
     private readonly affiliate: AffiliateService,
     private readonly uploads: UploadsService,
     private readonly audit: McpAuditService,
@@ -902,6 +904,84 @@ export class McpToolsService {
       throw new McpToolError('FACEBOOK_ERROR', (err as Error).message);
     }
     return { id: post.id, slug: post.slug, title: post.title, removedFacebookPostId: post.facebookPostId };
+  }
+
+  /** Bài PUBLISHED chưa có facebookCaption (cũ nhất trước) kèm đoạn đầu nội dung để soạn caption. */
+  async listPostsMissingFacebookCaption(input: { limit?: number | null; onlyNews?: boolean | null }) {
+    const limit = Math.min(Math.max(input.limit ?? 10, 1), 30);
+    const where = {
+      status: PostStatus.PUBLISHED,
+      type: input.onlyNews === false ? { not: PostType.PAGE } : PostType.NEWS,
+      OR: [{ facebookCaption: null }, { facebookCaption: '' }],
+    };
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.post.count({ where }),
+      this.prisma.post.findMany({
+        where,
+        orderBy: [{ publishedAt: 'asc' }, { createdAt: 'asc' }],
+        take: limit,
+        select: {
+          id: true,
+          slug: true,
+          type: true,
+          title: true,
+          summary: true,
+          contentText: true,
+          publishedAt: true,
+          facebookPostId: true,
+        },
+      }),
+    ]);
+    return {
+      totalMissing: total,
+      items: rows.map(({ contentText, ...row }) => ({
+        ...row,
+        excerpt: (contentText ?? '').replace(/\s+/g, ' ').trim().slice(0, 1500),
+      })),
+    };
+  }
+
+  /** Lưu facebookCaption cho bài ở bất kỳ trạng thái nào (không đăng, không đổi nội dung khác). */
+  async setFacebookCaption(
+    auth: McpAuthContext,
+    input: { id?: string | null; slug?: string | null; caption: string },
+  ) {
+    this.assertFacebookAccess(auth);
+    const ref = await this.findPostRef(input);
+    const caption = input.caption.trim();
+    const post = await this.prisma.post.update({
+      where: { id: ref.id },
+      data: { facebookCaption: caption || null },
+      select: { id: true, slug: true, title: true, facebookCaption: true, facebookPostId: true },
+    });
+    return { id: post.id, slug: post.slug, title: post.title, captionLength: post.facebookCaption?.length ?? 0 };
+  }
+
+  async getFacebookQueue(auth: McpAuthContext) {
+    this.assertQueueAdmin(auth);
+    return this.facebookQueue.status();
+  }
+
+  async setFacebookQueue(
+    auth: McpAuthContext,
+    input: { enabled?: boolean | null; postTimes?: string[] | null; onlyNews?: boolean | null },
+  ) {
+    this.assertQueueAdmin(auth);
+    try {
+      return await this.facebookQueue.updateConfig({
+        enabled: input.enabled ?? undefined,
+        postTimes: input.postTimes ?? undefined,
+        onlyNews: input.onlyNews ?? undefined,
+      });
+    } catch (err) {
+      throw new McpToolError('INVALID_INPUT', (err as Error).message);
+    }
+  }
+
+  private assertQueueAdmin(auth: McpAuthContext): void {
+    if (auth.user.role !== Role.ADMIN) {
+      throw new McpToolError('FORBIDDEN', 'Chỉ ADMIN mới xem/chỉnh hàng chờ đăng Facebook');
+    }
   }
 
   private assertFacebookAccess(auth: McpAuthContext): void {

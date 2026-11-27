@@ -41,7 +41,8 @@ Trả về:
 Không tự đăng khi chưa được người dùng đồng ý với caption. Sau khi đồng ý, chọn theo kịch bản:
 
 - **Đăng một bài cũ đã PUBLISHED**: gọi `post_to_facebook` với `slug` và `caption`. Không đổi trạng thái bài. Nếu báo `ALREADY_POSTED` thì hỏi người dùng có muốn gỡ bài cũ (`unpost_from_facebook`) rồi đăng lại không.
-- **Tạo bài mới và đăng ngay**: `create_post` (kèm `facebookCaption`) → `set_post_status` `PUBLISHED`; backend tự đăng đúng caption đó khi `FB_AUTO_POST=true`. Chỉ làm khi người dùng yêu cầu rõ ràng việc đăng.
+- **Tạo bài mới và đăng ngay**: `create_post` (kèm `facebookCaption`) → `set_post_status` `PUBLISHED` → `post_to_facebook`. Xuất bản không còn tự đăng Facebook. Chỉ làm khi người dùng yêu cầu rõ ràng việc đăng.
+- **Soạn caption hàng loạt cho bài cũ**: `list_posts_missing_facebook_caption` (lấy từng lô, có `excerpt`) → soạn caption theo quy tắc trên → `set_facebook_caption` cho từng bài. Chỉ lưu caption; hàng chờ tự đăng sẽ đăng theo lịch.
 - **Bài DRAFT**: lưu caption bằng `update_post`/`create_post` (`facebookCaption`), chưa đăng cho đến khi publish.
 - **Gỡ khỏi Facebook nhưng giữ bài trên web**: `unpost_from_facebook`.
 - **Xoá bài**: `delete_post` tự xoá luôn bài Facebook; thu hồi về DRAFT/ARCHIVED cũng vậy.
