@@ -249,7 +249,7 @@ export async function PostDetail({ post, related }: PostDetailProps) {
         </div>
 
         {/* Sidebar: giá, liên hệ, hành động */}
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
+        <aside className="space-y-4 lg:sticky lg:top-28 lg:h-fit">
           <Card className="border-border/70 shadow-card">
             <CardContent className="p-5">
               {post.priceValue != null ? (

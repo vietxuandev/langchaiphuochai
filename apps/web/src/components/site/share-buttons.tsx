@@ -32,11 +32,13 @@ export function ShareButtons({ path, className }: ShareButtonsProps) {
   };
 
   return (
-    <p className={className}>
-      <Share2 className="mr-1 inline h-3.5 w-3.5" />
-      <span className="mr-1">Chia sẻ:</span>
+    <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 ${className ?? ''}`}>
+      <span className="inline-flex items-center gap-1">
+        <Share2 className="h-3.5 w-3.5" />
+        Chia sẻ:
+      </span>
       <a
-        className="mr-3 hover:text-primary"
+        className="hover:text-primary"
         href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(absoluteUrl)}`}
         target="_blank"
         rel="noreferrer"
@@ -53,6 +55,6 @@ export function ShareButtons({ path, className }: ShareButtonsProps) {
         {copied ? <Check className="h-3 w-3 text-sea-600" /> : <Link2 className="h-3 w-3" />}
         {copied ? 'Đã sao chép' : 'Sao chép liên kết'}
       </Button>
-    </p>
+    </div>
   );
 }
