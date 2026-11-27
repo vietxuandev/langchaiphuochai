@@ -268,7 +268,9 @@ model Post {
   images PostImage[]
   tags   Tag[]       @relation("PostTags")
 
-  facebookPostId String?
+  /// Nội dung bài đăng Facebook (soạn bằng skill viet-bai-facebook-phuochai).
+  facebookCaption String?
+  facebookPostId  String?
 
   publishedAt DateTime?
   createdAt   DateTime  @default(now())

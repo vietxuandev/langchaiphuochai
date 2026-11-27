@@ -48,6 +48,9 @@ export class PostInputType {
   seoDescription?: string;
 
   @Field(() => String, { nullable: true })
+  facebookCaption?: string;
+
+  @Field(() => String, { nullable: true })
   categoryId?: string;
 
   @Field(() => [String], { nullable: true })

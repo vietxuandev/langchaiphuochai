@@ -66,6 +66,7 @@ export function PostForm({ post, mode }: PostFormProps) {
       contentHtml: post.contentHtml ?? '',
       seoTitle: post.seoTitle ?? '',
       seoDescription: post.seoDescription ?? '',
+      facebookCaption: post.facebookCaption ?? '',
       categoryId: post.category?.id ?? '',
       tags: post.tags.map((tag) => tag.name),
       addressRaw: post.addressRaw ?? '',
@@ -468,6 +469,13 @@ export function PostForm({ post, mode }: PostFormProps) {
                   <div className="space-y-2">
                     <Label htmlFor="seoDescription">Mô tả SEO</Label>
                     <Textarea id="seoDescription" rows={3} {...register('seoDescription')} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="facebookCaption">Nội dung đăng Facebook</Label>
+                    <Textarea id="facebookCaption" rows={8} {...register('facebookCaption')} />
+                    <p className="text-xs text-muted-foreground">
+                      Để trống thì dùng tiêu đề + mô tả. Link bài tự được thêm nếu chưa có.
+                    </p>
                   </div>
                 </TabsContent>
               </Tabs>

@@ -541,6 +541,7 @@ export class PostsService {
       title: input.title,
       seoTitle: input.seoTitle,
       seoDescription: input.seoDescription,
+      facebookCaption: input.facebookCaption,
       summary: input.summary,
       contentHtml,
       contentText:
@@ -645,6 +646,7 @@ export class PostsService {
       title: post.title,
       seoTitle: post.seoTitle,
       seoDescription: post.seoDescription,
+      facebookCaption: post.facebookCaption,
       summary: post.summary,
       contentHtml: post.contentHtml,
       contentText: post.contentText,

@@ -56,11 +56,17 @@ export class FacebookService {
     });
     if (!existing || existing.facebookPostId) return;
 
-    const message = [post.title, post.summary].filter(Boolean).join('\n\n');
+    const url = this.postUrl(post);
+    const caption = post.facebookCaption?.trim();
+    const message = caption
+      ? caption.includes(url)
+        ? caption
+        : `${caption}\n\n${url}`
+      : [post.title, post.summary].filter(Boolean).join('\n\n');
     const res = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/feed`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, link: this.postUrl(post), access_token: token }),
+      body: JSON.stringify({ message, link: url, access_token: token }),
       signal: AbortSignal.timeout(15_000),
     });
     const data = (await res.json().catch(() => ({}))) as { id?: string; error?: { message?: string } };

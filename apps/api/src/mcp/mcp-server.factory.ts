@@ -367,6 +367,11 @@ export class McpServerFactory {
           bedrooms: z.number().int().min(0).max(50).optional(),
           bathrooms: z.number().int().min(0).max(50).optional(),
           seoTitle: z.string().max(300).optional(),
+          facebookCaption: z
+            .string()
+            .max(3000)
+            .optional()
+            .describe('Nội dung bài đăng Facebook (văn bản thuần, có link bài). Xem skill viet-bai-facebook-phuochai'),
           idempotencyKey: z.string().min(4).max(120).optional().describe('Khoá chống tạo trùng khi retry'),
         },
         annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
@@ -393,6 +398,7 @@ export class McpServerFactory {
               bedrooms: typeof args.bedrooms === 'number' ? args.bedrooms : null,
               bathrooms: typeof args.bathrooms === 'number' ? args.bathrooms : null,
               seoTitle: (args.seoTitle as string | undefined) ?? null,
+              facebookCaption: (args.facebookCaption as string | undefined) ?? null,
               idempotencyKey: (args.idempotencyKey as string | undefined) ?? null,
             }),
           (result) => result.id,
@@ -423,6 +429,11 @@ export class McpServerFactory {
           bedrooms: z.number().int().min(0).max(50).optional(),
           bathrooms: z.number().int().min(0).max(50).optional(),
           seoTitle: z.string().max(300).optional(),
+          facebookCaption: z
+            .string()
+            .max(3000)
+            .optional()
+            .describe('Nội dung bài đăng Facebook (văn bản thuần, có link bài). Xem skill viet-bai-facebook-phuochai'),
         },
         annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
       },
@@ -449,6 +460,7 @@ export class McpServerFactory {
               bedrooms: typeof args.bedrooms === 'number' ? args.bedrooms : null,
               bathrooms: typeof args.bathrooms === 'number' ? args.bathrooms : null,
               seoTitle: (args.seoTitle as string | undefined) ?? null,
+              facebookCaption: (args.facebookCaption as string | undefined) ?? null,
             }),
           (result) => result.id,
         ),

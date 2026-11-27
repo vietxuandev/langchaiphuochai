@@ -236,6 +236,7 @@ export const postInputSchema = z.object({
   contentHtml: optionalText(200_000),
   seoTitle: optionalText(300),
   seoDescription: optionalText(500),
+  facebookCaption: optionalText(3000),
   categoryId: optionalText(40),
   tags: z.array(z.string().trim().min(1).max(80)).max(30, 'Tối đa 30 tag').default([]),
   publishedAt: optionalText(40),

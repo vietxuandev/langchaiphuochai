@@ -42,6 +42,7 @@ fragment PostFull on Post {
   sourceKey
   seoTitle
   seoDescription
+  facebookCaption
   contentHtml
   contentText
   pricePerM2Raw

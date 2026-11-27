@@ -424,6 +424,7 @@ type Post {
   seo: JSON
 
   """Mô tả SEO (meta description); trống thì dùng summary"""
+  facebookCaption: String
   seoDescription: String
   seoTitle: String
   slug: String!
@@ -516,6 +517,7 @@ input PostInput {
   publishedAt: String
   roadWidth: String
   seoDescription: String
+  facebookCaption: String
   seoTitle: String
   slug: String
   status: PostStatus
@@ -767,6 +769,7 @@ input UpdatePostInput {
   publishedAt: String
   roadWidth: String
   seoDescription: String
+  facebookCaption: String
   seoTitle: String
   slug: String
   status: PostStatus

@@ -239,6 +239,7 @@ Dùng trước khi chèn `[[affiliate:slug]]`.
 | `categorySlug` | slug có trong `list_categories` | ✅ |
 | `contentMarkdown` hoặc `contentHtml` | ≤ 200.000 ký tự | ✅ (một trong hai) |
 | `summary` | ≤ 1.000 | |
+| `facebookCaption` | ≤ 3.000, văn bản thuần | Nội dung đăng Facebook khi publish (xem skill `viet-bai-facebook-phuochai`); trống thì dùng tiêu đề + summary |
 | `slug` | ≤ 300 (bỏ trống để tự sinh) | |
 | `tags` | tối đa 20 tag | |
 | `ward` | tên xã/phường trong `list_wards` | |
@@ -264,7 +265,7 @@ Cập nhật bài đang ở trạng thái `DRAFT`. Truyền `id` hoặc `slug` h
 |---|---|---|
 | `id` hoặc `slug` | string | Chọn bài cần sửa |
 | `newSlug` | ≤ 300 | Đổi URL nếu cần |
-| `title`, `summary`, `contentMarkdown`, `contentHtml` | | Nội dung mới |
+| `title`, `summary`, `contentMarkdown`, `contentHtml`, `facebookCaption` | | Nội dung mới |
 | `categorySlug` | slug có trong `list_categories` | |
 | `tags` | tối đa 20 tag | |
 | `ward`, `addressRaw`, `priceRaw`, `areaText`, `bedrooms`, `bathrooms`, `seoTitle` | | |

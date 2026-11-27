@@ -337,6 +337,7 @@ export class McpToolsService {
       title: post.title,
       summary: post.summary,
       seoTitle: post.seoTitle,
+      facebookCaption: post.facebookCaption,
       contentHtml: (post.contentHtml ?? '').slice(0, 200_000),
       url: `${mcpConfig.siteUrl}${this.postPath(post.type, post.slug)}`,
       category: post.category ? { slug: post.category.slug, name: post.category.name } : null,
@@ -501,6 +502,7 @@ export class McpToolsService {
       bedrooms?: number | null;
       bathrooms?: number | null;
       seoTitle?: string | null;
+      facebookCaption?: string | null;
       idempotencyKey?: string | null;
     },
   ) {
@@ -581,6 +583,7 @@ export class McpToolsService {
       summary: summary ? normalizeDashes(summary.slice(0, LIMITS.summaryMax)) : undefined,
       contentHtml,
       seoTitle: input.seoTitle?.trim() || undefined,
+      facebookCaption: input.facebookCaption?.trim() || undefined,
       categoryId: category.id,
       tags,
       ward: ward ?? undefined,
@@ -659,6 +662,7 @@ export class McpToolsService {
       bedrooms?: number | null;
       bathrooms?: number | null;
       seoTitle?: string | null;
+      facebookCaption?: string | null;
     },
   ) {
     const current = await this.findPostRef(input);
@@ -745,6 +749,11 @@ export class McpToolsService {
       data.areaText = input.areaText.trim() || undefined;
       hasChanges = true;
     }
+    if (input.facebookCaption != null) {
+      data.facebookCaption = input.facebookCaption.trim() || undefined;
+      hasChanges = true;
+    }
+
     if (input.seoTitle != null) {
       data.seoTitle = input.seoTitle.trim() || undefined;
       hasChanges = true;
