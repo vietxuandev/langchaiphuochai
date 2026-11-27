@@ -7,6 +7,16 @@ const SETTING_ID = 'default';
 const TZ = 'Asia/Ho_Chi_Minh';
 /** Bỏ qua khung giờ đã trễ quá lâu (ví dụ server tắt) để không đăng dồn. */
 const CATCH_UP_MINUTES = 120;
+/** Danh mục du lịch/trải nghiệm được đăng trước (không gồm "co-hoi-dau-tu" và "thong-tin"). */
+const PRIORITY_CATEGORY_SLUGS = [
+  'trai-nghiem',
+  'diem-tham-quan',
+  'bai-tam',
+  'an-uong',
+  'di-lai-di-chuyen',
+  'dich-vu',
+  'luu-tru',
+];
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export type FacebookQueueConfig = { enabled: boolean; postTimes: string[]; onlyNews: boolean };
@@ -112,12 +122,17 @@ export class FacebookQueueService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  private nextPost(onlyNews: boolean) {
-    return this.prisma.post.findFirst({
-      where: { ...this.eligibleWhere(onlyNews), ...this.withCaption },
-      orderBy: [{ publishedAt: 'asc' }, { createdAt: 'asc' }],
-      select: { id: true, slug: true, type: true, title: true, summary: true, facebookCaption: true },
+  /** Ưu tiên bài du lịch/trải nghiệm; hết bài ưu tiên mới đến các bài còn lại (cũ nhất trước). */
+  private async nextPost(onlyNews: boolean) {
+    const base = { ...this.eligibleWhere(onlyNews), ...this.withCaption };
+    const select = { id: true, slug: true, type: true, title: true, summary: true, facebookCaption: true } as const;
+    const orderBy = [{ publishedAt: 'asc' }, { createdAt: 'asc' }] satisfies Prisma.PostOrderByWithRelationInput[];
+    const priority = await this.prisma.post.findFirst({
+      where: { AND: [base, { category: { slug: { in: PRIORITY_CATEGORY_SLUGS } } }] },
+      orderBy,
+      select,
     });
+    return priority ?? this.prisma.post.findFirst({ where: base, orderBy, select });
   }
 
   /** Đăng bài kế tiếp trong hàng chờ ngay lập tức (không phụ thuộc bật/tắt hay khung giờ). */
