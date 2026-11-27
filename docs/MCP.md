@@ -285,6 +285,23 @@ Cần scope `posts:publish`. Riêng `PUBLISHED` còn cần server bật `MCP_ALL
 
 Kết quả: `{ id, slug, title, status, url }`.
 
+### `post_to_facebook`
+
+Đăng ngay một bài **đã PUBLISHED** lên Facebook Page, không đổi trạng thái bài (dùng cho bài cũ).
+
+| Tham số | Kiểu | Ghi chú |
+|---|---|---|
+| `id` hoặc `slug` | string | Chọn bài |
+| `caption` | ≤ 3.000 | Tuỳ chọn; lưu vào `facebookCaption`. Trống thì dùng caption đã lưu, hoặc tiêu đề + summary |
+
+Cần scope `posts:publish`, `MCP_ALLOW_PUBLISH=true`, vai trò EDITOR trở lên và cấu hình `FB_PAGE_ID`/`FB_PAGE_TOKEN`. Lỗi: `POST_NOT_PUBLISHED`, `ALREADY_POSTED`, `FACEBOOK_ERROR`. Kết quả: `{ id, slug, title, facebookPostId }`.
+
+### `unpost_from_facebook`
+
+Xoá bài khỏi Facebook Page và xoá `facebookPostId`; bài trên website giữ nguyên. Tham số `id` hoặc `slug`. Cần `posts:publish`. Lỗi: `NOT_POSTED`, `FACEBOOK_ERROR`.
+
+Tự động: khi bài chuyển sang PUBLISHED và `FB_AUTO_POST=true`, bài được đăng lên Facebook; khi bài rời PUBLISHED hoặc bị xoá thì bài Facebook bị xoá theo.
+
 ### `delete_post`
 
 | Tham số | Kiểu | Ghi chú |

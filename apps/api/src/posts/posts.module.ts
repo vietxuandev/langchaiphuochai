@@ -9,6 +9,6 @@ import { PostsService } from './posts.service';
 @Module({
   imports: [CategoriesModule, UsersModule, NotificationsModule],
   providers: [PostsService, PostsResolver, FacebookService],
-  exports: [PostsService],
+  exports: [PostsService, FacebookService],
 })
 export class PostsModule {}

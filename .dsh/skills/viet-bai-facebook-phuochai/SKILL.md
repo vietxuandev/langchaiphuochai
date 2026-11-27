@@ -1,7 +1,7 @@
 ---
 name: viet-bai-facebook-phuochai
 description: Viết nội dung bài đăng Facebook hấp dẫn (hook, nhịp điệu, emoji, CTA, hashtag) cho Page Làng Chài Phước Hải từ một bài đã có trên website.
-whenToUse: Khi người dùng yêu cầu viết, viết lại hoặc tối ưu caption/bài đăng Facebook cho một bài của Làng Chài Phước Hải. Không dùng để viết bài cho website (dùng viet-bai-phuochai).
+whenToUse: Khi người dùng yêu cầu viết, viết lại, tối ưu hoặc đăng/gỡ bài Facebook cho một bài của Làng Chài Phước Hải. Không dùng để viết bài cho website (dùng viet-bai-phuochai).
 ---
 
 # Viết bài đăng Facebook cho Làng Chài Phước Hải
@@ -38,7 +38,15 @@ Trả về:
 2. 1 phương án thay thế với hook khác (khi người dùng chưa chỉ định).
 3. Ghi chú ngắn nếu thiếu dữ liệu cần xác nhận (giá, giờ, ngày).
 
-Không tự đăng lên Facebook. Khi người dùng đồng ý với caption, lưu vào bài bằng `update_post` (bài phải đang DRAFT) hoặc `create_post` với trường `facebookCaption`. Backend sẽ đăng đúng caption này khi bài được publish; nếu thiếu, backend chỉ đăng tiêu đề + summary. Link bài tự được thêm nếu caption chưa có. Bài đã PUBLISHED thì cần `set_post_status` về DRAFT, cập nhật caption rồi publish lại (bài trên Facebook sẽ bị xoá và đăng mới).
+Không tự đăng khi chưa được người dùng đồng ý với caption. Sau khi đồng ý, chọn theo kịch bản:
+
+- **Đăng một bài cũ đã PUBLISHED**: gọi `post_to_facebook` với `slug` và `caption`. Không đổi trạng thái bài. Nếu báo `ALREADY_POSTED` thì hỏi người dùng có muốn gỡ bài cũ (`unpost_from_facebook`) rồi đăng lại không.
+- **Tạo bài mới và đăng ngay**: `create_post` (kèm `facebookCaption`) → `set_post_status` `PUBLISHED`; backend tự đăng đúng caption đó khi `FB_AUTO_POST=true`. Chỉ làm khi người dùng yêu cầu rõ ràng việc đăng.
+- **Bài DRAFT**: lưu caption bằng `update_post`/`create_post` (`facebookCaption`), chưa đăng cho đến khi publish.
+- **Gỡ khỏi Facebook nhưng giữ bài trên web**: `unpost_from_facebook`.
+- **Xoá bài**: `delete_post` tự xoá luôn bài Facebook; thu hồi về DRAFT/ARCHIVED cũng vậy.
+
+Link bài tự được thêm vào caption nếu chưa có. Sau khi gọi tool, kiểm tra kết quả (`facebookPostId`) rồi báo người dùng; nếu `FACEBOOK_ERROR` thì báo nguyên văn lỗi.
 
 ## 5. Ví dụ
 

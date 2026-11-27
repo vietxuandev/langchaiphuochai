@@ -497,6 +497,62 @@ export class McpServerFactory {
     );
 
     register(
+      'post_to_facebook',
+      {
+        title: 'Đăng bài đã xuất bản lên Facebook',
+        description:
+          'Đăng NGAY một bài đã PUBLISHED lên Facebook Page, không đổi trạng thái bài (dùng cho bài cũ). ' +
+          'Có thể truyền caption (văn bản thuần, soạn theo skill viet-bai-facebook-phuochai); bỏ trống thì dùng facebookCaption đã lưu, ' +
+          'hoặc tiêu đề + summary. Báo lỗi ALREADY_POSTED nếu bài đã đăng. Cần posts:publish và MCP_ALLOW_PUBLISH=true.',
+        inputSchema: {
+          id: z.string().max(40).optional(),
+          slug: z.string().max(300).optional(),
+          caption: z.string().max(3000).optional().describe('Nội dung bài đăng Facebook, sẽ lưu vào facebookCaption'),
+        },
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+      },
+      (args) =>
+        run(
+          'post_to_facebook',
+          args,
+          'posts:publish',
+          () =>
+            this.tools.postToFacebook(auth, {
+              id: (args.id as string | undefined) ?? null,
+              slug: (args.slug as string | undefined) ?? null,
+              caption: (args.caption as string | undefined) ?? null,
+            }),
+          (result) => result.id,
+        ),
+    );
+
+    register(
+      'unpost_from_facebook',
+      {
+        title: 'Xoá bài khỏi Facebook',
+        description:
+          'Xoá bài đã đăng khỏi Facebook Page và xoá facebookPostId. Bài trên website giữ nguyên trạng thái. Cần posts:publish.',
+        inputSchema: {
+          id: z.string().max(40).optional(),
+          slug: z.string().max(300).optional(),
+        },
+        annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+      },
+      (args) =>
+        run(
+          'unpost_from_facebook',
+          args,
+          'posts:publish',
+          () =>
+            this.tools.unpostFromFacebook(auth, {
+              id: (args.id as string | undefined) ?? null,
+              slug: (args.slug as string | undefined) ?? null,
+            }),
+          (result) => result.id,
+        ),
+    );
+
+    register(
       'delete_post',
       {
         title: 'Xoá bài viết',

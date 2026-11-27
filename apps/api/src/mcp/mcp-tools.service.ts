@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PostStatus, PostType, PROVINCE_NAME, Role, WARDS, canonicalWardName, normalizeVietnamese, searchWards, stripTagsBlock } from '@phuochai/shared';
+import { PostStatus, PostType, PROVINCE_NAME, Role, WARDS, canPublish, canonicalWardName, normalizeVietnamese, searchWards, stripTagsBlock } from '@phuochai/shared';
 import type { PostInput } from '@phuochai/shared';
 import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
 import { PrismaService } from '../prisma/prisma.service';
+import { FacebookService } from '../posts/facebook.service';
 import { PostsService, type Viewer } from '../posts/posts.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { normalizeNewsSeo } from './news-seo';
@@ -86,6 +87,7 @@ export class McpToolsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly posts: PostsService,
+    private readonly facebook: FacebookService,
     private readonly affiliate: AffiliateService,
     private readonly uploads: UploadsService,
     private readonly audit: McpAuditService,
@@ -841,6 +843,71 @@ export class McpToolsService {
       status: current.status,
       deleted: true,
     };
+  }
+
+  /** Đăng một bài đã PUBLISHED lên Facebook Page ngay, không đổi trạng thái bài. */
+  async postToFacebook(
+    auth: McpAuthContext,
+    input: { id?: string | null; slug?: string | null; caption?: string | null },
+  ) {
+    this.assertFacebookAccess(auth);
+    if (!mcpConfig.allowPublish) {
+      throw new McpToolError('PUBLISH_DISABLED', 'Máy chủ đang tắt xuất bản qua MCP (MCP_ALLOW_PUBLISH=false).');
+    }
+    const ref = await this.findPostRef(input);
+    if (ref.status !== PostStatus.PUBLISHED) {
+      throw new McpToolError('POST_NOT_PUBLISHED', 'Chỉ đăng Facebook cho bài đã PUBLISHED.');
+    }
+    if (ref.type === PostType.PAGE) {
+      throw new McpToolError('INVALID_INPUT', 'Không đăng trang tĩnh (PAGE) lên Facebook.');
+    }
+
+    const caption = input.caption?.trim();
+    const post = await this.prisma.post.update({
+      where: { id: ref.id },
+      data: caption ? { facebookCaption: caption } : {},
+      select: { id: true, slug: true, type: true, title: true, summary: true, facebookCaption: true, facebookPostId: true },
+    });
+    if (post.facebookPostId) {
+      throw new McpToolError(
+        'ALREADY_POSTED',
+        `Bài đã được đăng Facebook (${post.facebookPostId}). Dùng unpost_from_facebook trước nếu muốn đăng lại.`,
+      );
+    }
+
+    let facebookPostId: string | null;
+    try {
+      facebookPostId = await this.facebook.postNow(post);
+    } catch (err) {
+      throw new McpToolError('FACEBOOK_ERROR', (err as Error).message);
+    }
+    return { id: post.id, slug: post.slug, title: post.title, facebookPostId };
+  }
+
+  /** Xoá bài khỏi Facebook Page và xoá facebookPostId; bài trên website giữ nguyên. */
+  async unpostFromFacebook(auth: McpAuthContext, input: { id?: string | null; slug?: string | null }) {
+    this.assertFacebookAccess(auth);
+    const ref = await this.findPostRef(input);
+    const post = await this.prisma.post.findUniqueOrThrow({
+      where: { id: ref.id },
+      select: { id: true, slug: true, title: true, facebookPostId: true },
+    });
+    if (!post.facebookPostId) {
+      throw new McpToolError('NOT_POSTED', 'Bài này chưa được đăng lên Facebook.');
+    }
+    try {
+      await this.facebook.unpostNow(post.id, post.facebookPostId);
+    } catch (err) {
+      await this.prisma.post.update({ where: { id: post.id }, data: { facebookPostId: post.facebookPostId } });
+      throw new McpToolError('FACEBOOK_ERROR', (err as Error).message);
+    }
+    return { id: post.id, slug: post.slug, title: post.title, removedFacebookPostId: post.facebookPostId };
+  }
+
+  private assertFacebookAccess(auth: McpAuthContext): void {
+    if (!canPublish(auth.user.role as Role)) {
+      throw new McpToolError('FORBIDDEN', 'Chỉ biên tập viên trở lên mới đăng/xoá bài Facebook');
+    }
   }
 
   /** Tìm bài theo id hoặc slug, dùng chung cho các tool thao tác. */
