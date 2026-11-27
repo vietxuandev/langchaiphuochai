@@ -2,13 +2,14 @@ import type { MetadataRoute } from 'next';
 import { BRAND } from '@phuochai/shared';
 import { postHref } from '@/components/site/post-card';
 import { getNavCategories } from '@/lib/data/categories';
-import { getPosts } from '@/lib/data/posts';
+import { getSitemapPosts } from '@/lib/data/posts';
+import { isThinContent } from '@/lib/seo/content-quality';
 import type { PostFilterInput } from '@/generated/graphql';
 
 /**
  * sitemap.xml (Next tự phục vụ tại `/sitemap.xml`).
  *
- * Nội dung: trang tĩnh + toàn bộ danh mục + toàn bộ bài viết đã xuất bản.
+ * Nội dung: trang tĩnh + toàn bộ danh mục + bài viết đã xuất bản có nội dung đủ dài.
  *
  * Lưu ý: phải `force-dynamic` vì sitemap lấy dữ liệu từ API. Nếu để Next render
  * tĩnh lúc build thì lúc build trên server (Docker/Coolify) API chưa chạy -> sitemap
@@ -39,7 +40,7 @@ let cache: { at: number; entries: SitemapEntry[] } | null = null;
 
 /** Lấy toàn bộ bài viết đã xuất bản (phân trang theo giới hạn pageSize của API). */
 async function loadPublishedPosts() {
-  const posts: Awaited<ReturnType<typeof getPosts>>['items'] = [];
+  const posts: Awaited<ReturnType<typeof getSitemapPosts>>['items'] = [];
 
   for (let page = 1; page <= MAX_PAGES; page += 1) {
     const filter = {
@@ -50,7 +51,7 @@ async function loadPublishedPosts() {
       sortOrder: 'DESC',
     } as PostFilterInput;
 
-    const result = await getPosts(filter);
+    const result = await getSitemapPosts(filter);
     posts.push(...result.items);
 
     if (!result.hasNextPage || result.items.length === 0) break;
@@ -70,6 +71,8 @@ async function buildEntries(): Promise<SitemapEntry[]> {
   }));
 
   const postEntries: SitemapEntry[] = posts
+    // Bỏ trang nội dung mỏng (đã gắn noindex ở trang chi tiết)
+    .filter((post) => !isThinContent(post.type, post.contentHtml))
     // Bỏ URL trùng: /gioi-thieu đã có route riêng
     .filter((post) => !(post.type === 'PAGE' && DUPLICATE_PAGE_SLUGS.has(post.slug)))
     // Bỏ bài trùng slug (nếu dữ liệu có) để sitemap không lặp URL

@@ -1,5 +1,19 @@
 # ---------------------------- Truy vấn công khai ----------------------------
 
+# Nhẹ hơn PostCard: chỉ dùng cho sitemap để loại trang nội dung mỏng.
+query SitemapPosts($filter: PostFilterInput) {
+  posts(filter: $filter) {
+    items {
+      slug
+      type
+      publishedAt
+      updatedAt
+      contentHtml
+    }
+    hasNextPage
+  }
+}
+
 query Posts($filter: PostFilterInput) {
   posts(filter: $filter) {
     items {

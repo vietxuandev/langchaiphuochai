@@ -4,12 +4,14 @@ import {
   PostDetailDocument,
   PostWardsDocument,
   PostsDocument,
+  SitemapPostsDocument,
   RelatedPostsDocument,
   type PostDetailQuery,
   type PostWardsQuery,
   type PostFilterInput,
   type PostType,
   type PostsQuery,
+  type SitemapPostsQuery,
   type RelatedPostsQuery,
 } from '@/generated/graphql';
 
@@ -98,4 +100,14 @@ export async function getPostWards(type?: PostType) {
     { postWards: [] } as unknown as PostWardsQuery,
   );
   return data.postWards ?? [];
+}
+
+/** Danh sách bài viết rút gọn (kèm contentHtml) cho sitemap. */
+export async function getSitemapPosts(filter: PostFilterInput) {
+  const data = await safeQuery<SitemapPostsQuery, { filter: PostFilterInput }>(
+    SitemapPostsDocument,
+    { filter },
+    { posts: { items: [], hasNextPage: false } } as unknown as SitemapPostsQuery,
+  );
+  return data.posts;
 }

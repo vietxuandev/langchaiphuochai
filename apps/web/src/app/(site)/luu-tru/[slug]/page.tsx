@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { JsonLd } from '@/components/seo/json-ld';
 import { PostDetail } from '@/components/site/post-detail';
 import { getPostBySlugOrNotFound, getRelatedPosts } from '@/lib/data/posts';
+import { isThinContent } from '@/lib/seo/content-quality';
 import { postJsonLd } from '@/lib/seo/structured-data';
 
 interface PageProps {
@@ -22,6 +23,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const post = await getPostBySlugOrNotFound(slug);
   return {
+    robots: isThinContent(post.type, post.contentHtml) ? { index: false, follow: true } : undefined,
     title: post.seoTitle ?? post.title,
     description: post.seoDescription ?? post.summary ?? undefined,
     alternates: { canonical: `/luu-tru/${post.slug}` },
