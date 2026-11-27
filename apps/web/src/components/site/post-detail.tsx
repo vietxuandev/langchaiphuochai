@@ -201,35 +201,6 @@ export async function PostDetail({ post, related }: PostDetailProps) {
               // HTML đã được API lọc (sanitize) khi lưu; thẻ affiliate được render từ dữ liệu DB đã escape.
               dangerouslySetInnerHTML={{ __html: affiliateContent.html }}
             />
-          ) : isProduct ? (
-            // Chưa có mô tả chi tiết: mời khách liên hệ thay vì để trống (gợi ý bổ sung chỉ hiện cho
-            // biên tập viên, ở PostAdminActions phía trên).
-            <Card className="border-primary/30 bg-muted/40">
-              <CardContent className="space-y-3 p-5">
-                <p className="font-display text-base font-semibold">
-                  {post.type === PostType.REAL_ESTATE
-                    ? 'Liên hệ để nhận thông tin chi tiết'
-                    : 'Liên hệ để biết giá và phòng trống'}
-                </p>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {post.type === PostType.REAL_ESTATE
-                    ? 'Gọi hoặc nhắn Zalo để hỏi giá, pháp lý và hẹn lịch xem nhà.'
-                    : 'Thông tin phòng, tiện ích và chính sách đang được cập nhật. Gọi hoặc nhắn Zalo để được tư vấn nhanh.'}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Button asChild>
-                    <a href={phoneHref}>
-                      <Phone className="mr-2 h-4 w-4" /> {phoneLabel}
-                    </a>
-                  </Button>
-                  <Button variant="outline" asChild>
-                    <a href={zaloHref} target="_blank" rel="noreferrer">
-                      <MessageCircle className="mr-2 h-4 w-4" /> Chat Zalo
-                    </a>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           ) : null}
 
           {isProduct ? <AttributeGrid post={post} /> : null}
