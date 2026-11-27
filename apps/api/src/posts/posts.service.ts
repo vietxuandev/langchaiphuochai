@@ -258,6 +258,8 @@ export class PostsService {
     if (status === PostStatus.PUBLISHED && current.status !== PostStatus.PUBLISHED) {
       await this.notifyPost(post, viewer, 'published');
       this.facebook.autoPost(post);
+    } else if (current.status === PostStatus.PUBLISHED && post.status !== PostStatus.PUBLISHED) {
+      this.facebook.retract(post.id, current.facebookPostId);
     } else if (
       current.status === PostStatus.PUBLISHED &&
       post.status === PostStatus.PUBLISHED &&
@@ -281,6 +283,7 @@ export class PostsService {
     if (!current) throw new NotFoundException('Không tìm thấy bài viết');
     this.assertCanEdit(current.authorId, viewer);
     await this.prisma.post.delete({ where: { id } });
+    this.facebook.retract(id, current.facebookPostId);
     if (current.status === PostStatus.PUBLISHED) {
       this.revalidateWeb(this.publicPaths(current.type as PostType, current.slug));
     }
@@ -309,6 +312,8 @@ export class PostsService {
     if (status === PostStatus.PUBLISHED && current.status !== PostStatus.PUBLISHED) {
       await this.notifyPost(post, viewer, 'published');
       this.facebook.autoPost(post);
+    } else if (current.status === PostStatus.PUBLISHED && status !== PostStatus.PUBLISHED) {
+      this.facebook.retract(post.id, current.facebookPostId);
     }
     if (current.status !== status && (current.status === PostStatus.PUBLISHED || status === PostStatus.PUBLISHED)) {
       this.revalidateWeb(this.publicPaths(post.type, post.slug));

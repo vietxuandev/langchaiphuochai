@@ -21,6 +21,27 @@ export class FacebookService {
     );
   }
 
+  /** Thu hồi: xoá bài trên Page và xoá facebookPostId để có thể đăng lại sau này. */
+  retract(postId: string, facebookPostId: string | null | undefined): void {
+    if (!facebookPostId) return;
+    void this.unpublish(postId, facebookPostId).catch((err) =>
+      this.logger.warn(`Xoá bài Facebook ${facebookPostId} thất bại: ${(err as Error).message}`),
+    );
+  }
+
+  private async unpublish(postId: string, facebookPostId: string): Promise<void> {
+    await this.prisma.post.updateMany({ where: { id: postId }, data: { facebookPostId: null } });
+    const token = process.env.FB_PAGE_TOKEN;
+    if (!token) return;
+    const res = await fetch(
+      `https://graph.facebook.com/${GRAPH_VERSION}/${facebookPostId}?access_token=${encodeURIComponent(token)}`,
+      { method: 'DELETE', signal: AbortSignal.timeout(15_000) },
+    );
+    const data = (await res.json().catch(() => ({}))) as { success?: boolean; error?: { message?: string } };
+    if (!res.ok || !data.success) throw new Error(data.error?.message ?? `HTTP ${res.status}`);
+    this.logger.log(`Đã xoá bài Facebook ${facebookPostId}`);
+  }
+
   private async publish(post: PostEntity): Promise<void> {
     const pageId = process.env.FB_PAGE_ID;
     const token = process.env.FB_PAGE_TOKEN;
