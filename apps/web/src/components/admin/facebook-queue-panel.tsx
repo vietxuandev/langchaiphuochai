@@ -1,13 +1,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Loader2, Play, Save } from 'lucide-react';
+import { Loader2, Play, Plus, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDateTime } from '@phuochai/shared';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -16,6 +27,12 @@ import {
   useRunFacebookQueueNowMutation,
   useUpdateFacebookQueueMutation,
 } from '@/generated/graphql';
+
+/** Các mốc giờ cách nhau 30 phút trong ngày: 00:00, 00:30, ..., 23:30. */
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const hour = String(Math.floor(i / 2)).padStart(2, '0');
+  return `${hour}:${i % 2 === 0 ? '00' : '30'}`;
+});
 
 /** Cấu hình hàng chờ tự đăng Facebook: mỗi khung giờ đăng 1 bài tin tức cũ nhất chưa đăng. */
 export function FacebookQueuePanel() {
@@ -28,9 +45,10 @@ export function FacebookQueuePanel() {
   const [runNow, { loading: running }] = useRunFacebookQueueNowMutation();
   const queue = data?.facebookQueue;
 
-  const [times, setTimes] = useState('');
+  const [slots, setSlots] = useState<string[]>([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   useEffect(() => {
-    if (queue) setTimes(queue.postTimes.join(', '));
+    if (queue) setSlots(queue.postTimes);
   }, [queue]);
 
   const save = async (variables: { enabled?: boolean; onlyNews?: boolean; postTimes?: string[] }, message: string) => {
@@ -45,7 +63,6 @@ export function FacebookQueuePanel() {
   };
 
   const handleRunNow = async () => {
-    if (!window.confirm('Đăng ngay bài kế tiếp trong hàng chờ lên Facebook?')) return;
     try {
       const result = await runNow();
       const payload = result.data?.runFacebookQueueNow;
@@ -56,6 +73,8 @@ export function FacebookQueuePanel() {
       void refetch();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Không chạy được');
+    } finally {
+      setConfirmOpen(false);
     }
   };
 
@@ -63,7 +82,9 @@ export function FacebookQueuePanel() {
   if (loading && !queue) return <Skeleton className="h-64 w-full" />;
   if (!queue) return null;
 
-  const parsedTimes = times.split(',').map((t) => t.trim()).filter(Boolean);
+  const nextFreeSlot = TIME_OPTIONS.find((t) => !slots.includes(t));
+  const uniqueSlots = [...new Set(slots)].sort();
+  const changed = uniqueSlots.join(',') !== queue.postTimes.join(',');
 
   return (
     <div className="max-w-2xl space-y-4">
@@ -94,43 +115,140 @@ export function FacebookQueuePanel() {
               onCheckedChange={(onlyNews) => save({ onlyNews }, 'Đã lưu')}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="fbq-times">Khung giờ đăng (giờ Việt Nam)</Label>
-            <div className="flex gap-2">
-              <Input id="fbq-times" value={times} onChange={(e) => setTimes(e.target.value)} placeholder="08:00, 19:30" />
-              <Button type="button" disabled={saving || parsedTimes.length === 0} onClick={() => save({ postTimes: parsedTimes }, 'Đã lưu khung giờ')}>
+          <div className="space-y-3">
+            <Label>Khung giờ đăng (giờ Việt Nam)</Label>
+            <div className="flex flex-wrap gap-2">
+              {slots.map((slot, index) => (
+                <div key={index} className="flex items-center gap-1">
+                  <Select value={slot} onValueChange={(value) => setSlots(slots.map((t, i) => (i === index ? value : t)))}>
+                    <SelectTrigger className="w-[110px]" aria-label={`Khung giờ ${index + 1}`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(TIME_OPTIONS.includes(slot) ? TIME_OPTIONS : [...TIME_OPTIONS, slot].sort()).map((time) => (
+                        <SelectItem key={time} value={time}>
+                          {time}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9"
+                    disabled={slots.length <= 1}
+                    aria-label="Xoá khung giờ"
+                    onClick={() => setSlots(slots.filter((_, i) => i !== index))}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!nextFreeSlot || slots.length >= 24}
+                onClick={() => nextFreeSlot && setSlots([...slots, nextFreeSlot])}
+              >
+                <Plus className="h-4 w-4" />
+                Thêm giờ
+              </Button>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                Mỗi khung giờ đăng 1 bài, hiện {queue.postsPerDay} bài/ngày.
+              </p>
+              <Button
+                type="button"
+                disabled={saving || slots.length === 0 || !changed}
+                onClick={() => save({ postTimes: uniqueSlots }, 'Đã lưu khung giờ')}
+              >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Lưu
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Phân tách bằng dấu phẩy, dạng HH:mm. Số bài mỗi ngày = số khung giờ (hiện {queue.postsPerDay} bài/ngày).
-            </p>
           </div>
         </CardContent>
       </Card>
 
       <Card className="border-border/70">
-        <CardHeader>
-          <CardTitle className="font-display text-base">Hàng chờ</CardTitle>
+        <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
+          <div className="space-y-1.5">
+            <CardTitle className="font-display text-base">Hàng chờ</CardTitle>
+            <CardDescription>Bài kế tiếp được lấy từ danh sách đã có nội dung Facebook.</CardDescription>
+          </div>
+          <Badge variant={queue.enabled ? 'default' : 'secondary'}>{queue.enabled ? 'Đang bật' : 'Đang tắt'}</Badge>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <p>
-            Đang chờ đăng: <strong>{queue.pendingCount}</strong> bài
-          </p>
-          <p>
-            Bị bỏ qua vì chưa có nội dung Facebook: <strong>{queue.missingCaptionCount}</strong> bài
-          </p>
-          <p>Bài kế tiếp: {queue.nextPostTitle ?? '—'}</p>
-          <p>Khung giờ kế tiếp: {queue.enabled ? (queue.nextSlot ?? '—') : 'Đang tắt'}</p>
-          <p>Lần chạy gần nhất: {queue.lastRunAt ? formatDateTime(queue.lastRunAt) : '—'}</p>
-          {queue.lastError ? <p className="text-destructive">Lỗi gần nhất: {queue.lastError}</p> : null}
-          <Button type="button" variant="outline" size="sm" disabled={running} onClick={handleRunNow}>
+        <CardContent className="space-y-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-border/70 p-3">
+              <p className="text-xs text-muted-foreground">Đang chờ đăng</p>
+              <p className="mt-1 font-display text-2xl font-semibold">{queue.pendingCount} bài</p>
+            </div>
+            <div className="rounded-lg border border-border/70 p-3">
+              <p className="text-xs text-muted-foreground">Bị bỏ qua vì chưa có nội dung Facebook</p>
+              <p className="mt-1 font-display text-2xl font-semibold">{queue.missingCaptionCount} bài</p>
+            </div>
+          </div>
+
+          <div className="rounded-lg bg-muted/50 p-3">
+            <p className="text-xs text-muted-foreground">Bài kế tiếp</p>
+            <p className="mt-1 text-sm font-medium">{queue.nextPostTitle ?? '—'}</p>
+          </div>
+
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-xs text-muted-foreground">Khung giờ kế tiếp</dt>
+              <dd className="mt-0.5">{queue.enabled ? (queue.nextSlot ?? '—') : 'Đang tắt'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Lần chạy gần nhất</dt>
+              <dd className="mt-0.5">{queue.lastRunAt ? formatDateTime(queue.lastRunAt) : '—'}</dd>
+            </div>
+          </dl>
+
+          {queue.lastError ? (
+            <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+              Lỗi gần nhất: {queue.lastError}
+            </p>
+          ) : null}
+
+          <Button
+            type="button"
+            variant="outline"
+            disabled={running || !queue.nextPostTitle}
+            onClick={() => setConfirmOpen(true)}
+          >
             {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             Đăng bài kế tiếp ngay
           </Button>
         </CardContent>
       </Card>
+
+      <AlertDialog open={confirmOpen} onOpenChange={(open) => (running ? undefined : setConfirmOpen(open))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Đăng bài kế tiếp ngay?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bài <strong>{queue.nextPostTitle}</strong> sẽ được đăng lên Facebook Page ngay lập tức, không chờ khung giờ.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={running}>Huỷ</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={running}
+              onClick={(event) => {
+                event.preventDefault();
+                void handleRunNow();
+              }}
+            >
+              {running ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Đăng ngay
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
