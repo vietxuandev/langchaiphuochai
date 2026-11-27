@@ -160,6 +160,25 @@ export class PostsResolver {
   }
 
   @Roles(Role.EDITOR)
+  @Mutation(() => PostEntity, { description: 'Đăng bài đã xuất bản lên Facebook Page (editor/admin)' })
+  async postToFacebook(
+    @Args('id', { type: () => String }) id: string,
+    @Args('caption', { type: () => String, nullable: true }) caption: string | undefined,
+    @CurrentUser() user: UserEntity,
+  ): Promise<PostEntity> {
+    return this.postsService.postToFacebook(id, caption?.slice(0, 3000), (await this.toViewer(user))!);
+  }
+
+  @Roles(Role.EDITOR)
+  @Mutation(() => PostEntity, { description: 'Gỡ bài khỏi Facebook Page (editor/admin)' })
+  async unpostFromFacebook(
+    @Args('id', { type: () => String }) id: string,
+    @CurrentUser() user: UserEntity,
+  ): Promise<PostEntity> {
+    return this.postsService.unpostFromFacebook(id, (await this.toViewer(user))!);
+  }
+
+  @Roles(Role.EDITOR)
   @Mutation(() => PostEntity, { description: 'Lưu trữ bài viết (editor/admin)' })
   async archivePost(
     @Args('id', { type: () => String }) id: string,

@@ -290,6 +290,47 @@ export class PostsService {
     return true;
   }
 
+  /** Đăng bài đã xuất bản lên Facebook Page ngay; lưu caption nếu được truyền. */
+  async postToFacebook(id: string, caption: string | null | undefined, viewer: Viewer): Promise<PostEntity> {
+    const current = await this.prisma.post.findUnique({ where: { id } });
+    if (!current) throw new NotFoundException('Không tìm thấy bài viết');
+    this.assertCanEdit(current.authorId, viewer);
+    if (current.status !== PostStatus.PUBLISHED) {
+      throw new BadRequestException('Chỉ đăng Facebook cho bài đã xuất bản');
+    }
+    if (current.type === PostType.PAGE) throw new BadRequestException('Không đăng trang tĩnh lên Facebook');
+    if (current.facebookPostId) {
+      throw new BadRequestException('Bài này đã được đăng lên Facebook. Hãy gỡ bài cũ trước nếu muốn đăng lại.');
+    }
+
+    const trimmed = caption?.trim();
+    const row =
+      caption == null
+        ? current
+        : await this.prisma.post.update({ where: { id }, data: { facebookCaption: trimmed || null } });
+    try {
+      await this.facebook.postNow(row);
+    } catch (err) {
+      throw new BadRequestException(`Đăng Facebook thất bại: ${(err as Error).message}`);
+    }
+    return this.findById(id, viewer);
+  }
+
+  /** Gỡ bài khỏi Facebook Page và xoá facebookPostId; bài trên website giữ nguyên. */
+  async unpostFromFacebook(id: string, viewer: Viewer): Promise<PostEntity> {
+    const current = await this.prisma.post.findUnique({ where: { id } });
+    if (!current) throw new NotFoundException('Không tìm thấy bài viết');
+    this.assertCanEdit(current.authorId, viewer);
+    if (!current.facebookPostId) throw new BadRequestException('Bài này chưa được đăng lên Facebook');
+    try {
+      await this.facebook.unpostNow(id, current.facebookPostId);
+    } catch (err) {
+      await this.prisma.post.update({ where: { id }, data: { facebookPostId: current.facebookPostId } });
+      throw new BadRequestException(`Gỡ bài Facebook thất bại: ${(err as Error).message}`);
+    }
+    return this.findById(id, viewer);
+  }
+
   /** Đổi trạng thái nhanh (xuất bản / lưu trữ). */
   async setStatus(id: string, status: PostStatus, viewer: Viewer): Promise<PostEntity> {
     const current = await this.prisma.post.findUnique({ where: { id } });
@@ -647,6 +688,7 @@ export class PostsService {
       seoTitle: post.seoTitle,
       seoDescription: post.seoDescription,
       facebookCaption: post.facebookCaption,
+      facebookPostId: post.facebookPostId,
       summary: post.summary,
       contentHtml: post.contentHtml,
       contentText: post.contentText,

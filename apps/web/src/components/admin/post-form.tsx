@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Controller, useFieldArray, useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, ImagePlus, Loader2, Save, Send, Trash2, Upload } from 'lucide-react';
+import { ArrowLeft, Facebook, ImagePlus, Loader2, Save, Send, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { POST_STATUS_LABELS, POST_TYPE_LABELS, PROVINCE_NAME, PostStatus, PostType, UPLOAD, WARDS, buildImageUrl, createPostSchema, type PostInput, slugify } from '@phuochai/shared';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,8 @@ import { uploadImage } from '@/lib/uploads';
 import {
   useAdminCategoriesQuery,
   useCreatePostMutation,
+  usePostToFacebookMutation,
+  useUnpostFromFacebookMutation,
   useUpdatePostMutation,
   type AdminPostDetailQuery,
 } from '@/generated/graphql';
@@ -186,6 +188,43 @@ export function PostForm({ post, mode }: PostFormProps) {
       toast.error(error instanceof Error ? error.message : 'Không lưu được bài viết');
     }
   });
+
+  const [postToFacebook] = usePostToFacebookMutation();
+  const [unpostFromFacebook] = useUnpostFromFacebookMutation();
+  const [facebookPostId, setFacebookPostId] = useState<string | null>(post?.facebookPostId ?? null);
+  const [fbBusy, setFbBusy] = useState(false);
+
+  const handlePostFacebook = async () => {
+    if (!post) return;
+    setFbBusy(true);
+    try {
+      const caption = (watch('facebookCaption') ?? '').trim();
+      const result = await postToFacebook({ variables: { id: post.id, caption } });
+      const id = result.data?.postToFacebook?.facebookPostId;
+      if (!id) throw new Error(result.errors?.[0]?.message ?? 'Không đăng được lên Facebook');
+      setFacebookPostId(id);
+      toast.success('Đã đăng lên Facebook');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Không đăng được lên Facebook');
+    } finally {
+      setFbBusy(false);
+    }
+  };
+
+  const handleUnpostFacebook = async () => {
+    if (!post || !window.confirm('Gỡ bài này khỏi Facebook Page?')) return;
+    setFbBusy(true);
+    try {
+      const result = await unpostFromFacebook({ variables: { id: post.id } });
+      if (!result.data?.unpostFromFacebook) throw new Error(result.errors?.[0]?.message ?? 'Không gỡ được bài Facebook');
+      setFacebookPostId(null);
+      toast.success('Đã gỡ bài khỏi Facebook');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Không gỡ được bài Facebook');
+    } finally {
+      setFbBusy(false);
+    }
+  };
 
   const submitWithStatus = (status: PostStatus) => {
     setValue('status', status, { shouldDirty: true });
@@ -470,15 +509,56 @@ export function PostForm({ post, mode }: PostFormProps) {
                     <Label htmlFor="seoDescription">Mô tả SEO</Label>
                     <Textarea id="seoDescription" rows={3} {...register('seoDescription')} />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="facebookCaption">Nội dung đăng Facebook</Label>
-                    <Textarea id="facebookCaption" rows={8} {...register('facebookCaption')} />
-                    <p className="text-xs text-muted-foreground">
-                      Để trống thì dùng tiêu đề + mô tả. Link bài tự được thêm nếu chưa có.
-                    </p>
-                  </div>
                 </TabsContent>
               </Tabs>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/70">
+            <CardHeader className="pb-3">
+              <CardTitle className="font-display flex items-center gap-2 text-base">
+                <Facebook className="h-4 w-4" /> Đăng Facebook
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="facebookCaption">Nội dung bài đăng</Label>
+                <Textarea id="facebookCaption" rows={8} {...register('facebookCaption')} />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Để trống thì dùng tiêu đề + mô tả. Link bài tự được thêm nếu chưa có.</span>
+                  <span>{(watch('facebookCaption') ?? '').length}/3000</span>
+                </div>
+              </div>
+              {mode === 'edit' && post ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {facebookPostId ? (
+                    <>
+                      <span className="text-sm text-emerald-600">Đã đăng lên Facebook</span>
+                      {canPublish ? (
+                        <Button type="button" variant="outline" size="sm" disabled={fbBusy} onClick={handleUnpostFacebook}>
+                          {fbBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                          Gỡ khỏi Facebook
+                        </Button>
+                      ) : null}
+                    </>
+                  ) : canPublish ? (
+                    <>
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={fbBusy || post.status !== PostStatus.PUBLISHED || post.type === PostType.PAGE}
+                        onClick={handlePostFacebook}
+                      >
+                        {fbBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Facebook className="h-4 w-4" />}
+                        Đăng lên Facebook
+                      </Button>
+                      {post.status !== PostStatus.PUBLISHED ? (
+                        <span className="text-xs text-muted-foreground">Cần xuất bản bài trước khi đăng.</span>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
             </CardContent>
           </Card>
 

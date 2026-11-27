@@ -304,6 +304,9 @@ type Mutation {
   """Đánh dấu tất cả thông báo đã đọc"""
   markAllAdminNotificationsRead: Int!
 
+  """Đăng bài đã xuất bản lên Facebook Page (editor/admin)"""
+  postToFacebook(caption: String, id: String!): Post!
+
   """Xuất bản bài viết (editor/admin)"""
   publishPost(id: String!): Post!
 
@@ -323,6 +326,9 @@ type Mutation {
 
   """Thu hồi token MCP (hiệu lực ngay)"""
   revokeAgentToken(id: String!): Boolean!
+
+  """Gỡ bài khỏi Facebook Page (editor/admin)"""
+  unpostFromFacebook(id: String!): Post!
 
   """Chuyển bài viết về bản nháp (editor/admin)"""
   unpublishPost(id: String!): Post!
@@ -425,6 +431,9 @@ type Post {
 
   """Mô tả SEO (meta description); trống thì dùng summary"""
   facebookCaption: String
+
+  """ID bài đã đăng trên Facebook Page (trống nếu chưa đăng)"""
+  facebookPostId: String
   seoDescription: String
   seoTitle: String
   slug: String!
