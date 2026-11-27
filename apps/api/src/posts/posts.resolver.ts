@@ -164,9 +164,24 @@ export class PostsResolver {
   async postToFacebook(
     @Args('id', { type: () => String }) id: string,
     @Args('caption', { type: () => String, nullable: true }) caption: string | undefined,
+    @Args('scheduledAt', {
+      type: () => Date,
+      nullable: true,
+      description: 'Hẹn giờ theo lịch gốc Facebook (10 phút – 30 ngày); trống = đăng ngay',
+    })
+    scheduledAt: Date | undefined,
+    @Args('placeId', {
+      type: () => String,
+      nullable: true,
+      description: 'ID Page địa điểm để gắn thẻ vị trí (mặc định FB_PLACE_ID)',
+    })
+    placeId: string | undefined,
     @CurrentUser() user: UserEntity,
   ): Promise<PostEntity> {
-    return this.postsService.postToFacebook(id, caption?.slice(0, 3000), (await this.toViewer(user))!);
+    return this.postsService.postToFacebook(id, caption?.slice(0, 3000), (await this.toViewer(user))!, {
+      scheduledAt,
+      placeId,
+    });
   }
 
   @Roles(Role.EDITOR)

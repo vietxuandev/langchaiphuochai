@@ -503,11 +503,17 @@ export class McpServerFactory {
         description:
           'Đăng NGAY một bài đã PUBLISHED lên Facebook Page, không đổi trạng thái bài (dùng cho bài cũ). ' +
           'Có thể truyền caption (văn bản thuần, soạn theo skill viet-bai-facebook-phuochai); bỏ trống thì dùng facebookCaption đã lưu, ' +
-          'hoặc tiêu đề + summary. Báo lỗi ALREADY_POSTED nếu bài đã đăng. Cần posts:publish và MCP_ALLOW_PUBLISH=true.',
+          'hoặc tiêu đề + summary. Truyền scheduledAt để hẹn giờ theo lịch gốc của Facebook (10 phút – 30 ngày), placeId để gắn thẻ địa điểm. Báo lỗi ALREADY_POSTED nếu bài đã đăng. Cần posts:publish và MCP_ALLOW_PUBLISH=true.',
         inputSchema: {
           id: z.string().max(40).optional(),
           slug: z.string().max(300).optional(),
           caption: z.string().max(3000).optional().describe('Nội dung bài đăng Facebook, sẽ lưu vào facebookCaption'),
+          scheduledAt: z
+            .string()
+            .max(40)
+            .optional()
+            .describe('Giờ hẹn đăng ISO 8601 (có múi giờ), cách hiện tại 10 phút – 30 ngày; bỏ trống = đăng ngay'),
+          placeId: z.string().max(40).optional().describe('ID Page địa điểm để gắn thẻ vị trí; mặc định FB_PLACE_ID'),
         },
         annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
       },
@@ -521,6 +527,8 @@ export class McpServerFactory {
               id: (args.id as string | undefined) ?? null,
               slug: (args.slug as string | undefined) ?? null,
               caption: (args.caption as string | undefined) ?? null,
+              scheduledAt: (args.scheduledAt as string | undefined) ?? null,
+              placeId: (args.placeId as string | undefined) ?? null,
             }),
           (result) => result.id,
         ),

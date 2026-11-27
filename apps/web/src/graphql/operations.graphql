@@ -268,11 +268,12 @@ mutation UnpublishPost($id: String!) {
   }
 }
 
-mutation PostToFacebook($id: String!, $caption: String) {
-  postToFacebook(id: $id, caption: $caption) {
+mutation PostToFacebook($id: String!, $caption: String, $scheduledAt: DateTime) {
+  postToFacebook(id: $id, caption: $caption, scheduledAt: $scheduledAt) {
     id
     facebookCaption
     facebookPostId
+    facebookScheduledAt
   }
 }
 

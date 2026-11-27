@@ -269,10 +269,12 @@ model Post {
   tags   Tag[]       @relation("PostTags")
 
   /// Nội dung bài đăng Facebook (soạn bằng skill viet-bai-facebook-phuochai).
-  facebookCaption  String?
-  facebookPostId   String?
+  facebookCaption     String?
+  facebookPostId      String?
   /// Thời điểm đăng Facebook lần đầu; không bị xoá khi gỡ bài, để hàng chờ không đăng lại bài đã gỡ chủ ý.
-  facebookPostedAt DateTime?
+  facebookPostedAt    DateTime?
+  /// Giờ đăng theo lịch gốc của Facebook (bài đang ở trạng thái hẹn giờ trên Page); trống nếu đăng ngay.
+  facebookScheduledAt DateTime?
 
   publishedAt DateTime?
   createdAt   DateTime  @default(now())

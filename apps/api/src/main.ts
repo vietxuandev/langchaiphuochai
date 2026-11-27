@@ -18,7 +18,15 @@ async function bootstrap(): Promise<void> {
 
   // Nội dung bài viết (Markdown/HTML) gửi qua MCP có thể dài hơn 100KB mặc định.
   // Đăng ký trước parser mặc định của Nest nên giới hạn 4MB được áp dụng.
-  app.use(json({ limit: '4mb' }));
+  app.use(
+    json({
+      limit: '4mb',
+      // Giữ body thô để xác thực chữ ký webhook Facebook (X-Hub-Signature-256).
+      verify: (req, _res, buf) => {
+        (req as Request & { rawBody?: Buffer }).rawBody = buf;
+      },
+    }),
+  );
 
   app.enableCors({
     origin: (process.env.CORS_ORIGINS ?? 'http://localhost:3000').split(',').map((origin) => origin.trim()),

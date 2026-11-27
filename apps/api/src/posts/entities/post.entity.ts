@@ -90,6 +90,9 @@ export class PostEntity {
   @Field(() => String, { nullable: true, description: 'ID bài đã đăng trên Facebook Page (trống nếu chưa đăng)' })
   facebookPostId?: string | null;
 
+  @Field(() => Date, { nullable: true, description: 'Giờ hẹn đăng theo lịch gốc Facebook (trống nếu đăng ngay)' })
+  facebookScheduledAt?: Date | null;
+
   @Field(() => String, { nullable: true })
   summary?: string | null;
 

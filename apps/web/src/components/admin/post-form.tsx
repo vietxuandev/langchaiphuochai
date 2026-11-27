@@ -192,18 +192,26 @@ export function PostForm({ post, mode }: PostFormProps) {
   const [postToFacebook] = usePostToFacebookMutation();
   const [unpostFromFacebook] = useUnpostFromFacebookMutation();
   const [facebookPostId, setFacebookPostId] = useState<string | null>(post?.facebookPostId ?? null);
+  const [facebookScheduledAt, setFacebookScheduledAt] = useState<string | null>(post?.facebookScheduledAt ?? null);
+  const [scheduleInput, setScheduleInput] = useState('');
   const [fbBusy, setFbBusy] = useState(false);
 
-  const handlePostFacebook = async () => {
+  const handlePostFacebook = async (schedule = false) => {
     if (!post) return;
+    if (schedule && !scheduleInput) {
+      toast.error('Chọn giờ hẹn đăng');
+      return;
+    }
     setFbBusy(true);
     try {
       const caption = (watch('facebookCaption') ?? '').trim();
-      const result = await postToFacebook({ variables: { id: post.id, caption } });
+      const scheduledAt = schedule ? new Date(scheduleInput).toISOString() : null;
+      const result = await postToFacebook({ variables: { id: post.id, caption, scheduledAt } });
       const id = result.data?.postToFacebook?.facebookPostId;
       if (!id) throw new Error(result.errors?.[0]?.message ?? 'Không đăng được lên Facebook');
       setFacebookPostId(id);
-      toast.success('Đã đăng lên Facebook');
+      setFacebookScheduledAt(result.data?.postToFacebook?.facebookScheduledAt ?? null);
+      toast.success(schedule ? 'Đã hẹn giờ đăng trên Facebook' : 'Đã đăng lên Facebook');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Không đăng được lên Facebook');
     } finally {
@@ -218,6 +226,7 @@ export function PostForm({ post, mode }: PostFormProps) {
       const result = await unpostFromFacebook({ variables: { id: post.id } });
       if (!result.data?.unpostFromFacebook) throw new Error(result.errors?.[0]?.message ?? 'Không gỡ được bài Facebook');
       setFacebookPostId(null);
+      setFacebookScheduledAt(null);
       toast.success('Đã gỡ bài khỏi Facebook');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Không gỡ được bài Facebook');
@@ -533,7 +542,11 @@ export function PostForm({ post, mode }: PostFormProps) {
                 <div className="flex flex-wrap items-center gap-2">
                   {facebookPostId ? (
                     <>
-                      <span className="text-sm text-emerald-600">Đã đăng lên Facebook</span>
+                      <span className="text-sm text-emerald-600">
+                        {facebookScheduledAt && new Date(facebookScheduledAt) > new Date()
+                          ? `Đã hẹn giờ đăng Facebook lúc ${new Date(facebookScheduledAt).toLocaleString('vi-VN')}`
+                          : 'Đã đăng lên Facebook'}
+                      </span>
                       {canPublish ? (
                         <Button type="button" variant="outline" size="sm" disabled={fbBusy} onClick={handleUnpostFacebook}>
                           {fbBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -547,10 +560,25 @@ export function PostForm({ post, mode }: PostFormProps) {
                         type="button"
                         size="sm"
                         disabled={fbBusy || post.status !== PostStatus.PUBLISHED || post.type === PostType.PAGE}
-                        onClick={handlePostFacebook}
+                        onClick={() => handlePostFacebook(false)}
                       >
                         {fbBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Facebook className="h-4 w-4" />}
                         Đăng lên Facebook
+                      </Button>
+                      <Input
+                        type="datetime-local"
+                        className="h-8 w-auto"
+                        value={scheduleInput}
+                        onChange={(event) => setScheduleInput(event.target.value)}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={fbBusy || post.status !== PostStatus.PUBLISHED || post.type === PostType.PAGE}
+                        onClick={() => handlePostFacebook(true)}
+                      >
+                        Hẹn giờ
                       </Button>
                       {post.status !== PostStatus.PUBLISHED ? (
                         <span className="text-xs text-muted-foreground">Cần xuất bản bài trước khi đăng.</span>

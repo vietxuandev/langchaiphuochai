@@ -850,7 +850,13 @@ export class McpToolsService {
   /** Đăng một bài đã PUBLISHED lên Facebook Page ngay, không đổi trạng thái bài. */
   async postToFacebook(
     auth: McpAuthContext,
-    input: { id?: string | null; slug?: string | null; caption?: string | null },
+    input: {
+      id?: string | null;
+      slug?: string | null;
+      caption?: string | null;
+      scheduledAt?: string | null;
+      placeId?: string | null;
+    },
   ) {
     this.assertFacebookAccess(auth);
     if (!mcpConfig.allowPublish) {
@@ -877,13 +883,24 @@ export class McpToolsService {
       );
     }
 
+    const scheduledAt = input.scheduledAt ? new Date(input.scheduledAt) : null;
+    if (scheduledAt && Number.isNaN(scheduledAt.getTime())) {
+      throw new McpToolError('INVALID_INPUT', 'scheduledAt phải là thời điểm ISO 8601, ví dụ 2026-12-01T08:00:00+07:00.');
+    }
+
     let facebookPostId: string | null;
     try {
-      facebookPostId = await this.facebook.postNow(post);
+      facebookPostId = await this.facebook.postNow(post, { scheduledAt, placeId: input.placeId });
     } catch (err) {
       throw new McpToolError('FACEBOOK_ERROR', (err as Error).message);
     }
-    return { id: post.id, slug: post.slug, title: post.title, facebookPostId };
+    return {
+      id: post.id,
+      slug: post.slug,
+      title: post.title,
+      facebookPostId,
+      scheduledAt: scheduledAt?.toISOString() ?? null,
+    };
   }
 
   /** Xoá bài khỏi Facebook Page và xoá facebookPostId; bài trên website giữ nguyên. */

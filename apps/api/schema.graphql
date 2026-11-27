@@ -334,7 +334,16 @@ type Mutation {
   markAllAdminNotificationsRead: Int!
 
   """Đăng bài đã xuất bản lên Facebook Page (editor/admin)"""
-  postToFacebook(caption: String, id: String!): Post!
+  postToFacebook(
+    caption: String
+    id: String!
+
+    """ID Page địa điểm để gắn thẻ vị trí (mặc định FB_PLACE_ID)"""
+    placeId: String
+
+    """Hẹn giờ theo lịch gốc Facebook (10 phút – 30 ngày); trống = đăng ngay"""
+    scheduledAt: DateTime
+  ): Post!
 
   """Xuất bản bài viết (editor/admin)"""
   publishPost(id: String!): Post!
@@ -469,6 +478,9 @@ type Post {
 
   """ID bài đã đăng trên Facebook Page (trống nếu chưa đăng)"""
   facebookPostId: String
+
+  """Giờ hẹn đăng theo lịch gốc Facebook (trống nếu đăng ngay)"""
+  facebookScheduledAt: DateTime
   seoDescription: String
   seoTitle: String
   slug: String!

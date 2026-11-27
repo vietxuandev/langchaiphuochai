@@ -287,14 +287,18 @@ Kết quả: `{ id, slug, title, status, url }`.
 
 ### `post_to_facebook`
 
-Đăng ngay một bài **đã PUBLISHED** lên Facebook Page, không đổi trạng thái bài (dùng cho bài cũ).
+Đăng ngay (hoặc hẹn giờ theo lịch gốc của Facebook) một bài **đã PUBLISHED** lên Facebook Page, không đổi trạng thái bài (dùng cho bài cũ).
 
 | Tham số | Kiểu | Ghi chú |
 |---|---|---|
 | `id` hoặc `slug` | string | Chọn bài |
 | `caption` | ≤ 3.000 | Tuỳ chọn; lưu vào `facebookCaption`. Trống thì dùng caption đã lưu, hoặc tiêu đề + summary |
+| `scheduledAt` | ISO 8601 | Tuỳ chọn; hẹn giờ đăng (cách hiện tại 10 phút – 30 ngày). Facebook tự đăng đúng giờ, bài hiện ở mục bài hẹn giờ của Page |
+| `placeId` | string | Tuỳ chọn; ID Page địa điểm để gắn thẻ vị trí, mặc định `FB_PLACE_ID` |
 
-Cần scope `posts:publish`, `MCP_ALLOW_PUBLISH=true`, vai trò EDITOR trở lên và cấu hình `FB_PAGE_ID`/`FB_PAGE_TOKEN`. Lỗi: `POST_NOT_PUBLISHED`, `ALREADY_POSTED`, `FACEBOOK_ERROR`. Kết quả: `{ id, slug, title, facebookPostId }`.
+Cần scope `posts:publish`, `MCP_ALLOW_PUBLISH=true`, vai trò EDITOR trở lên và cấu hình `FB_PAGE_ID`/`FB_PAGE_TOKEN`. Lỗi: `POST_NOT_PUBLISHED`, `ALREADY_POSTED`, `FACEBOOK_ERROR`. Kết quả: `{ id, slug, title, facebookPostId, scheduledAt }`.
+
+**Webhook Facebook** (`/webhooks/facebook`): cần `FB_APP_SECRET` và `FB_WEBHOOK_VERIFY_TOKEN`. Trong Meta Developers → Webhooks → Page, đặt Callback URL `https://<domain-api>/webhooks/facebook`, Verify token trùng `FB_WEBHOOK_VERIFY_TOKEN`, đăng ký trường `feed`, rồi subscribe app vào Page. Khi bài bị xoá trực tiếp trên Facebook, `facebookPostId` tự được xoá; bình luận mới được ghi log.
 
 ### `unpost_from_facebook`
 

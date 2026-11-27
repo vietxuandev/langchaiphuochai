@@ -289,7 +289,12 @@ export class PostsService {
   }
 
   /** Đăng bài đã xuất bản lên Facebook Page ngay; lưu caption nếu được truyền. */
-  async postToFacebook(id: string, caption: string | null | undefined, viewer: Viewer): Promise<PostEntity> {
+  async postToFacebook(
+    id: string,
+    caption: string | null | undefined,
+    viewer: Viewer,
+    options: { scheduledAt?: Date | null; placeId?: string | null } = {},
+  ): Promise<PostEntity> {
     const current = await this.prisma.post.findUnique({ where: { id } });
     if (!current) throw new NotFoundException('Không tìm thấy bài viết');
     this.assertCanEdit(current.authorId, viewer);
@@ -307,7 +312,7 @@ export class PostsService {
         ? current
         : await this.prisma.post.update({ where: { id }, data: { facebookCaption: trimmed || null } });
     try {
-      await this.facebook.postNow(row);
+      await this.facebook.postNow(row, options);
     } catch (err) {
       throw new BadRequestException(`Đăng Facebook thất bại: ${(err as Error).message}`);
     }
@@ -323,7 +328,10 @@ export class PostsService {
     try {
       await this.facebook.unpostNow(id, current.facebookPostId);
     } catch (err) {
-      await this.prisma.post.update({ where: { id }, data: { facebookPostId: current.facebookPostId } });
+      await this.prisma.post.update({
+        where: { id },
+        data: { facebookPostId: current.facebookPostId, facebookScheduledAt: current.facebookScheduledAt },
+      });
       throw new BadRequestException(`Gỡ bài Facebook thất bại: ${(err as Error).message}`);
     }
     return this.findById(id, viewer);
