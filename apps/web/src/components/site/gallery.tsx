@@ -15,13 +15,7 @@ type GalleryImage = PostFullFragment['images'][number];
 export function Gallery({ images, title }: { images: GalleryImage[]; title: string }) {
   const [active, setActive] = useState(0);
 
-  if (images.length === 0) {
-    return (
-      <div className="flex aspect-[16/9] w-full items-center justify-center rounded-2xl bg-gradient-to-br from-sea-100 to-sea-200 text-sea-600">
-        <span className="text-sm">Chưa có ảnh cho địa điểm này</span>
-      </div>
-    );
-  }
+  if (images.length === 0) return null;
 
   const current = images[Math.min(active, images.length - 1)];
   const currentUrl = buildImageUrl(current);
